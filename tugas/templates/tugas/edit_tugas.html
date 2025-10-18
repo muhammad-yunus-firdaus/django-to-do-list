@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-md mt-10">
+    <h2 class="text-2xl font-bold text-blue-700 mb-6">Edit Tugas</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Judul -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium">Judul:</label>
+            <input type="text" name="judul" value="{{ form.judul.value|default:'' }}" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Deskripsi -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium">Deskripsi:</label>
+            <textarea name="deskripsi" rows="4" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">{{ form.deskripsi.value|default:'' }}</textarea>
+        </div>
+
+        <!-- Deadline -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium">Deadline:</label>
+            <input type="datetime-local" name="deadline" value="{{ form.deadline.value|default:''|date:'Y-m-d\TH:i' }}" 
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- Prioritas -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium">Prioritas:</label>
+            <select name="prioritas" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for choice in form.prioritas.field.choices %}
+                    <option value="{{ choice.0 }}" {% if form.prioritas.value == choice.0 %}selected{% endif %}>
+                        {{ choice.1 }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Kategori -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium">Kategori:</label>
+            <select name="kategori" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for choice in form.kategori.field.choices %}
+                    <option value="{{ choice.0 }}" {% if form.kategori.value == choice.0 %}selected{% endif %}>
+                        {{ choice.1 }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Status -->
+        <div class="mb-4">
+            <label class="block text-gray-700 font-medium">Status:</label>
+            <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                {% for choice in form.status.field.choices %}
+                    <option value="{{ choice.0 }}" {% if form.status.value == choice.0 %}selected{% endif %}>
+                        {{ choice.1 }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Tombol Aksi -->
+        <div class="flex space-x-2">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+                Simpan Perubahan
+            </button>
+            <a href="{% url 'daftar_tugas' %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">
+                Batal
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

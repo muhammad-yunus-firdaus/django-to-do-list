@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Daftar Tugas{% endblock %}
+
+{% block content %}
+<div class="container mx-auto mt-6 px-4">
+    <h1 class="text-2xl font-bold text-blue-700 mb-4">Manajemen Tugas</h1>
+
+    <!--  Form Pencarian & Export -->
+    <div class="flex justify-between items-center mb-4">
+        <form method="GET" class="flex space-x-2">
+            <input type="text" name="q" placeholder="Cari tugas..." value="{{ request.GET.q }}" class="border rounded-lg px-3 py-2">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Cari</button>
+        </form>
+
+        <!-- Dropdown Export -->
+        <div class="relative">
+            <button id="exportBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Export ▼
+            </button>
+            <div id="exportDropdown" class="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md hidden">
+                <a href="{% url 'tugas:export_csv' %}" class="block px-4 py-2 hover:bg-gray-200">Export CSV</a>
+                <a href="{% url 'tugas:export_excel' %}" class="block px-4 py-2 hover:bg-gray-200">Export Excel</a>
+                <a href="{% url 'tugas:export_pdf' %}" class="block px-4 py-2 hover:bg-gray-200">Export PDF</a>
+            </div>
+        </div>
+    </div>
+
+    <!--  Form Filter -->
+    <form method="GET" class="grid grid-cols-4 gap-4 bg-gray-100 p-4 rounded-lg shadow-md">
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Kategori:</label>
+            <select name="kategori" class="w-full border rounded-lg px-3 py-2">
+                <option value="">Semua Kategori</option>
+                {% for kategori in kategori_list %}
+                    <option value="{{ kategori }}" {% if kategori == kategori_filter %}selected{% endif %}>
+                        {{ kategori }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Prioritas:</label>
+            <select name="prioritas" class="w-full border rounded-lg px-3 py-2">
+                <option value="">Semua Prioritas</option>
+                <option value="tinggi" {% if prioritas_filter == "tinggi" %}selected{% endif %}>Tinggi</option>
+                <option value="sedang" {% if prioritas_filter == "sedang" %}selected{% endif %}>Sedang</option>
+                <option value="rendah" {% if prioritas_filter == "rendah" %}selected{% endif %}>Rendah</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700">Status:</label>
+            <select name="status" class="w-full border rounded-lg px-3 py-2">
+                <option value="">Semua Status</option>
+                <option value="belum" {% if status_filter == "belum" %}selected{% endif %}>Belum Selesai</option>
+                <option value="selesai" {% if status_filter == "selesai" %}selected{% endif %}>Selesai</option>
+            </select>
+        </div>
+
+        <div class="flex items-end">
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Filter</button>
+        </div>
+    </form>
+
+    <!--  Tabel -->
+    {% if tugas_list %}
+    <div class="overflow-x-auto mt-4">
+        <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-md text-sm">
+            <thead class="bg-gray-200 text-gray-700">
+                <tr class="text-left">
+                    <th class="px-4 py-2">Judul</th>
+                    <th class="px-4 py-2">Deskripsi</th>
+                    <th class="px-4 py-2">Kategori</th>
+                    <th class="px-4 py-2">Prioritas</th>
+                    <th class="px-4 py-2">Deadline</th>
+                    <th class="px-4 py-2">Status</th>
+                    <th class="px-4 py-2">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tugas in tugas_list %}
+                <tr class="{% if tugas.selesai %}bg-green-100{% else %}bg-white{% endif %} border-b">
+                    <td class="px-4 py-2 font-semibold">{{ tugas.judul }}</td>
+                    <td class="px-4 py-2 text-gray-600 break-words max-w-xs">
+                        {{ tugas.deskripsi }}
+                    </td>                    
+                    <td class="px-4 py-2">{{ tugas.get_kategori_display }}</td>
+                    <td class="px-4 py-2">
+                        {% if tugas.prioritas == "tinggi" %}
+                            <span class="bg-red-500 text-white px-2 py-1 rounded-lg">Tinggi</span>
+                        {% elif tugas.prioritas == "sedang" %}
+                            <span class="bg-yellow-500 text-black px-2 py-1 rounded-lg">Sedang</span>
+                        {% else %}
+                            <span class="bg-green-500 text-white px-2 py-1 rounded-lg">Rendah</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2">{{ tugas.deadline|date:"d M Y H:i" }}</td>
+                    <td class="px-4 py-2 text-center">
+                        {% if tugas.selesai %}
+                            <span class="inline-block w-28 text-center bg-gray-600 text-white px-3 py-1 rounded-lg">
+                                Selesai
+                            </span>
+                        {% else %}
+                            <span class="inline-block w-28 text-center bg-blue-500 text-white px-3 py-1 rounded-lg">
+                                Belum Selesai
+                            </span>
+                        {% endif %}
+                    </td>
+                    
+                    <td class="px-4 py-2 flex space-x-2">
+                        <a href="{% url 'tugas:edit' tugas.id %}" class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600">Edit</a>
+                        <button onclick="konfirmasiHapus('{{ tugas.id }}', '{{ tugas.judul }}')" class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600">Hapus</button>
+                        {% if not tugas.selesai %}
+                        <button onclick="konfirmasiSelesai('{{ tugas.id }}', '{{ tugas.judul }}')" class="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600">Selesai</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="text-center text-gray-600 mt-4">Tidak ada tugas.</p>
+    {% endif %}
+</div>
+
+<!-- Script untuk Dropdown Export -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let exportBtn = document.getElementById("exportBtn");
+        let exportDropdown = document.getElementById("exportDropdown");
+
+        exportBtn.addEventListener("click", function (event) {
+            event.stopPropagation();
+            exportDropdown.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", function () {
+            exportDropdown.classList.add("hidden");
+        });
+    });
+</script>
+
+<script>
+    function konfirmasiHapus(id, judul) {
+        Swal.fire({
+            title: "Hapus Tugas?",
+            text: `Apakah kamu yakin ingin menghapus tugas "${judul}"?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Ya, Hapus",
+            cancelButtonText: "Batal"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/tugas/hapus/${id}/`, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": getCSRFToken(), // Kirim CSRF token agar Django tidak menolak request
+                        "Content-Type": "application/json"
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        Swal.fire("Terhapus!", "Tugas berhasil dihapus.", "success").then(() => {
+                            location.reload(); // Refresh halaman setelah berhasil menghapus
+                        });
+                    } else {
+                        Swal.fire("Gagal!", "Tugas gagal dihapus.", "error");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    Swal.fire("Error!", "Terjadi kesalahan, coba lagi.", "error");
+                });
+            }
+        });
+    }
+
+    // Fungsi untuk mengambil CSRF token dari cookie
+    function getCSRFToken() {
+        let cookies = document.cookie.split(";");
+        for (let cookie of cookies) {
+            let [name, value] = cookie.trim().split("=");
+            if (name === "csrftoken") {
+                return value;
+            }
+        }
+        return "";
+    }
+    function konfirmasiSelesai(id, judul) {
+        Swal.fire({
+            title: "Tandai Selesai?",
+            text: `Tandai tugas "${judul}" sebagai selesai?`,
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonColor: "#28a745",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Ya, Selesai",
+            cancelButtonText: "Batal"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/tugas/selesai/${id}/`;
+            }
+        });
+    }
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,140 @@
+/* Import Font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+/* Variabel CSS */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-color);
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* Header */
+h1, h2, h3 {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Tombol */
+.btn {
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+/* Form Input */
+.form-control {
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+/* Kartu / Box */
+.card {
+    border-radius: 12px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    background: #fff;
+    text-align: center;
+    font-weight: 600;
+    transition: transform 0.2s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+/* Efek Hover */
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Warna Dashboard */
+.card.tugas-selesai {
+    background-color: var(--primary-color);  /* Biru */
+    color: white;
+}
+
+.card.tugas-belum-selesai {
+    background-color: var(--danger-color);  /* Merah */
+    color: white;
+}
+
+.card.total-tugas {
+    background-color: var(--success-color);  /* Hijau */
+    color: white;
+}
+
+/* Progress Bar */
+.progress {
+    height: 30px;
+    position: relative;
+    border-radius: 5px;
+    background-color: #e9ecef;
+    overflow: hidden;
+}
+
+.progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.5s ease-in-out;
+    background-color: var(--success-color);
+}
+
+.progress-value {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    color: black;
+    font-size: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+/* Responsif */
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+}

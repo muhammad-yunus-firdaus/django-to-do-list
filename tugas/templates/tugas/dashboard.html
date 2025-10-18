@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+{% if messages %}
+  <div class="mb-4" data-aos="fade-down">
+    {% for message in messages %}
+      <div class="bg-yellow-200 text-yellow-800 px-4 py-2 rounded-md shadow-md">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<div class="max-w-6xl mx-auto px-4 mt-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4" data-aos="fade-down">Dashboard</h1>
+
+    <!-- Card Statistik -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" data-aos="fade-up">
+        <div class="bg-blue-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+            <h2 class="text-lg font-semibold">Tugas Selesai</h2>
+            <p class="text-3xl font-bold mt-2">{{ tugas_selesai }}</p>
+        </div>
+
+        <div class="bg-red-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+            <h2 class="text-lg font-semibold">Tugas Belum Selesai</h2>
+            <p class="text-3xl font-bold mt-2">{{ tugas_belum_selesai }}</p>
+        </div>
+
+        <div class="bg-green-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
+            <h2 class="text-lg font-semibold">Total Tugas</h2>
+            <p class="text-3xl font-bold mt-2">{{ total_tugas }}</p>
+        </div>
+    </div>
+
+    <!-- Progress Bar Dua Warna -->
+    <div class="mt-8" data-aos="fade-up" data-aos-delay="100">
+        <h2 class="text-lg font-semibold text-gray-700 mb-2">Progress Tugas</h2>
+        <div class="relative w-full h-6 bg-gray-200 rounded-full overflow-hidden shadow-inner hover:shadow-lg transition-shadow duration-300">
+            <!-- Bar Selesai -->
+            <div id="bar-selesai"
+                 class="absolute top-0 left-0 h-6 transition-all duration-[1500ms] ease-out animate-fill"
+                 style="width: 0%;
+                        background: linear-gradient(to right, #60a5fa, #2563eb);">
+            </div>
+
+            <!-- Bar Belum Selesai -->
+            {% if tugas_belum_selesai > 0 %}
+            <div id="bar-belum"
+                 class="absolute top-0 h-6 transition-all duration-[1500ms] ease-out animate-fill"
+                 style="left: 0%; width: 0%;
+                        background: linear-gradient(to right, #f87171, #dc2626);">
+            </div>
+            {% endif %}
+
+            <!-- Persentase -->
+            <span class="absolute inset-0 flex items-center justify-center font-semibold text-white text-sm drop-shadow-md">
+                {{ persentase_selesai|floatformat:2 }}% Selesai
+            </span>
+        </div>
+    </div>
+
+    <!-- Deadline Terdekat -->
+    {% if tugas_deadline_terdekat %}
+    <div class="mt-10" data-aos="fade-up" data-aos-delay="200">
+        <h2 class="text-lg font-semibold text-gray-700 mb-3">🕒 Tugas dengan Deadline Terdekat</h2>
+        <ul class="bg-white rounded-lg shadow divide-y divide-gray-200">
+            {% for tugas in tugas_deadline_terdekat %}
+            <li class="p-4 flex justify-between items-center hover:bg-gray-50 transition">
+                <span class="font-medium text-gray-700">{{ tugas.judul }}</span>
+                <span class="text-sm text-gray-500">{{ tugas.deadline|date:"l, d M Y" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Prioritas Tinggi -->
+    {% if prioritas_tinggi %}
+    <div class="mt-10" data-aos="fade-up" data-aos-delay="250">
+        <h2 class="text-lg font-semibold text-gray-700 mb-3">
+            <span class="inline-flex items-center gap-2">
+                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium shadow-sm">
+                    ⚡ Tugas dengan Prioritas Tinggi
+                </span>
+            </span>
+        </h2>
+        <ul class="bg-white rounded-lg shadow divide-y divide-gray-200">
+            {% for tugas in prioritas_tinggi %}
+            <li class="p-4 flex justify-between items-center hover:bg-red-50 transition">
+                <span class="font-medium text-red-600">{{ tugas.judul }}</span>
+                <span class="text-sm text-gray-500">{{ tugas.deadline|date:"l, d M Y" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+
+    <!-- Grafik Statistik -->
+    <div class="mt-10" data-aos="fade-up" data-aos-delay="300">
+        <canvas id="taskChart"
+            data-tugas-selesai="{{ tugas_selesai }}"
+            data-tugas-belum="{{ tugas_belum_selesai }}">
+        </canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+
+<style>
+@keyframes pulse-bar {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.9; transform: scaleY(1.05); }
+}
+.animate-fill {
+  animation: pulse-bar 2s ease-in-out infinite;
+}
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    AOS.init({ duration: 800, once: true });
+
+    const tugasSelesai = {{ tugas_selesai|default:0 }};
+    const tugasBelum = {{ tugas_belum_selesai|default:0 }};
+    const total = {{ total_tugas|default:0 }};
+    const selesaiPersen = total > 0 ? (tugasSelesai / total * 100) : 0;
+    const belumPersen = total > 0 ? (tugasBelum / total * 100) : 0;
+
+    const barSelesai = document.getElementById("bar-selesai");
+    const barBelum = document.getElementById("bar-belum");
+
+    setTimeout(() => {
+        barSelesai.style.width = selesaiPersen + "%";
+        if (barBelum) {
+            barBelum.style.left = selesaiPersen + "%";
+            barBelum.style.width = belumPersen + "%";
+        }
+    }, 300);
+
+    const canvas = document.getElementById("taskChart");
+    const ctx = canvas.getContext("2d");
+
+    const gradientSelesai = ctx.createLinearGradient(0, 0, 0, 200);
+    gradientSelesai.addColorStop(0, "#60a5fa");
+    gradientSelesai.addColorStop(1, "#2563eb");
+
+    const gradientBelum = ctx.createLinearGradient(0, 0, 0, 200);
+    gradientBelum.addColorStop(0, "#f87171");
+    gradientBelum.addColorStop(1, "#dc2626");
+
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: ["Selesai", "Belum Selesai"],
+            datasets: [{
+                label: "Jumlah Tugas",
+                data: [tugasSelesai, tugasBelum],
+                backgroundColor: [gradientSelesai, gradientBelum],
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hapus Tugas</title>
+</head>
+<body>
+    <h1>Apakah Anda yakin ingin menghapus "{{ tugas.judul }}"?</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit">Ya, Hapus</button>
+    </form>
+    <a href="{% url 'daftar_tugas' %}">Batal</a>
+</body>
+</html>

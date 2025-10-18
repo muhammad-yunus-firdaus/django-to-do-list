@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Detail Tugas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-primary">Detail Tugas</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title">{{ tugas.judul }}</h3>
+            <p class="card-text">{{ tugas.deskripsi }}</p>
+            
+            <p><strong>Kategori:</strong> {{ tugas.get_kategori_display }}</p>
+            <p><strong>Prioritas:</strong> 
+                {% if tugas.prioritas == "tinggi" %}
+                    <span class="badge bg-danger">Tinggi</span>
+                {% elif tugas.prioritas == "sedang" %}
+                    <span class="badge bg-warning text-dark">Sedang</span>
+                {% else %}
+                    <span class="badge bg-success">Rendah</span>
+                {% endif %}
+            </p>
+
+            <p><strong>Deadline:</strong> 
+                {% if tugas.deadline %}
+                    {{ tugas.deadline|date:"d F Y H:i" }}
+                {% else %}
+                    <span class="text-muted">Tidak ada</span>
+                {% endif %}
+            </p>
+
+            <p><strong>Status:</strong> 
+                {% if tugas.selesai %}
+                    <span class="badge bg-secondary">Selesai</span>
+                {% else %}
+                    <span class="badge bg-info text-dark">Belum Selesai</span>
+                {% endif %}
+            </p>
+
+            <a href="{% url 'tugas:daftar' %}" class="btn btn-secondary">Kembali</a>
+            <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-primary">Edit</a>
+            <button class="btn btn-danger" onclick="konfirmasiHapus('{{ tugas.id }}', '{{ tugas.judul }}')">Hapus</button>
+        </div>
+    </div>
+</div>
+
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Skrip Konfirmasi Hapus -->
+<script>
+    function konfirmasiHapus(tugasId, tugasJudul) {
+        Swal.fire({
+            title: `Hapus Tugas?`,
+            html: `<b>"${tugasJudul}"</b> akan dihapus secara permanen!`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Ya, Hapus",
+            cancelButtonText: "Batal",
+            reverseButtons: true,
+            showClass: {
+                popup: "animate__animated animate__fadeInDown"
+            },
+            hideClass: {
+                popup: "animate__animated animate__fadeOutUp"
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `{% url 'tugas:hapus' 0 %}`.replace('0', tugasId);
+            }
+        });
+    }
+</script>
+
+{% endblock %}
