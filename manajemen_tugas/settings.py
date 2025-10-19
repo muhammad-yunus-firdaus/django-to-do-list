@@ -1,7 +1,7 @@
 """
 Django settings for manajemen_tugas project.
 """
-
+import dj_database_url
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -22,7 +22,6 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
 
 # Allowed hosts
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else ["127.0.0.1", "localhost"]
-
 # Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -81,15 +80,23 @@ WSGI_APPLICATION = 'manajemen_tugas.wsgi.application'
 
 # Database configuration
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME", "manajemen_tugas"),
-        "USER": os.getenv("DB_USER", "postgres"),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", "localhost"),
-        "PORT": os.getenv("DB_PORT", "5432"),
-    }
+    'default': dj_database_url.config(
+        default=os.getenv("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
+
+#DATABASES = {
+#    "default": {
+#        "ENGINE": "django.db.backends.postgresql",
+#        "NAME": os.getenv("DB_NAME", "manajemen_tugas"),
+#        "USER": os.getenv("DB_USER", "postgres"),
+#        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+#        "HOST": os.getenv("DB_HOST", "localhost"),
+#        "PORT": os.getenv("DB_PORT", "5432"),
+#    }
+#}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
