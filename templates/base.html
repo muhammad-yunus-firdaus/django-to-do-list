@@ -6,50 +6,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Aplikasi Manajemen Tugas{% endblock %}</title>
 
-    <!-- ✅ Gunakan hanya satu: Bootstrap atau Tailwind -->
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- ✅ Custom CSS -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <script src="https://unpkg.com/lucide@latest"></script>
+
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 </head>
 <body class="bg-gray-100">
 
-    {% if request.resolver_match.url_name != "login" %}
-    
-    <nav class="bg-blue-600 text-white p-3 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="#" class="text-xl font-bold">Manajemen Tugas</a>
-            <ul class="flex space-x-6">
-                <li><a href="{% url 'tugas:dashboard' %}" class="hover:underline">Dashboard</a></li>
-                <li><a href="{% url 'tugas:daftar' %}" class="hover:underline">Daftar Tugas</a></li>
-                <li><a href="{% url 'tugas:tambah' %}" class="hover:underline">Tambah Tugas</a></li>
-                
-                {% if user.is_authenticated %}
-                    <li><a href="{% url 'tugas:logout' %}" class="text-white hover:text-red-300 transition font-medium">Logout</a></li>
-                {% else %}
-                    <li><a href="{% url 'tugas:login' %}" class="hover:underline text-green-400">Login</a></li>
-                {% endif %}
-            </ul>
-        </div>
-    </nav>
-    {% endif %}
+{% if request.resolver_match.url_name != "login" %}
+<nav class="bg-blue-600 text-white p-4 shadow-md">
+    <div class="container mx-auto flex flex-wrap items-center justify-between">
+        <!-- Judul -->
+        <a href="#" class="text-lg sm:text-xl font-bold mb-2 sm:mb-0">Manajemen Tugas</a>
 
-    <!-- Konten Utama -->
-    <main class="container mx-auto p-4">
-        {% block content %}{% endblock %}
-    </main>
+        <!-- Menu -->
+        <ul class="flex flex-wrap gap-4 text-sm sm:text-base">
+            <li><a href="{% url 'tugas:dashboard' %}" class="hover:underline">Dashboard</a></li>
+            <li><a href="{% url 'tugas:daftar' %}" class="hover:underline">Daftar Tugas</a></li>
+            <li><a href="{% url 'tugas:tambah' %}" class="hover:underline">Tambah Tugas</a></li>
 
-    <!-- Footer -->
-    <footer class="text-center text-gray-500 p-3 mt-6 border-t">
-        &copy; 2025 - Muhammad Yunus Firdaus
-    </footer>
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'tugas:logout' %}" class="hover:text-red-300 transition font-medium">Logout</a></li>
+            {% else %}
+                <li><a href="{% url 'tugas:login' %}" class="hover:underline text-green-400">Login</a></li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+{% endif %}
 
-    <!-- Bootstrap JS -->
-    
+<!-- Konten Utama -->
+<main class="container mx-auto p-4">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="text-center text-gray-500 p-3 mt-6 border-t">
+    &copy; 2025 - Muhammad Yunus Firdaus
+</footer>
 
 </body>
 </html>
