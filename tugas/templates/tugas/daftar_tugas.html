@@ -7,19 +7,20 @@
 <div class="container mx-auto mt-6 px-4">
     <h1 class="text-2xl font-bold text-blue-700 mb-4">Manajemen Tugas</h1>
 
-    <!--  Form Pencarian & Export -->
-    <div class="flex justify-between items-center mb-4">
-        <form method="GET" class="flex space-x-2">
-            <input type="text" name="q" placeholder="Cari tugas..." value="{{ request.GET.q }}" class="border rounded-lg px-3 py-2">
+    <!-- Form Pencarian & Export -->
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+        <form method="GET" class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <input type="text" name="q" placeholder="Cari tugas..." value="{{ request.GET.q }}" 
+                   class="border rounded-lg px-3 py-2 w-full sm:w-64">
             <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Cari</button>
         </form>
 
         <!-- Dropdown Export -->
-        <div class="relative">
-            <button id="exportBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+        <div class="relative w-full sm:w-auto">
+            <button id="exportBtn" class="bg-green-600 text-white w-full sm:w-auto px-4 py-2 rounded-lg hover:bg-green-700">
                 Export ▼
             </button>
-            <div id="exportDropdown" class="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-md hidden">
+            <div id="exportDropdown" class="absolute right-0 mt-2 w-full sm:w-40 bg-white border rounded-lg shadow-md hidden z-10">
                 <a href="{% url 'tugas:export_csv' %}" class="block px-4 py-2 hover:bg-gray-200">Export CSV</a>
                 <a href="{% url 'tugas:export_excel' %}" class="block px-4 py-2 hover:bg-gray-200">Export Excel</a>
                 <a href="{% url 'tugas:export_pdf' %}" class="block px-4 py-2 hover:bg-gray-200">Export PDF</a>
@@ -27,8 +28,8 @@
         </div>
     </div>
 
-    <!--  Form Filter -->
-    <form method="GET" class="grid grid-cols-4 gap-4 bg-gray-100 p-4 rounded-lg shadow-md">
+    <!-- Form Filter -->
+    <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-gray-100 p-4 rounded-lg shadow-md">
         <div>
             <label class="block text-sm font-medium text-gray-700">Kategori:</label>
             <select name="kategori" class="w-full border rounded-lg px-3 py-2">
@@ -61,11 +62,11 @@
         </div>
 
         <div class="flex items-end">
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Filter</button>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full">Filter</button>
         </div>
     </form>
 
-    <!--  Tabel -->
+    <!-- Tabel -->
     {% if tugas_list %}
     <div class="overflow-x-auto mt-4">
         <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-md text-sm">
@@ -83,10 +84,8 @@
             <tbody>
                 {% for tugas in tugas_list %}
                 <tr class="{% if tugas.selesai %}bg-green-100{% else %}bg-white{% endif %} border-b">
-                    <td class="px-4 py-2 font-semibold">{{ tugas.judul }}</td>
-                    <td class="px-4 py-2 text-gray-600 break-words max-w-xs">
-                        {{ tugas.deskripsi }}
-                    </td>                    
+                    <td class="px-4 py-2 font-semibold break-words max-w-xs">{{ tugas.judul }}</td>
+                    <td class="px-4 py-2 text-gray-600 break-words max-w-xs">{{ tugas.deskripsi }}</td>                    
                     <td class="px-4 py-2">{{ tugas.get_kategori_display }}</td>
                     <td class="px-4 py-2">
                         {% if tugas.prioritas == "tinggi" %}
@@ -97,7 +96,7 @@
                             <span class="bg-green-500 text-white px-2 py-1 rounded-lg">Rendah</span>
                         {% endif %}
                     </td>
-                    <td class="px-4 py-2">{{ tugas.deadline|date:"d M Y H:i" }}</td>
+                    <td class="px-4 py-2 whitespace-nowrap">{{ tugas.deadline|date:"d M Y H:i" }}</td>
                     <td class="px-4 py-2 text-center">
                         {% if tugas.selesai %}
                             <span class="inline-block w-28 text-center bg-gray-600 text-white px-3 py-1 rounded-lg">
@@ -109,8 +108,7 @@
                             </span>
                         {% endif %}
                     </td>
-                    
-                    <td class="px-4 py-2 flex space-x-2">
+                    <td class="px-4 py-2 flex flex-wrap gap-2">
                         <a href="{% url 'tugas:edit' tugas.id %}" class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600">Edit</a>
                         <button onclick="konfirmasiHapus('{{ tugas.id }}', '{{ tugas.judul }}')" class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600">Hapus</button>
                         {% if not tugas.selesai %}
@@ -160,14 +158,14 @@
                 fetch(`/tugas/hapus/${id}/`, {
                     method: "POST",
                     headers: {
-                        "X-CSRFToken": getCSRFToken(), // Kirim CSRF token agar Django tidak menolak request
+                        "X-CSRFToken": getCSRFToken(),
                         "Content-Type": "application/json"
                     }
                 })
                 .then(response => {
                     if (response.ok) {
                         Swal.fire("Terhapus!", "Tugas berhasil dihapus.", "success").then(() => {
-                            location.reload(); // Refresh halaman setelah berhasil menghapus
+                            location.reload();
                         });
                     } else {
                         Swal.fire("Gagal!", "Tugas gagal dihapus.", "error");
@@ -181,7 +179,6 @@
         });
     }
 
-    // Fungsi untuk mengambil CSRF token dari cookie
     function getCSRFToken() {
         let cookies = document.cookie.split(";");
         for (let cookie of cookies) {
@@ -192,6 +189,7 @@
         }
         return "";
     }
+
     function konfirmasiSelesai(id, judul) {
         Swal.fire({
             title: "Tandai Selesai?",
@@ -209,6 +207,5 @@
         });
     }
 </script>
-
 
 {% endblock %}

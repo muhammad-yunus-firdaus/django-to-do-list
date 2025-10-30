@@ -22,6 +22,7 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
 
 # Allowed hosts
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else ["127.0.0.1", "localhost"]
+
 # Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -33,7 +34,6 @@ INSTALLED_APPS = [
     'django.contrib.sites', 
     'tugas',  # Aplikasi manajemen tugas
     "widget_tweaks",
-
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
@@ -45,7 +45,6 @@ SITE_ID = 1
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -61,12 +60,11 @@ ROOT_URLCONF = 'manajemen_tugas.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "templates")],  # Bisa digunakan jika ada template global
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -86,17 +84,6 @@ DATABASES = {
     )
 }
 
-#DATABASES = {
-#    "default": {
-#        "ENGINE": "django.db.backends.postgresql",
-#        "NAME": os.getenv("DB_NAME", "manajemen_tugas"),
-#        "USER": os.getenv("DB_USER", "postgres"),
-#        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-#        "HOST": os.getenv("DB_HOST", "localhost"),
-#        "PORT": os.getenv("DB_PORT", "5432"),
-#    }
-#}
-
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -111,8 +98,8 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # Internationalization
-LANGUAGE_CODE = 'id'  # Bahasa Indonesia
-TIME_ZONE = 'Asia/Jakarta'  # Waktu Indonesia Barat (WIB)
+LANGUAGE_CODE = 'id'
+TIME_ZONE = 'Asia/Jakarta'
 USE_I18N = True
 USE_TZ = True
 
@@ -121,18 +108,20 @@ LOGIN_REDIRECT_URL = "tugas:dashboard"
 LOGOUT_REDIRECT_URL = "tugas:login"
 
 # Static files
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"] if (BASE_DIR / "static").exists() else []
-STATIC_ROOT = BASE_DIR / "staticfiles"  # Untuk collectstatic saat deployment
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Media files (upload user)
+# Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Konfigurasi Email (Gunakan Gmail SMTP)
+# Email configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587

@@ -15,9 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from tugas.views import tambah_tugas, daftar_tugas, export_csv, export_pdf, export_excel
 from tugas import views
+from django.conf import settings
+from django.conf.urls.static import static  
+from pathlib import Path
+from django.views.static import serve
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,5 +36,16 @@ urlpatterns = [
     path("export/pdf/", export_pdf, name="export_pdf"),
     path('export/excel/', export_excel, name='export_excel'),
     path("accounts/", include("allauth.urls")),
-
+    
 ]
+
+# Serve static files di development
+if settings.DEBUG:
+    urlpatterns += [
+        re_path(r'^static/(?P<path>.*)$', serve, {
+            'document_root': settings.BASE_DIR / 'static',
+        }),
+        re_path(r'^media/(?P<path>.*)$', serve, {
+            'document_root': settings.MEDIA_ROOT,
+        }),
+    ]

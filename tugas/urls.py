@@ -27,7 +27,7 @@ urlpatterns = [
     path('tandai_selesai/<int:tugas_id>/', views.tandai_selesai, name='tandai_selesai'), 
     path("tugas/selesai/<int:tugas_id>/", views.tandai_selesai, name="selesai"),
     path("detail/<int:tugas_id>/", views.detail_tugas, name="detail"),
-
+    
      # 🔹 URL Export
     path("export/csv/", views.export_csv, name="export_csv"),
     path("export/excel/", views.export_excel, name="export_excel"),
