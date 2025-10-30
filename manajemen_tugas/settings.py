@@ -17,6 +17,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY tidak boleh kosong! Pastikan diisi di .env")
 
+
 # Debug mode
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
 
