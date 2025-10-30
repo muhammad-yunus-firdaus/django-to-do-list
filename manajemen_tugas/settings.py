@@ -20,6 +20,7 @@ if not SECRET_KEY:
 # Debug mode
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
 
+
 # Allowed hosts
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else ["127.0.0.1", "localhost"]
 
@@ -110,9 +111,9 @@ LOGOUT_REDIRECT_URL = "tugas:login"
 # Static files
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / 'static',
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files
 MEDIA_URL = "/media/"
