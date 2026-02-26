@@ -79,6 +79,7 @@ rangkuman_proyek.txt
 TESTING_CHECKLIST.txt
 SECURITY_REVIEW.md
 DEPLOYMENT_GUIDE.md
+MIGRATION_COMMANDS.md
 
 # Tapi README.md dan .env.example tetap di-upload
 # karena berguna untuk dokumentasi public
