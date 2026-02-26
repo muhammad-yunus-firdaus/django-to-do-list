@@ -1,65 +1,88 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Aplikasi Manajemen Tugas{% endblock %}</title>
+    <title>{% block title %}Manajemen Tugas{% endblock %}</title>
+    <meta name="description" content="Kelola tugas dengan mudah dan efisien">
 
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Favicon (Lengkap untuk semua browser) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
-    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'site.webmanifest' %}">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#4F46E5">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tugas App">
+    <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- Custom CSS -->
+    <!-- Design System CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 
-    <!-- Ikon (Lucide) -->
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {% block head %}{% endblock %}
 </head>
-<body class="bg-gray-100">
 
-{% if request.resolver_match.url_name != "login" %}
-<nav class="bg-blue-600 text-white p-4 shadow-md">
-    <div class="container mx-auto flex flex-wrap items-center justify-between">
-        <!-- Judul -->
-        <a href="#" class="text-lg sm:text-xl font-bold mb-2 sm:mb-0">Manajemen Tugas</a>
+<body>
 
-        <!-- Menu -->
-        <ul class="flex flex-wrap gap-4 text-sm sm:text-base">
-            <li><a href="{% url 'tugas:dashboard' %}" class="hover:underline">Dashboard</a></li>
-            <li><a href="{% url 'tugas:daftar' %}" class="hover:underline">Daftar Tugas</a></li>
-            <li><a href="{% url 'tugas:tambah' %}" class="hover:underline">Tambah Tugas</a></li>
-
-            {% if user.is_authenticated %}
-                <li><a href="{% url 'tugas:logout' %}" class="hover:text-red-300 transition font-medium">Logout</a></li>
-            {% else %}
-                <li><a href="{% url 'tugas:login' %}" class="hover:underline text-green-400">Login</a></li>
-            {% endif %}
-        </ul>
+    {% block layout %}
+    <!-- Default layout: full page without sidebar (used by login/register) -->
+    {% if messages %}
+    <div style="position:fixed;top:16px;right:16px;z-index:100;max-width:400px;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
     </div>
-</nav>
-{% endif %}
-
-<!-- Konten Utama -->
-<main class="container mx-auto p-4">
+    {% endif %}
     {% block content %}{% endblock %}
-</main>
+    {% endblock layout %}
 
-<!-- Footer -->
-<footer class="text-center text-gray-500 p-3 mt-6 border-t">
-    &copy; 2025 - Muhammad Yunus Firdaus
-</footer>
+    <!-- Lucide Icons Init -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => lucide.createIcons());
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('open');
+        }
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+
+    <!-- Notification System -->
+    <script>
+        // Set CSRF token from Django template for AJAX requests
+        window.CSRF_TOKEN = '{{ csrf_token }}';
+    </script>
+    <script src="{% static 'js/notifications.js' %}"></script>
+
+    {% block scripts %}{% endblock %}
 
 </body>
+
 </html>

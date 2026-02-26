@@ -5,6 +5,7 @@ import dj_database_url
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from django.contrib.messages import constants as messages
 
 # Memuat variabel dari file .env
 load_dotenv()
@@ -17,10 +18,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY tidak boleh kosong! Pastikan diisi di .env")
 
-
 # Debug mode
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1")
-
 
 # Allowed hosts
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else ["127.0.0.1", "localhost"]
@@ -33,15 +32,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites', 
-    'tugas',  # Aplikasi manajemen tugas
+    'tugas',
     "widget_tweaks",
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
 ]
-
-SITE_ID = 1
 
 # Middleware
 MIDDLEWARE = [
@@ -50,7 +43,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -94,11 +86,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-)
-
 # Internationalization
 LANGUAGE_CODE = 'id'
 TIME_ZONE = 'Asia/Jakarta'
@@ -108,6 +95,7 @@ USE_TZ = True
 # Redirect setelah login/logout
 LOGIN_REDIRECT_URL = "tugas:dashboard"
 LOGOUT_REDIRECT_URL = "tugas:login"
+LOGIN_URL = "tugas:login"
 
 # Static files
 STATIC_URL = '/static/'
@@ -123,17 +111,36 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 
-# Django Allauth Settings
-ACCOUNT_LOGIN_METHODS = {"username", "email"}
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
-ACCOUNT_RATE_LIMITS = {"login_failed": "5/5m"}
-ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_LOGOUT_ON_GET = True
+# ── Security Settings ───────────────────────────────────────────────
+
+# CSRF Protection
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = not DEBUG
+
+# Session Security
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_AGE = 3600  # 1 jam
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# XSS & Clickjacking Protection
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = "DENY"
+
+# HTTPS & HSTS (hanya di production)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 tahun
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+# Message Tags (mapping ke CSS class)
+MESSAGE_TAGS = {
+    messages.DEBUG: "info",
+    messages.INFO: "info",
+    messages.SUCCESS: "success",
+    messages.WARNING: "warning",
+    messages.ERROR: "danger",
+}

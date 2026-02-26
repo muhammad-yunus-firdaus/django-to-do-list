@@ -72,3 +72,13 @@ develop-eggs/
 # Backup atau dump database
 *.sql
 *.dump
+
+# -- Documentation Files (Internal) --
+# File dokumentasi internal yang ga perlu di GitHub
+rangkuman_proyek.txt
+TESTING_CHECKLIST.txt
+SECURITY_REVIEW.md
+DEPLOYMENT_GUIDE.md
+
+# Tapi README.md dan .env.example tetap di-upload
+# karena berguna untuk dokumentasi public

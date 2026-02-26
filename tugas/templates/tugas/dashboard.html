@@ -1,176 +1,218 @@
-{% extends "base.html" %}
+﻿{% extends "sidebar_base.html" %}
+{% load static %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - Manajemen Tugas{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-{% if messages %}
-  <div class="mb-4" data-aos="fade-down">
-    {% for message in messages %}
-      <div class="bg-yellow-200 text-yellow-800 px-4 py-2 rounded-md shadow-md">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-
-
-<div class="max-w-6xl mx-auto px-4 mt-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-4" data-aos="fade-down">Dashboard</h1>
-
-    <!-- Card Statistik -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" data-aos="fade-up">
-        <div class="bg-blue-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-            <h2 class="text-lg font-semibold">Tugas Selesai</h2>
-            <p class="text-3xl font-bold mt-2">{{ tugas_selesai }}</p>
+<!-- Stat Cards -->
+<div class="grid-stats mb-6">
+    <div class="stat-card animate-fade-up stagger-1">
+        <div class="stat-icon" style="background:var(--primary-light);">
+            <i data-lucide="layers" style="width:24px;height:24px;color:var(--primary);"></i>
         </div>
-
-        <div class="bg-red-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-            <h2 class="text-lg font-semibold">Tugas Belum Selesai</h2>
-            <p class="text-3xl font-bold mt-2">{{ tugas_belum_selesai }}</p>
-        </div>
-
-        <div class="bg-green-500 text-white p-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-            <h2 class="text-lg font-semibold">Total Tugas</h2>
-            <p class="text-3xl font-bold mt-2">{{ total_tugas }}</p>
+        <div>
+            <div class="stat-value">{{ total_tugas }}</div>
+            <div class="stat-label">Total Tugas</div>
         </div>
     </div>
 
-    <!-- Progress Bar Dua Warna -->
-    <div class="mt-8" data-aos="fade-up" data-aos-delay="100">
-        <h2 class="text-lg font-semibold text-gray-700 mb-2">Progress Tugas</h2>
-        <div class="relative w-full h-6 bg-gray-200 rounded-full overflow-hidden shadow-inner hover:shadow-lg transition-shadow duration-300">
-            <!-- Bar Selesai -->
-            <div id="bar-selesai"
-                 class="absolute top-0 left-0 h-6 transition-all duration-[1500ms] ease-out animate-fill"
-                 style="width: 0%;
-                        background: linear-gradient(to right, #60a5fa, #2563eb);">
-            </div>
-
-            <!-- Bar Belum Selesai -->
-            {% if tugas_belum_selesai > 0 %}
-            <div id="bar-belum"
-                 class="absolute top-0 h-6 transition-all duration-[1500ms] ease-out animate-fill"
-                 style="left: 0%; width: 0%;
-                        background: linear-gradient(to right, #f87171, #dc2626);">
-            </div>
-            {% endif %}
-
-            <!-- Persentase -->
-            <span class="absolute inset-0 flex items-center justify-center font-semibold text-white text-sm drop-shadow-md">
-                {{ persentase_selesai|floatformat:2 }}% Selesai
-            </span>
+    <div class="stat-card animate-fade-up stagger-2">
+        <div class="stat-icon" style="background:var(--accent-success-light);">
+            <i data-lucide="check-circle-2" style="width:24px;height:24px;color:var(--accent-success);"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--accent-success);">{{ tugas_selesai }}</div>
+            <div class="stat-label">Selesai</div>
         </div>
     </div>
 
-    <!-- Deadline Terdekat -->
-    {% if tugas_deadline_terdekat %}
-    <div class="mt-10" data-aos="fade-up" data-aos-delay="200">
-        <h2 class="text-lg font-semibold text-gray-700 mb-3">🕒 Tugas dengan Deadline Terdekat</h2>
-        <ul class="bg-white rounded-lg shadow divide-y divide-gray-200">
-            {% for tugas in tugas_deadline_terdekat %}
-            <li class="p-4 flex justify-between items-center hover:bg-gray-50 transition">
-                <span class="font-medium text-gray-700">{{ tugas.judul }}</span>
-                <span class="text-sm text-gray-500">{{ tugas.deadline|date:"l, d M Y" }}</span>
-            </li>
-            {% endfor %}
-        </ul>
+    <div class="stat-card animate-fade-up stagger-3">
+        <div class="stat-icon" style="background:var(--accent-warning-light);">
+            <i data-lucide="clock" style="width:24px;height:24px;color:var(--accent-warning);"></i>
+        </div>
+        <div>
+            <div class="stat-value" style="color:var(--accent-warning);">{{ tugas_belum_selesai }}</div>
+            <div class="stat-label">Belum Selesai</div>
+        </div>
     </div>
-    {% endif %}
 
-    <!-- Prioritas Tinggi -->
-    {% if prioritas_tinggi %}
-    <div class="mt-10" data-aos="fade-up" data-aos-delay="250">
-        <h2 class="text-lg font-semibold text-gray-700 mb-3">
-            <span class="inline-flex items-center gap-2">
-                <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full font-medium shadow-sm">
-                    ⚡ Tugas dengan Prioritas Tinggi
-                </span>
-            </span>
-        </h2>
-        <ul class="bg-white rounded-lg shadow divide-y divide-gray-200">
-            {% for tugas in prioritas_tinggi %}
-            <li class="p-4 flex justify-between items-center hover:bg-red-50 transition">
-                <span class="font-medium text-red-600">{{ tugas.judul }}</span>
-                <span class="text-sm text-gray-500">{{ tugas.deadline|date:"l, d M Y" }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-
-
-    <!-- Grafik Statistik -->
-    <div class="mt-10" data-aos="fade-up" data-aos-delay="300">
-        <canvas id="taskChart"
-            data-tugas-selesai="{{ tugas_selesai }}"
-            data-tugas-belum="{{ tugas_belum_selesai }}">
-        </canvas>
+    <div class="stat-card animate-fade-up stagger-4">
+        <div class="stat-icon" style="background:var(--primary-light);">
+            <i data-lucide="trending-up" style="width:24px;height:24px;color:var(--primary);"></i>
+        </div>
+        <div>
+            <div class="stat-value">{{ persentase_selesai|floatformat:0 }}%</div>
+            <div class="stat-label">Progres</div>
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
-<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+<!-- Progress Bar -->
+<div class="card animate-fade-up" style="padding:20px;margin-bottom:24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span class="text-sm font-bold">Progres Keseluruhan</span>
+        <span class="badge badge-info">{{ persentase_selesai|floatformat:0 }}%</span>
+    </div>
+    <div class="progress-bar">
+        <div class="progress-fill" style="width: {{ persentase_selesai|floatformat:0 }}%;"></div>
+    </div>
+</div>
 
-<style>
-@keyframes pulse-bar {
-  0%, 100% { opacity: 1; transform: scaleY(1); }
-  50% { opacity: 0.9; transform: scaleY(1.05); }
-}
-.animate-fill {
-  animation: pulse-bar 2s ease-in-out infinite;
-}
-</style>
+<!-- PWA Install Prompt -->
+<div id="pwaInstallBanner" class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;background:linear-gradient(135deg, var(--primary-light) 0%, var(--accent-info-light) 100%);border-color:var(--primary);display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <i data-lucide="smartphone" style="width:24px;height:24px;color:var(--primary);"></i>
+            <div>
+                <div style="font-weight:600;font-size:0.95rem;color:var(--text-primary);">Install Aplikasi</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Akses lebih cepat & bisa offline</div>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button onclick="installPWA()" class="btn btn-primary btn-sm">
+                <i data-lucide="download" style="width:14px;height:14px;"></i> Install
+            </button>
+            <button onclick="dismissInstallBanner()" class="btn btn-ghost btn-sm">Nanti</button>
+        </div>
+    </div>
+</div>
 
+<!-- Two Column Grid -->
+<div class="grid-2">
+    <!-- Deadline Terdekat -->
+    <div class="card animate-fade-up" style="padding:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <i data-lucide="calendar-clock" style="width:20px;height:20px;color:var(--accent-danger);"></i>
+            <h3 style="margin:0;">Deadline Terdekat</h3>
+        </div>
+
+        {% if tugas_deadline_terdekat %}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            {% for tugas in tugas_deadline_terdekat %}
+            <a href="{% url 'tugas:detail' tugas.id %}"
+                style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border);text-decoration:none;transition:var(--transition);"
+                onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+                <div>
+                    <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);" class="truncate">{{ tugas.judul }}</div>
+                    <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">{{ tugas.deadline|date:"d M Y H:i" }}</div>
+                </div>
+                {% if tugas.prioritas  ==  "tinggi" %}
+                <span class="badge badge-danger">Tinggi</span>
+                {% elif tugas.prioritas  ==  "sedang" %}
+                <span class="badge badge-warning">Sedang</span>
+                {% else %}
+                <span class="badge badge-success">Rendah</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:24px;">
+            <i data-lucide="calendar-check" style="width:36px;height:36px;"></i>
+            <p>Tidak ada tugas mendekati deadline</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Prioritas Tinggi -->
+    <div class="card animate-fade-up" style="padding:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <i data-lucide="alert-triangle" style="width:20px;height:20px;color:var(--accent-warning);"></i>
+            <h3 style="margin:0;">Prioritas Tinggi</h3>
+        </div>
+
+        {% if prioritas_tinggi %}
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            {% for tugas in prioritas_tinggi %}
+            <a href="{% url 'tugas:detail' tugas.id %}"
+                style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border);text-decoration:none;transition:var(--transition);"
+                onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+                <div>
+                    <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);" class="truncate">{{ tugas.judul }}</div>
+                    <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">{{ tugas.deadline|date:"d M Y H:i" }}</div>
+                </div>
+                <span class="badge badge-danger">Tinggi</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:24px;">
+            <i data-lucide="check-circle" style="width:36px;height:36px;"></i>
+            <p>Tidak ada tugas prioritas tinggi</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Overdue Section -->
+{% if tugas_overdue %}
+<div class="card animate-fade-up mt-6" style="padding:20px;border-color:var(--accent-danger);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <i data-lucide="alert-octagon" style="width:20px;height:20px;color:var(--accent-danger);"></i>
+        <h3 style="margin:0;color:var(--accent-danger);">Tugas Melewati Deadline</h3>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for tugas in tugas_overdue %}
+        <a href="{% url 'tugas:detail' tugas.id %}"
+            style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-md);background:var(--accent-danger-light);text-decoration:none;">
+            <div>
+                <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);">{{ tugas.judul }}</div>
+                <div class="text-xs" style="color:var(--accent-danger);">Deadline: {{ tugas.deadline|date:"d M Y H:i" }}
+                </div>
+            </div>
+            <span class="badge badge-danger">Overdue</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    AOS.init({ duration: 800, once: true });
+    // PWA Install Prompt
+    let deferredPrompt;
 
-    const tugasSelesai = {{ tugas_selesai|default:0 }};
-    const tugasBelum = {{ tugas_belum_selesai|default:0 }};
-    const total = {{ total_tugas|default:0 }};
-    const selesaiPersen = total > 0 ? (tugasSelesai / total * 100) : 0;
-    const belumPersen = total > 0 ? (tugasBelum / total * 100) : 0;
-
-    const barSelesai = document.getElementById("bar-selesai");
-    const barBelum = document.getElementById("bar-belum");
-
-    setTimeout(() => {
-        barSelesai.style.width = selesaiPersen + "%";
-        if (barBelum) {
-            barBelum.style.left = selesaiPersen + "%";
-            barBelum.style.width = belumPersen + "%";
-        }
-    }, 300);
-
-    const canvas = document.getElementById("taskChart");
-    const ctx = canvas.getContext("2d");
-
-    const gradientSelesai = ctx.createLinearGradient(0, 0, 0, 200);
-    gradientSelesai.addColorStop(0, "#60a5fa");
-    gradientSelesai.addColorStop(1, "#2563eb");
-
-    const gradientBelum = ctx.createLinearGradient(0, 0, 0, 200);
-    gradientBelum.addColorStop(0, "#f87171");
-    gradientBelum.addColorStop(1, "#dc2626");
-
-    new Chart(ctx, {
-        type: "bar",
-        data: {
-            labels: ["Selesai", "Belum Selesai"],
-            datasets: [{
-                label: "Jumlah Tugas",
-                data: [tugasSelesai, tugasBelum],
-                backgroundColor: [gradientSelesai, gradientBelum],
-                borderRadius: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent default prompt
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show custom install banner
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner && !localStorage.getItem('pwaInstallDismissed')) {
+            banner.style.display = 'block';
+            // Re-init Lucide icons for dynamically shown content
+            setTimeout(() => lucide.createIcons(), 100);
         }
     });
-});
+
+    function installPWA() {
+        if (!deferredPrompt) return;
+        
+        // Show install prompt
+        deferredPrompt.prompt();
+        
+        // Wait for user choice
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted PWA install');
+            }
+            deferredPrompt = null;
+            document.getElementById('pwaInstallBanner').style.display = 'none';
+        });
+    }
+
+    function dismissInstallBanner() {
+        document.getElementById('pwaInstallBanner').style.display = 'none';
+        localStorage.setItem('pwaInstallDismissed', 'true');
+    }
+
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('App is running in standalone mode (installed)');
+    }
 </script>
 {% endblock %}

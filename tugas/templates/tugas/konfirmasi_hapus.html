@@ -1,14 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Hapus Tugas</title>
-</head>
-<body>
-    <h1>Apakah Anda yakin ingin menghapus "{{ tugas.judul }}"?</h1>
-    <form method="POST">
-        {% csrf_token %}
-        <button type="submit">Ya, Hapus</button>
-    </form>
-    <a href="{% url 'daftar_tugas' %}">Batal</a>
-</body>
-</html>
+{% extends "sidebar_base.html" %}
+
+{% block title %}Hapus Tugas - Manajemen Tugas{% endblock %}
+{% block page_title %}Hapus Tugas{% endblock %}
+
+{% block content %}
+<div style="max-width:480px;" class="animate-fade-up">
+    <div class="card" style="padding:28px;text-align:center;">
+        <div
+            style="width:56px;height:56px;background:var(--accent-danger-light);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <i data-lucide="alert-triangle" style="width:28px;height:28px;color:var(--accent-danger);"></i>
+        </div>
+
+        <h2 style="margin-bottom:8px;">Hapus Tugas?</h2>
+        <p style="margin-bottom:24px;">
+            Tugas <strong>"{{ tugas.judul }}"</strong> akan dihapus secara permanen.
+        </p>
+
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost">Batal</a>
+            <form method="POST" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i> Ya, Hapus
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

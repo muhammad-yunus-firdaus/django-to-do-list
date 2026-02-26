@@ -1,45 +1,37 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.contrib.auth import get_user_model
-from django.db.models import Q
-from django.urls import reverse_lazy
 from django.http import HttpResponse
-from .models import Tugas
-from .forms import TugasForm, RegisterForm, CustomAuthenticationForm
-from openpyxl import Workbook
-from openpyxl.styles.borders import Border, Side 
-from openpyxl.styles import Font, Alignment, PatternFill
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
-from django.utils.timezone import now, timedelta
-from django.core.mail import send_mail
-from django.conf import settings
-from django.contrib.auth.models import User
-import csv
+from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-User = get_user_model()
+from .models import Tugas, Subtask
+from .forms import TugasForm, RegisterForm, CustomAuthenticationForm, SubtaskForm
+from .notifications import check_subtask_completion, generate_deadline_notifications, generate_overdue_notifications
+from .services import (
+    get_dashboard_stats,
+    get_upcoming_deadlines,
+    get_high_priority_tasks,
+    get_approaching_deadline_tasks,
+    get_overdue_tasks,
+    get_filtered_tugas,
+    mark_task_complete,
+    get_export_data,
+)
 
-# Konstanta status tugas
-STATUS_SELESAI = "selesai"
-STATUS_BELUM = "belum"
 
-# Halaman utama
-def index(request):
-    return render(request, "tugas/index.html")
+# ══════════════════════════════════════════════════════════════════════
+# AUTH - Login, Logout, Register
+# ══════════════════════════════════════════════════════════════════════
 
-#  Login
 def login_view(request):
+    # Halaman login, auto redirect ke dashboard kalo udah login
     if request.user.is_authenticated:
         return redirect("tugas:dashboard")
 
     if request.method == "POST":
-        form = CustomAuthenticationForm(request, data=request.POST)  # ← tambahkan "request" di sini!
+        form = CustomAuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
@@ -48,77 +40,122 @@ def login_view(request):
         else:
             messages.error(request, "Username atau password salah.")
     else:
-        form = CustomAuthenticationForm(request)  # ← tambahkan juga "request" di sini
+        form = CustomAuthenticationForm(request)
 
     return render(request, "tugas/login.html", {"form": form})
 
 
-# Logout
 @login_required
 def logout_view(request):
+    # Logout user terus balik ke halaman login
     logout(request)
     messages.info(request, "Kamu telah logout.")
     return redirect("tugas:login")
 
-#  Register
+
 def register(request):
+    # Halaman daftar akun baru, cuma pake username doang tanpa email
     if request.user.is_authenticated:
         return redirect("tugas:dashboard")
 
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data["password"])
-            user.save()
+            form.save()
             messages.success(request, "Registrasi berhasil! Silakan login terlebih dahulu.")
             return redirect("tugas:login")
     else:
         form = RegisterForm()
-    
+
     return render(request, "tugas/register.html", {"form": form})
 
-#  Fungsi filter & pencarian tugas
-def get_filtered_tugas(request, tugas_list):
-    prioritas_filter = request.GET.get('prioritas', '')
-    kategori_filter = request.GET.get('kategori', '')
-    status_filter = request.GET.get('status', '')
-    search_query = request.GET.get('q', '')
 
-    if prioritas_filter:
-        tugas_list = tugas_list.filter(prioritas=prioritas_filter)
-    if kategori_filter:
-        tugas_list = tugas_list.filter(kategori=kategori_filter)
-    if status_filter:
-        tugas_list = tugas_list.filter(status=status_filter)
-    if search_query:
-        tugas_list = tugas_list.filter(
-            Q(judul__icontains=search_query) | Q(deskripsi__icontains=search_query)
-        )
+# ══════════════════════════════════════════════════════════════════════
+# DASHBOARD - Statistik & Overview
+# ══════════════════════════════════════════════════════════════════════
 
-    return tugas_list
-
-#  Daftar tugas dengan filter & pencarian
 @login_required
-def daftar_tugas(request):
-    tugas_list = Tugas.objects.filter(user=request.user)
-    tugas_list = get_filtered_tugas(request, tugas_list)
+def dashboard_view(request):
+    # Halaman utama setelah login, nampilin semua statistik tugas
+    user = request.user
 
-    kategori_list = [kategori[0] for kategori in Tugas.KATEGORI_CHOICES]
+    # Ambil semua data statistik dari service layer
+    stats = get_dashboard_stats(user)
+    tugas_deadline_terdekat = get_upcoming_deadlines(user)
+    prioritas_tinggi = get_high_priority_tasks(user)
+    tugas_mendekati_deadline = get_approaching_deadline_tasks(user)
+    tugas_overdue = get_overdue_tasks(user)
+
+    # Generate notifikasi otomatis waktu buka dashboard
+    generate_deadline_notifications()
+    generate_overdue_notifications()
+
+    # NOTE: Django messages udah ga dipake lagi, sekarang pake notification system
+    # if tugas_mendekati_deadline.exists():
+    #     messages.warning(
+    #         request,
+    #         f"Ada {tugas_mendekati_deadline.count()} tugas yang mendekati deadline (kurang dari 2 hari)!"
+    #     )
+
+    # if tugas_overdue.exists():
+    #     messages.error(
+    #         request,
+    #         f"Ada {tugas_overdue.count()} tugas yang sudah melewati deadline!"
+    #     )
 
     context = {
-        "tugas_list": tugas_list,
+        **stats,
+        "tugas_deadline_terdekat": tugas_deadline_terdekat,
+        "prioritas_tinggi": prioritas_tinggi,
+        "tugas_mendekati_deadline": tugas_mendekati_deadline,
+        "tugas_overdue": tugas_overdue,
+    }
+
+    return render(request, "tugas/dashboard.html", context)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# CRUD TUGAS - Create, Read, Update, Delete
+# ══════════════════════════════════════════════════════════════════════
+
+@login_required
+def daftar_tugas(request):
+    # Nampilin semua tugas punya user ini, bisa di-filter dan di-search
+    filters = {
+        "prioritas": request.GET.get("prioritas", ""),
+        "kategori": request.GET.get("kategori", ""),
+        "status": request.GET.get("status", ""),
+        "q": request.GET.get("q", ""),
+    }
+
+    tugas_list = get_filtered_tugas(request.user, filters)
+    kategori_list = [k[0] for k in Tugas.KATEGORI_CHOICES]
+
+    # Buat pagination biar ga terlalu banyak di satu halaman
+    paginator = Paginator(tugas_list, 10)
+    page_number = request.GET.get('page')
+    
+    try:
+        tugas_page = paginator.page(page_number)
+    except PageNotAnInteger:
+        tugas_page = paginator.page(1)
+    except EmptyPage:
+        tugas_page = paginator.page(paginator.num_pages)
+
+    context = {
+        "tugas_list": tugas_page,
         "kategori_list": kategori_list,
-        "prioritas_filter": request.GET.get('prioritas', ''),
-        "kategori_filter": request.GET.get('kategori', ''),
-        "status_filter": request.GET.get('status', ''),
-        "search_query": request.GET.get('q', ''),
+        "prioritas_filter": filters["prioritas"],
+        "kategori_filter": filters["kategori"],
+        "status_filter": filters["status"],
+        "search_query": filters["q"],
     }
     return render(request, "tugas/daftar_tugas.html", context)
 
-#  Tambah tugas
+
 @login_required
 def tambah_tugas(request):
+    # Form buat bikin tugas baru
     if request.method == "POST":
         form = TugasForm(request.POST)
         if form.is_valid():
@@ -129,20 +166,20 @@ def tambah_tugas(request):
             return redirect("tugas:daftar")
     else:
         form = TugasForm()
-    
+
     return render(request, "tugas/tambah_tugas.html", {"form": form})
 
-#  Edit tugas
+
 @login_required
 def edit_tugas(request, tugas_id):
+    # Form buat edit tugas yang udah ada
     tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
 
     if request.method == "POST":
         form = TugasForm(request.POST, instance=tugas)
         if form.is_valid():
             updated_tugas = form.save(commit=False)
-            
-            # Pastikan field yang tidak diubah (seperti deadline) tetap dipertahankan
+
             if not form.cleaned_data.get("deadline"):
                 updated_tugas.deadline = tugas.deadline
 
@@ -150,219 +187,145 @@ def edit_tugas(request, tugas_id):
             messages.success(request, "Tugas berhasil diperbarui!")
             return redirect("tugas:daftar")
         else:
-            messages.error(request, "Terjadi kesalahan saat memperbarui tugas. Periksa kembali form kamu.")
+            messages.error(request, "Terjadi kesalahan. Periksa kembali form kamu.")
     else:
         form = TugasForm(instance=tugas)
-    
+
     return render(request, "tugas/edit_tugas.html", {"form": form})
 
 
-#  Hapus tugas
 @login_required
+@require_POST
 def hapus_tugas(request, tugas_id):
+    # Hapus tugas, cuma bisa lewat POST biar aman
     tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
-    
-    if request.method == "POST":
-        tugas.delete()
-        messages.success(request, "Tugas berhasil dihapus!")
-        return redirect("tugas:daftar")
+    tugas.delete()
+    messages.success(request, "Tugas berhasil dihapus!")
+    return redirect("tugas:daftar")
 
-    return render(request, "tugas/konfirmasi_hapus.html", {"tugas": tugas})
 
-#  Tandai tugas selesai
 @login_required
+@require_POST
 def tandai_selesai(request, tugas_id):
+    # Tandain tugas jadi selesai, cuma bisa lewat POST
     tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
-    
-    if tugas.status == STATUS_SELESAI:
-        messages.warning(request, "Tugas ini sudah selesai sebelumnya!")
-    else:
-        tugas.status = STATUS_SELESAI
-        tugas.save()
+
+    if mark_task_complete(tugas):
         messages.success(request, f"Tugas '{tugas.judul}' telah selesai!")
+    else:
+        messages.warning(request, "Tugas ini sudah selesai sebelumnya!")
 
     return redirect("tugas:daftar")
 
-#  Halaman Dashboard dengan statistik tugas
-@login_required
-def dashboard_view(request):
-    tugas_user = Tugas.objects.filter(user=request.user)
 
-    # Hitung tugas selesai & belum selesai
-    tugas_selesai = tugas_user.filter(status="selesai").count()
-    tugas_belum_selesai = tugas_user.filter(status="belum").count()
-    total_tugas = tugas_user.count()
-    
-    # Hitung persentase
-    if total_tugas > 0:
-        persentase_selesai = (tugas_selesai / total_tugas) * 100
-        persentase_belum_selesai = 100 - persentase_selesai
-    else:
-        persentase_selesai = 0
-        persentase_belum_selesai = 0
-
-    #  Ambil tugas dengan deadline terdekat
-    tugas_deadline_terdekat = tugas_user.filter(status="belum").order_by("deadline")[:5]
-
-    #  Ambil tugas dengan prioritas tinggi
-    prioritas_tinggi = tugas_user.filter(
-    prioritas__iexact="Tinggi",
-    status="belum"
-    ).order_by("deadline")[:5]
-
-    #  Notifikasi untuk tugas mendekati deadline
-    tugas_mendekati_deadline = tugas_user.filter(
-        status="belum",
-        deadline__gt=now(),
-        deadline__lte=now() + timedelta(days=2)
-    )
-    if tugas_mendekati_deadline.exists():
-        messages.warning(request, "⚠️ Ada tugas yang mendekati deadline! Segera selesaikan.")
-
-    #  Kirim semua data ke template
-    context = {
-        "tugas_selesai": tugas_selesai,
-        "tugas_belum_selesai": tugas_belum_selesai,
-        "total_tugas": total_tugas,
-        "persentase_selesai": persentase_selesai,
-        "persentase_belum_selesai": persentase_belum_selesai,
-        "tugas_deadline_terdekat": tugas_deadline_terdekat,
-        "prioritas_tinggi": prioritas_tinggi,  # <--- ini dia kuncinya
-    }
-
-    return render(request, "tugas/dashboard.html", context)
-
-
-#  Detail tugas dengan validasi pengguna
 @login_required
 def detail_tugas(request, tugas_id):
+    # Halaman detail tugas, nampilin info lengkap sama subtask-nya
     tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
     return render(request, "tugas/detail_tugas.html", {"tugas": tugas})
 
+
+# ══════════════════════════════════════════════════════════════════════
+# EXPORT - CSV, Excel, PDF
+# ══════════════════════════════════════════════════════════════════════
+
 @login_required
 def export_csv(request):
+    # Download semua tugas dalam format CSV
+    import csv
+
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="tugas.csv"'
 
     writer = csv.writer(response)
     writer.writerow(['Judul', 'Kategori', 'Prioritas', 'Deadline', 'Status'])
 
-    tugas_list = Tugas.objects.filter(user=request.user)
-    for tugas in tugas_list:
+    for row in get_export_data(request.user):
         writer.writerow([
-            tugas.judul,
-            tugas.get_kategori_display(),
-            tugas.prioritas,
-            tugas.deadline.strftime("%d-%m-%Y %H:%M"),
-            "Selesai" if tugas.status == STATUS_SELESAI else "Belum Selesai"
+            row["judul"], row["kategori"], row["prioritas"],
+            row["deadline"], row["status"]
         ])
 
     return response
 
-#  Export data tugas ke Excel (.xlsx)
+
 @login_required
 def export_excel(request):
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    # Download tugas dalam format Excel (.xlsx) dengan styling
+    from openpyxl import Workbook
+    from openpyxl.styles.borders import Border, Side
+    from openpyxl.styles import Font, Alignment, PatternFill
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
     response["Content-Disposition"] = 'attachment; filename="tugas.xlsx"'
 
-    # Buat workbook dan sheet
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = "Daftar Tugas"
 
-    #  Styling Header
+    # Kasih styling biar lebih rapi
     header_font = Font(bold=True, color="FFFFFF")
     header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
     border_style = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin")
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
     )
 
     headers = ["Judul", "Kategori", "Prioritas", "Deadline", "Status"]
     sheet.append(headers)
 
-    # Terapkan styling ke header
-    for col_idx, cell in enumerate(sheet[1], 1):
+    for cell in sheet[1]:
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = Alignment(horizontal="center", vertical="center")
         cell.border = border_style
 
-    #  Ambil data tugas berdasarkan user
-    tugas_list = Tugas.objects.filter(user=request.user)
-
-    #  Tambahkan data ke dalam sheet
-    for row_idx, tugas in enumerate(tugas_list, start=2):  # Mulai dari baris kedua
-        status_text = "Selesai" if tugas.status == STATUS_SELESAI else "Belum Selesai"
-        deadline_str = tugas.deadline.strftime("%d-%m-%Y %H:%M") if tugas.deadline else "N/A"
-
-        data_row = [
-            tugas.judul,
-            tugas.get_kategori_display(),
-            tugas.get_prioritas_display() if hasattr(tugas, "get_prioritas_display") else tugas.prioritas,
-            deadline_str,
-            status_text
-        ]
-        sheet.append(data_row)
-
-        # Terapkan border ke setiap sel di baris ini
-        for col_idx, cell in enumerate(sheet[row_idx], 1):
+    for row_idx, row in enumerate(get_export_data(request.user), start=2):
+        sheet.append([
+            row["judul"], row["kategori"], row["prioritas"],
+            row["deadline"], row["status"]
+        ])
+        for cell in sheet[row_idx]:
             cell.alignment = Alignment(horizontal="left", vertical="center")
             cell.border = border_style
 
-    #  Mengatur lebar kolom otomatis
+    # Atur lebar kolom otomatis sesuai isi
     for col in sheet.columns:
-        max_length = 0
-        col_letter = col[0].column_letter  # Mendapatkan huruf kolom (A, B, C, dll.)
-        for cell in col:
-            try:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
-        sheet.column_dimensions[col_letter].width = max_length + 2
+        max_len = max((len(str(c.value or "")) for c in col), default=0)
+        sheet.column_dimensions[col[0].column_letter].width = max_len + 2
 
-    # Simpan workbook ke response
     workbook.save(response)
     return response
 
+
 @login_required
 def export_pdf(request):
+    # Download tugas dalam format PDF dengan tabel rapi
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+
     response = HttpResponse(content_type="application/pdf")
     response["Content-Disposition"] = 'attachment; filename="tugas.pdf"'
 
     doc = SimpleDocTemplate(response, pagesize=landscape(letter))
-    elements = []
-    
-    # Gunakan style untuk teks agar bisa wrap
     styles = getSampleStyleSheet()
     style_normal = styles["Normal"]
 
-    # Header tabel
     data = [["Judul", "Deskripsi", "Kategori", "Prioritas", "Deadline", "Status"]]
 
-    # Ambil data tugas dari user
-    tugas_list = Tugas.objects.filter(user=request.user)
-
-    for tugas in tugas_list:
-        judul_paragraph = Paragraph(tugas.judul, style_normal)  # Wrap text pada Judul
-        deskripsi_paragraph = Paragraph(tugas.deskripsi, style_normal)  # Wrap text pada Deskripsi
-        deadline_str = tugas.deadline.strftime("%d-%m-%Y %H:%M") if tugas.deadline else "N/A"
-        status_text = "Selesai" if tugas.status == STATUS_SELESAI else "Belum Selesai"
-
+    for row in get_export_data(request.user):
         data.append([
-            judul_paragraph,   # ✅ Wrap text pada Judul
-            deskripsi_paragraph,  # ✅ Wrap text pada Deskripsi
-            tugas.get_kategori_display(),
-            tugas.prioritas,
-            deadline_str,
-            status_text
+            Paragraph(row["judul"], style_normal),
+            Paragraph(row["deskripsi"], style_normal),
+            row["kategori"], row["prioritas"],
+            row["deadline"], row["status"],
         ])
 
-    # Membuat tabel dengan kolom lebih fleksibel
-    table = Table(data, colWidths=[150, 250, 100, 80, 120, 100])  # Lebar kolom Judul diperbesar
+    table = Table(data, colWidths=[150, 250, 100, 80, 120, 100])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -371,68 +334,88 @@ def export_pdf(request):
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('VALIGN', (0, 1), (-1, -1), 'TOP'),  # Agar teks tetap rata atas
+        ('VALIGN', (0, 1), (-1, -1), 'TOP'),
     ]))
 
-    elements.append(table)
-    doc.build(elements)
-
+    doc.build([table])
     return response
 
-    # Buat tabel dengan kolom lebih fleksibel
-    table = Table(data, colWidths=[100, 250, 100, 80, 120, 100])  # Sesuaikan ukuran kolom
-    table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('VALIGN', (1, 1), (-1, -1), 'TOP'),  # Agar teks deskripsi tetap dari atas
-    ]))
 
-    elements.append(table)
-    doc.build(elements)
-
-    return response
+# ══════════════════════════════════════════════════════════════════════
+# SUBTASK - Kelola Sub-tugas
+# ══════════════════════════════════════════════════════════════════════
 
 @login_required
-def get_filtered_tugas(request, tugas_list):
-    prioritas_filter = request.GET.get("prioritas", "")
-    kategori_filter = request.GET.get("kategori", "")
-    status_filter = request.GET.get("status", "")
-    search_query = request.GET.get("q", "")
-
-    if prioritas_filter:
-        tugas_list = tugas_list.filter(prioritas=prioritas_filter)
+@require_POST
+def tambah_subtask(request, tugas_id):
+    # Tambahin subtask baru ke dalam tugas
+    tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
+    form = SubtaskForm(request.POST)
     
-    if kategori_filter:
-        tugas_list = tugas_list.filter(kategori=kategori_filter)
+    if form.is_valid():
+        subtask = form.save(commit=False)
+        subtask.tugas = tugas
+        
+        # Kasih nomor urutan otomatis (ambil yang terakhir + 1)
+        last_subtask = tugas.subtasks.order_by('-urutan').first()
+        subtask.urutan = (last_subtask.urutan + 1) if last_subtask else 1
+        
+        subtask.save()
+        messages.success(request, f"Subtask '{subtask.judul}' berhasil ditambahkan!")
+    else:
+        messages.error(request, "Gagal menambahkan subtask. Silakan coba lagi.")
+    
+    return redirect('tugas:detail', tugas_id=tugas.id)
 
-    if status_filter:
-        tugas_list = tugas_list.filter(status=status_filter)
 
-    # 🔍 Filter berdasarkan pencarian (judul atau kategori)
-    if search_query:
-        tugas_list = tugas_list.filter(
-            Q(judul__icontains=search_query) | Q(kategori__icontains=search_query)
-        )
+@login_required
+@require_POST
+def edit_subtask(request, subtask_id):
+    # Ubah judul subtask
+    subtask = get_object_or_404(Subtask, id=subtask_id, tugas__user=request.user)
+    
+    judul_baru = request.POST.get('judul', '').strip()
+    if judul_baru:
+        subtask.judul = judul_baru
+        subtask.save()
+        messages.success(request, "Subtask berhasil diupdate!")
+    else:
+        messages.error(request, "Judul subtask tidak boleh kosong.")
+    
+    return redirect('tugas:detail', tugas_id=subtask.tugas.id)
 
-    return tugas_list
+
+@login_required
+@require_POST
+def hapus_subtask(request, subtask_id):
+    # Hapus subtask dari tugas
+    subtask = get_object_or_404(Subtask, id=subtask_id, tugas__user=request.user)
+    tugas_id = subtask.tugas.id
+    judul = subtask.judul
+    
+    subtask.delete()
+    messages.success(request, f"Subtask '{judul}' berhasil dihapus!")
+    
+    return redirect('tugas:detail', tugas_id=tugas_id)
 
 
-def kirim_reminder_tugas():
-    batas_waktu = now() + timedelta(days=1)  # Tugas yang deadline-nya dalam 1 hari ke depan
-    tugas_mendekati = Tugas.objects.filter(deadline__lte=batas_waktu, status="Belum Selesai")
-
-    for tugas in tugas_mendekati:
-        user_email = tugas.user.email  # Asumsikan setiap tugas punya relasi ke User
-        send_mail(
-            'Reminder: Tugas Mendekati Deadline!',
-            f'Halo {tugas.user.username}, tugas "{tugas.judul}" memiliki deadline {tugas.deadline.strftime("%d-%m-%Y %H:%M")}. Jangan lupa untuk menyelesaikannya!',
-            'yunusproject14@gmail.com',  # Ganti dengan email pengirimmu
-            [user_email],  # Kirim ke email pemilik tugas
-            fail_silently=False,
-            headers={'Reply-To': 'yunusproject14@gmail.com'}
-        )
+@login_required
+@require_POST
+def toggle_subtask(request, subtask_id):
+    # Toggle centang/uncentang subtask (dipanggil via AJAX)
+    from django.http import JsonResponse
+    
+    subtask = get_object_or_404(Subtask, id=subtask_id, tugas__user=request.user)
+    
+    subtask.selesai = not subtask.selesai
+    subtask.save()
+    
+    # Cek kalo semua subtask udah selesai, bikin notifikasi
+    check_subtask_completion(subtask.tugas)
+    
+    # Kirim balik response JSON buat update UI
+    return JsonResponse({
+        'success': True,
+        'selesai': subtask.selesai,
+        'progress': subtask.tugas.subtask_progress
+    })

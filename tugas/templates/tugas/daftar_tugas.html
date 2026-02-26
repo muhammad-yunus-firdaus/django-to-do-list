@@ -1,211 +1,401 @@
-{% extends "base.html" %}
+{% extends "sidebar_base.html" %}
 {% load static %}
 
-{% block title %}Daftar Tugas{% endblock %}
+{% block title %}Daftar Tugas - Manajemen Tugas{% endblock %}
+{% block page_title %}Daftar Tugas{% endblock %}
 
 {% block content %}
-<div class="container mx-auto mt-6 px-4">
-    <h1 class="text-2xl font-bold text-blue-700 mb-4">Manajemen Tugas</h1>
-
-    <!-- Form Pencarian & Export -->
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-        <form method="GET" class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <input type="text" name="q" placeholder="Cari tugas..." value="{{ request.GET.q }}" 
-                   class="border rounded-lg px-3 py-2 w-full sm:w-64">
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Cari</button>
+<!-- Search & Actions Bar -->
+<div class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;">
+    <div class="search-actions-wrapper">
+        <!-- Search -->
+        <form method="GET" class="search-form">
+            {% if prioritas_filter %}<input type="hidden" name="prioritas" value="{{ prioritas_filter }}">{% endif %}
+            {% if kategori_filter %}<input type="hidden" name="kategori" value="{{ kategori_filter }}">{% endif %}
+            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+            <div style="position:relative;flex:1;">
+                <i data-lucide="search"
+                    style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted);"></i>
+                <input type="text" name="q" placeholder="Cari tugas..." value="{{ search_query }}"
+                    style="padding-left:38px;font-size:.875rem;">
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Cari</button>
         </form>
 
-        <!-- Dropdown Export -->
-        <div class="relative w-full sm:w-auto">
-            <button id="exportBtn" class="bg-green-600 text-white w-full sm:w-auto px-4 py-2 rounded-lg hover:bg-green-700">
-                Export ▼
-            </button>
-            <div id="exportDropdown" class="absolute right-0 mt-2 w-full sm:w-40 bg-white border rounded-lg shadow-md hidden z-10">
-                <a href="{% url 'tugas:export_csv' %}" class="block px-4 py-2 hover:bg-gray-200">Export CSV</a>
-                <a href="{% url 'tugas:export_excel' %}" class="block px-4 py-2 hover:bg-gray-200">Export Excel</a>
-                <a href="{% url 'tugas:export_pdf' %}" class="block px-4 py-2 hover:bg-gray-200">Export PDF</a>
-            </div>
+        <!-- Actions -->
+        <div class="action-buttons-group">
+            <a href="{% url 'tugas:tambah' %}" class="btn btn-primary btn-sm">
+                <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                <span class="hide-mobile">Tambah</span>
+                <span class="show-mobile">Tambah</span>
+            </a>
+            <a href="{% url 'tugas:export_excel' %}" class="btn btn-ghost btn-sm export-btn">
+                <i data-lucide="file-spreadsheet" style="width:16px;height:16px;color:var(--accent-success);"></i>
+                <span class="hide-mobile">Export Excel</span>
+                <span class="show-mobile">Excel</span>
+            </a>
+            <a href="{% url 'tugas:export_pdf' %}" class="btn btn-ghost btn-sm export-btn">
+                <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i>
+                <span class="hide-mobile">Export PDF</span>
+                <span class="show-mobile">PDF</span>
+            </a>
         </div>
     </div>
+</div>
 
-    <!-- Form Filter -->
-    <form method="GET" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-gray-100 p-4 rounded-lg shadow-md">
+<!-- Filters -->
+<form method="GET" class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;">
+    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
         <div>
-            <label class="block text-sm font-medium text-gray-700">Kategori:</label>
-            <select name="kategori" class="w-full border rounded-lg px-3 py-2">
-                <option value="">Semua Kategori</option>
-                {% for kategori in kategori_list %}
-                    <option value="{{ kategori }}" {% if kategori == kategori_filter %}selected{% endif %}>
-                        {{ kategori }}
-                    </option>
+            <label class="form-label text-xs">Kategori</label>
+            <select name="kategori" style="font-size:.85rem;">
+                <option value="">Semua</option>
+                {% for kat in kategori_list %}
+                <option value="{{ kat }}" {% if kat == kategori_filter %}selected{% endif %}>{{ kat|title }}</option>
                 {% endfor %}
             </select>
         </div>
-
         <div>
-            <label class="block text-sm font-medium text-gray-700">Prioritas:</label>
-            <select name="prioritas" class="w-full border rounded-lg px-3 py-2">
-                <option value="">Semua Prioritas</option>
+            <label class="form-label text-xs">Prioritas</label>
+            <select name="prioritas" style="font-size:.85rem;">
+                <option value="">Semua</option>
                 <option value="tinggi" {% if prioritas_filter == "tinggi" %}selected{% endif %}>Tinggi</option>
                 <option value="sedang" {% if prioritas_filter == "sedang" %}selected{% endif %}>Sedang</option>
                 <option value="rendah" {% if prioritas_filter == "rendah" %}selected{% endif %}>Rendah</option>
             </select>
         </div>
-
         <div>
-            <label class="block text-sm font-medium text-gray-700">Status:</label>
-            <select name="status" class="w-full border rounded-lg px-3 py-2">
-                <option value="">Semua Status</option>
+            <label class="form-label text-xs">Status</label>
+            <select name="status" style="font-size:.85rem;">
+                <option value="">Semua</option>
                 <option value="belum" {% if status_filter == "belum" %}selected{% endif %}>Belum Selesai</option>
                 <option value="selesai" {% if status_filter == "selesai" %}selected{% endif %}>Selesai</option>
             </select>
         </div>
-
-        <div class="flex items-end">
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full">Filter</button>
+        <div style="display:flex;gap:8px;">
+            <button type="submit" class="btn btn-primary btn-sm" style="flex:1;">Filter</button>
+            <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost btn-sm">Reset</a>
         </div>
-    </form>
-
-    <!-- Tabel -->
-    {% if tugas_list %}
-    <div class="overflow-x-auto mt-4">
-        <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-md text-sm">
-            <thead class="bg-gray-200 text-gray-700">
-                <tr class="text-left">
-                    <th class="px-4 py-2">Judul</th>
-                    <th class="px-4 py-2">Deskripsi</th>
-                    <th class="px-4 py-2">Kategori</th>
-                    <th class="px-4 py-2">Prioritas</th>
-                    <th class="px-4 py-2">Deadline</th>
-                    <th class="px-4 py-2">Status</th>
-                    <th class="px-4 py-2">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tugas in tugas_list %}
-                <tr class="{% if tugas.selesai %}bg-green-100{% else %}bg-white{% endif %} border-b">
-                    <td class="px-4 py-2 font-semibold break-words max-w-xs">{{ tugas.judul }}</td>
-                    <td class="px-4 py-2 text-gray-600 break-words max-w-xs">{{ tugas.deskripsi }}</td>                    
-                    <td class="px-4 py-2">{{ tugas.get_kategori_display }}</td>
-                    <td class="px-4 py-2">
-                        {% if tugas.prioritas == "tinggi" %}
-                            <span class="bg-red-500 text-white px-2 py-1 rounded-lg">Tinggi</span>
-                        {% elif tugas.prioritas == "sedang" %}
-                            <span class="bg-yellow-500 text-black px-2 py-1 rounded-lg">Sedang</span>
-                        {% else %}
-                            <span class="bg-green-500 text-white px-2 py-1 rounded-lg">Rendah</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap">{{ tugas.deadline|date:"d M Y H:i" }}</td>
-                    <td class="px-4 py-2 text-center">
-                        {% if tugas.selesai %}
-                            <span class="inline-block w-28 text-center bg-gray-600 text-white px-3 py-1 rounded-lg">
-                                Selesai
-                            </span>
-                        {% else %}
-                            <span class="inline-block w-28 text-center bg-blue-500 text-white px-3 py-1 rounded-lg">
-                                Belum Selesai
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-2 flex flex-wrap gap-2">
-                        <a href="{% url 'tugas:edit' tugas.id %}" class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600">Edit</a>
-                        <button onclick="konfirmasiHapus('{{ tugas.id }}', '{{ tugas.judul }}')" class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600">Hapus</button>
-                        {% if not tugas.selesai %}
-                        <button onclick="konfirmasiSelesai('{{ tugas.id }}', '{{ tugas.judul }}')" class="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600">Selesai</button>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
-    {% else %}
-        <p class="text-center text-gray-600 mt-4">Tidak ada tugas.</p>
-    {% endif %}
+</form>
+
+<!-- Task Table (Desktop) -->
+{% if tugas_list %}
+<div class="table-wrap animate-fade-up desktop-only">
+    <table>
+        <thead>
+            <tr>
+                <th>Tugas</th>
+                <th>Kategori</th>
+                <th>Prioritas</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th style="text-align:right;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tugas in tugas_list %}
+            <tr>
+                <td>
+                    <a href="{% url 'tugas:detail' tugas.id %}"
+                        style="font-weight:600;color:var(--text-primary);text-decoration:none;">
+                        {{ tugas.judul }}
+                    </a>
+                    {% if tugas.deskripsi %}
+                    <div class="text-xs" style="color:var(--text-muted);max-width:300px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                        {{ tugas.deskripsi }}
+                    </div>
+                    <a href="{% url 'tugas:detail' tugas.id %}" 
+                        style="font-size:0.75rem;color:var(--accent-primary);text-decoration:none;margin-top:4px;display:inline-block;">
+                        Lihat detail →
+                    </a>
+                    {% endif %}
+                </td>
+                <td><span class="badge badge-info">{{ tugas.get_kategori_display }}</span></td>
+                <td>
+                    {% if tugas.prioritas == "tinggi" %}
+                    <span class="badge badge-danger">Tinggi</span>
+                    {% elif tugas.prioritas == "sedang" %}
+                    <span class="badge badge-warning">Sedang</span>
+                    {% else %}
+                    <span class="badge badge-success">Rendah</span>
+                    {% endif %}
+                </td>
+                <td style="white-space:nowrap;font-size:.85rem;">
+                    {{ tugas.deadline|date:"d M Y H:i" }}
+                    {% if tugas.is_overdue %}
+                    <span class="badge badge-danger" style="margin-left:6px;font-size:0.7rem;">OVERDUE</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if tugas.selesai %}
+                    <span class="badge badge-muted">Selesai</span>
+                    {% else %}
+                    <span class="badge badge-info">Belum</span>
+                    {% endif %}
+                </td>
+                <td style="text-align:right;">
+                    <div style="display:flex;gap:6px;justify-content:flex-end;">
+                        <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-ghost btn-sm" title="Edit">
+                            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                        </a>
+                        {% if not tugas.selesai %}
+                        <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
+                            class="btn btn-success btn-sm" title="Selesai">
+                            <i data-lucide="check" style="width:14px;height:14px;"></i>
+                        </button>
+                        {% endif %}
+                        <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
+                            class="btn btn-danger btn-sm" title="Hapus">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 
-<!-- Script untuk Dropdown Export -->
+<!-- Task Cards (Mobile) -->
+<div class="task-cards-container mobile-only">
+    {% for tugas in tugas_list %}
+    <div class="task-card animate-fade-up">
+        <div class="task-card-header">
+            <a href="{% url 'tugas:detail' tugas.id %}" class="task-card-title">
+                {{ tugas.judul }}
+            </a>
+            <div class="task-card-badges">
+                <span class="badge badge-info">{{ tugas.get_kategori_display }}</span>
+                {% if tugas.prioritas == "tinggi" %}
+                <span class="badge badge-danger">Tinggi</span>
+                {% elif tugas.prioritas == "sedang" %}
+                <span class="badge badge-warning">Sedang</span>
+                {% else %}
+                <span class="badge badge-success">Rendah</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if tugas.deskripsi %}
+        <div class="task-card-desc">
+            {{ tugas.deskripsi|truncatewords:15 }}
+        </div>
+        {% endif %}
+        
+        <div class="task-card-info">
+            <div class="task-card-deadline">
+                <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                <span>{{ tugas.deadline|date:"d M Y H:i" }}</span>
+                {% if tugas.is_overdue %}
+                <span class="badge badge-danger" style="font-size:0.65rem;margin-left:4px;">OVERDUE</span>
+                {% endif %}
+            </div>
+            <div class="task-card-status">
+                {% if tugas.status == "selesai" %}
+                <span class="badge badge-success">✓ Selesai</span>
+                {% else %}
+                <span class="badge badge-info">Belum Selesai</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="task-card-actions">
+            <a href="{% url 'tugas:detail' tugas.id %}" class="btn btn-ghost btn-sm">
+                <i data-lucide="eye" style="width:16px;height:16px;"></i>
+                Detail
+            </a>
+            <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-ghost btn-sm">
+                <i data-lucide="pencil" style="width:16px;height:16px;"></i>
+                Edit
+            </a>
+            {% if tugas.status != "selesai" %}
+            <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
+                class="btn btn-success btn-sm">
+                <i data-lucide="check" style="width:16px;height:16px;"></i>
+                Selesai
+            </button>
+            {% endif %}
+            <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
+                class="btn btn-danger btn-sm">
+                <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
+                Hapus
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if tugas_list.has_other_pages %}
+<div class="card animate-fade-up" style="padding:16px 20px;margin-top:20px;">
+    <div style="display:flex;justify-content:center;align-items:center;gap:8px;">
+        {% if tugas_list.has_previous %}
+        <a href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+            class="btn btn-ghost btn-sm" title="Halaman Pertama">
+            <i data-lucide="chevrons-left" style="width:16px;height:16px;"></i>
+        </a>
+        <a href="?page={{ tugas_list.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+            class="btn btn-ghost btn-sm" title="Sebelumnya">
+            <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-ghost btn-sm" disabled>
+            <i data-lucide="chevrons-left" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="btn btn-ghost btn-sm" disabled>
+            <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+        </button>
+        {% endif %}
+
+        <span style="padding:0 12px;font-size:0.9rem;font-weight:500;">
+            Halaman {{ tugas_list.number }} dari {{ tugas_list.paginator.num_pages }}
+        </span>
+
+        {% if tugas_list.has_next %}
+        <a href="?page={{ tugas_list.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+            class="btn btn-ghost btn-sm" title="Selanjutnya">
+            <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+        </a>
+        <a href="?page={{ tugas_list.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+            class="btn btn-ghost btn-sm" title="Halaman Terakhir">
+            <i data-lucide="chevrons-right" style="width:16px;height:16px;"></i>
+        </a>
+        {% else %}
+        <button class="btn btn-ghost btn-sm" disabled>
+            <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+        </button>
+        <button class="btn btn-ghost btn-sm" disabled>
+            <i data-lucide="chevrons-right" style="width:16px;height:16px;"></i>
+        </button>
+        {% endif %}
+    </div>
+    <div style="text-align:center;margin-top:8px;font-size:0.8rem;color:var(--text-muted);">
+        Menampilkan {{ tugas_list.start_index }} - {{ tugas_list.end_index }} dari {{ tugas_list.paginator.count }} tugas
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="card animate-fade-up">
+    <div class="empty-state">
+        <i data-lucide="inbox" style="width:48px;height:48px;"></i>
+        <p style="margin-top:12px;font-weight:500;">Belum ada tugas</p>
+        <p class="text-xs" style="margin-top:4px;">Klik "Tambah" untuk membuat tugas pertamamu</p>
+        <a href="{% url 'tugas:tambah' %}" class="btn btn-primary btn-sm" style="margin-top:16px;">
+            <i data-lucide="plus" style="width:16px;height:16px;"></i> Tambah Tugas
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Hidden POST forms -->
+<form id="hapusForm" method="POST" style="display:none;">{% csrf_token %}</form>
+<form id="selesaiForm" method="POST" style="display:none;">{% csrf_token %}</form>
+{% endblock %}
+
+{% block scripts %}
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let exportBtn = document.getElementById("exportBtn");
-        let exportDropdown = document.getElementById("exportDropdown");
+    // Play completion sound using Web Audio API
+    function playCompletionSound() {
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create a soft, magical "sparkle" completion sound
+            const playTone = (freq, startTime, duration, volume = 0.15) => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                // Soft triangle wave for gentle, warm tone
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, startTime);
+                
+                // Low-pass filter for smooth, mellow sound
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(2000, startTime);
+                
+                // Gentle fade in/out
+                gain.gain.setValueAtTime(0, startTime);
+                gain.gain.linearRampToValueAtTime(volume, startTime + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            };
+            
+            const now = audioContext.currentTime;
+            
+            // Gentle "magical" completion melody (E-G#-B-E) - like a soft chime
+            playTone(659.25, now, 0.35, 0.12);        // E5
+            playTone(830.61, now + 0.1, 0.4, 0.1);    // G#5
+            playTone(987.77, now + 0.2, 0.45, 0.08);  // B5
+            playTone(1318.51, now + 0.3, 0.5, 0.06);  // E6 (octave higher, very soft)
+            
+        } catch (e) {
+            console.log('Audio not supported');
+        }
+    }
 
-        exportBtn.addEventListener("click", function (event) {
-            event.stopPropagation();
-            exportDropdown.classList.toggle("hidden");
-        });
+    function toggleExportMenu(e) {
+        e.stopPropagation();
+        const menu = document.getElementById("exportMenu");
+        menu.classList.toggle("hidden");
+    }
 
-        document.addEventListener("click", function () {
-            exportDropdown.classList.add("hidden");
-        });
+    // Close export dropdown on outside click
+    document.addEventListener("click", (e) => {
+        const menu = document.getElementById("exportMenu");
+        const toggle = document.getElementById("exportToggle");
+        if (menu && !menu.classList.contains("hidden")) {
+            if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add("hidden");
+            }
+        }
     });
-</script>
 
-<script>
     function konfirmasiHapus(id, judul) {
         Swal.fire({
             title: "Hapus Tugas?",
-            text: `Apakah kamu yakin ingin menghapus tugas "${judul}"?`,
+            text: 'Tugas "' + judul + '" akan dihapus permanen.',
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
+            confirmButtonColor: "#F43F5E",
+            cancelButtonColor: "#64748B",
             confirmButtonText: "Ya, Hapus",
             cancelButtonText: "Batal"
         }).then((result) => {
             if (result.isConfirmed) {
-                fetch(`/tugas/hapus/${id}/`, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": getCSRFToken(),
-                        "Content-Type": "application/json"
-                    }
-                })
-                .then(response => {
-                    if (response.ok) {
-                        Swal.fire("Terhapus!", "Tugas berhasil dihapus.", "success").then(() => {
-                            location.reload();
-                        });
-                    } else {
-                        Swal.fire("Gagal!", "Tugas gagal dihapus.", "error");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    Swal.fire("Error!", "Terjadi kesalahan, coba lagi.", "error");
-                });
+                const form = document.getElementById("hapusForm");
+                form.action = "/tugas/hapus/" + id + "/";
+                form.submit();
             }
         });
-    }
-
-    function getCSRFToken() {
-        let cookies = document.cookie.split(";");
-        for (let cookie of cookies) {
-            let [name, value] = cookie.trim().split("=");
-            if (name === "csrftoken") {
-                return value;
-            }
-        }
-        return "";
     }
 
     function konfirmasiSelesai(id, judul) {
         Swal.fire({
             title: "Tandai Selesai?",
-            text: `Tandai tugas "${judul}" sebagai selesai?`,
-            icon: "info",
+            text: 'Tandai "' + judul + '" sebagai selesai?',
+            icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#28a745",
-            cancelButtonColor: "#3085d6",
+            confirmButtonColor: "#10B981",
+            cancelButtonColor: "#64748B",
             confirmButtonText: "Ya, Selesai",
             cancelButtonText: "Batal"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = `/tugas/selesai/${id}/`;
+                playCompletionSound(); // Play sound when confirmed
+                const form = document.getElementById("selesaiForm");
+                form.action = "/tugas/selesai/" + id + "/";
+                form.submit();
             }
         });
     }
 </script>
-
 {% endblock %}

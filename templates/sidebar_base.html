@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block layout %}
+<!-- Mobile Toggle -->
+<button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Menu">
+    <i data-lucide="menu" style="width:22px;height:22px;"></i>
+</button>
+
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <i data-lucide="check-square" style="width:24px;height:24px;"></i>
+        <span>Manajemen Tugas</span>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="{% url 'tugas:dashboard' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i data-lucide="layout-dashboard" style="width:20px;height:20px;"></i>
+            Dashboard
+        </a>
+        <a href="{% url 'tugas:daftar' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'daftar' %}active{% endif %}">
+            <i data-lucide="list-todo" style="width:20px;height:20px;"></i>
+            Daftar Tugas
+        </a>
+        <a href="{% url 'tugas:tambah' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'tambah' %}active{% endif %}">
+            <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
+            Tambah Tugas
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <i data-lucide="user-circle" style="width:22px;height:22px;"></i>
+            {{ user.username }}
+        </div>
+        <a href="{% url 'tugas:logout' %}" class="sidebar-link" style="margin-top:10px;color:rgba(255,255,255,.5);">
+            <i data-lucide="log-out" style="width:18px;height:18px;"></i>
+            Logout
+        </a>
+    </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Top Bar -->
+    <header class="page-header">
+        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+        <div class="flex items-center gap-3">
+            <!-- Notification Bell -->
+            <div style="position:relative;">
+                <button id="notificationBell" onclick="toggleNotifications()" 
+                    style="background:transparent;border:none;cursor:pointer;position:relative;padding:8px;border-radius:8px;transition:all 0.2s;"
+                    onmouseenter="this.style.background='var(--bg-hover)'"
+                    onmouseleave="this.style.background='transparent'">
+                    <i data-lucide="bell" style="width:20px;height:20px;color:var(--text-secondary);"></i>
+                    <span id="notificationBadge" class="notification-badge" style="display:none;">0</span>
+                </button>
+                
+                <!-- Notification Backdrop (untuk mobile) -->
+                <div id="notificationBackdrop" class="notification-backdrop" onclick="toggleNotifications()"></div>
+                
+                <!-- Notification Dropdown -->
+                <div id="notificationDropdown" class="notification-dropdown" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--border);background:linear-gradient(to bottom, var(--card), var(--bg));">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <i data-lucide="bell" style="width:18px;height:18px;color:var(--primary);"></i>
+                            <h3 style="font-size:1rem;font-weight:600;color:var(--text-primary);">Notifikasi</h3>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <button onclick="markAllRead()" class="text-xs" 
+                                style="color:var(--primary);background:var(--primary-light);border:none;cursor:pointer;font-weight:600;padding:6px 12px;border-radius:6px;transition:all 0.2s;font-size:0.75rem;"
+                                onmouseenter="this.style.background='var(--primary-100)'"
+                                onmouseleave="this.style.background='var(--primary-light)'">
+                                <i data-lucide="check-check" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></i>
+                                <span class="hide-mobile">Tandai semua</span>
+                            </button>
+                            <!-- Close button untuk mobile -->
+                            <button onclick="toggleNotifications()" class="show-mobile" 
+                                style="background:var(--bg);border:1px solid var(--border);cursor:pointer;padding:6px;border-radius:6px;transition:all 0.2s;"
+                                onmouseenter="this.style.background='var(--bg-hover)'"
+                                onmouseleave="this.style.background='var(--bg)'">
+                                <i data-lucide="x" style="width:16px;height:16px;color:var(--text-secondary);"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="notificationList">
+                        <!-- Notifications akan dimuat via AJAX -->
+                        <div style="padding:40px 20px;text-align:center;color:var(--text-muted);">
+                            <i data-lucide="loader" class="animate-spin" style="width:24px;height:24px;margin:0 auto 8px;"></i>
+                            <p style="font-size:0.9rem;">Memuat notifikasi...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 text-sm" style="color:var(--text-muted);">
+                <i data-lucide="user" style="width:16px;height:16px;"></i>
+                {{ user.username }}
+            </div>
+        </div>
+    </header>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div style="padding: 16px 32px 0;">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {% if message.tags == 'success' %}<i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+            {% elif message.tags == 'warning' %}<i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+            {% elif message.tags == 'danger' %}<i data-lucide="alert-circle" style="width:18px;height:18px;"></i>
+            {% else %}<i data-lucide="info" style="width:18px;height:18px;"></i>{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Page Body -->
+    <div class="page-body">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+{% endblock layout %}

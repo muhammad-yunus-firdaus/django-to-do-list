@@ -1,19 +1,27 @@
 {
-  "name": "Aplikasi Manajemen Tugas",
-  "short_name": "Tugas",
+  "name": "Manajemen Tugas - Task Manager",
+  "short_name": "Tugas App",
+  "description": "Kelola tugas dengan mudah dan efisien. Track deadline, prioritas, dan kategori tugas Anda.",
+  "start_url": "/tugas/dashboard/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#4F46E5",
+  "background_color": "#ffffff",
   "icons": [
     {
       "src": "/static/images/android-chrome-192x192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/android-chrome-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "theme_color": "#2563eb",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "categories": ["productivity", "utilities"],
+  "screenshots": []
 }
