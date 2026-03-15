@@ -63,31 +63,31 @@
 
         <!-- Subtask Section -->
         {% if tugas.has_subtasks or not tugas.selesai %}
-        <div class="subtask-section">
-            <div class="subtask-header">
-                <h3>Subtask</h3>
+        <div style="margin-bottom:24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <h3 style="font-size:1rem;font-weight:600;color:var(--text-primary);">Subtask</h3>
                 {% if tugas.has_subtasks %}
-                <span class="subtask-progress-text">{{ tugas.subtask_progress }}%</span>
+                <span style="font-size:.85rem;color:var(--text-muted);font-weight:500;">{{ tugas.subtask_progress }}%</span>
                 {% endif %}
             </div>
 
             <!-- Progress Bar -->
             {% if tugas.has_subtasks %}
-            <div class="subtask-progress-wrap">
+            <div style="background:var(--bg-secondary);border-radius:8px;height:8px;margin-bottom:16px;overflow:hidden;">
                 <div style="background:linear-gradient(90deg, #10B981, #059669);height:100%;width:{{ tugas.subtask_progress }}%;transition:width 0.3s ease;"></div>
             </div>
             {% endif %}
 
             <!-- Add Subtask Form -->
             {% if not tugas.selesai %}
-            <form method="POST" action="{% url 'tugas:tambah_subtask' tugas.id %}" class="subtask-form">
+            <form method="POST" action="{% url 'tugas:tambah_subtask' tugas.id %}" style="margin-bottom:16px;">
                 {% csrf_token %}
-                <div class="subtask-form-row">
+                <div style="display:flex;gap:8px;">
                     <input type="text" name="judul" placeholder="Tambah subtask baru..." required autofocus
-                        class="subtask-input"
+                        style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;transition:all 0.2s;"
                         onfocus="this.style.borderColor='var(--primary)';this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'"
                         onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                    <button type="submit" class="btn btn-primary subtask-add-btn">
+                    <button type="submit" class="btn btn-primary" style="padding:10px 20px;">
                         <i data-lucide="plus" style="width:16px;height:16px;"></i>
                     </button>
                 </div>
@@ -96,15 +96,17 @@
 
             <!-- Subtask List -->
             {% if tugas.has_subtasks %}
-            <div class="subtask-list">
+            <div style="display:flex;flex-direction:column;gap:8px;">
                 {% for subtask in tugas.subtasks.all %}
                 <div class="subtask-item" data-id="{{ subtask.id }}"
-                    >
+                    style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-secondary);border-radius:8px;transition:all 0.2s;"
+                    onmouseenter="this.style.background='var(--bg-hover)'"
+                    onmouseleave="this.style.background='var(--bg-secondary)'">
                     
                     <!-- Checkbox -->
                     <input type="checkbox" {% if subtask.selesai %}checked{% endif %}
                         onchange="toggleSubtask({{ subtask.id }})"
-                        class="subtask-checkbox">
+                        style="width:18px;height:18px;cursor:pointer;accent-color:var(--success);">
                     
                     <!-- Judul (editable on double-click) -->
                     <div class="subtask-judul" style="flex:1;font-size:.9rem;color:var(--text-primary);{% if subtask.selesai %}text-decoration:line-through;opacity:0.6;{% endif %}">
@@ -113,13 +115,19 @@
 
                     <!-- Action Buttons -->
                     {% if not tugas.selesai %}
-                    <div class="subtask-actions">
+                    <div style="display:flex;gap:4px;opacity:0;transition:opacity 0.2s;" class="subtask-actions">
                         <button onclick="editSubtask({{ subtask.id }}, '{{ subtask.judul|escapejs }}')"
-                            class="btn-icon subtask-action-btn" title="Edit">
+                            class="btn-icon" title="Edit"
+                            style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:transparent;border:none;cursor:pointer;transition:all 0.2s;"
+                            onmouseenter="this.style.background='var(--bg-hover)'"
+                            onmouseleave="this.style.background='transparent'">
                             <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
                         </button>
                         <button onclick="hapusSubtask({{ subtask.id }}, '{{ subtask.judul|escapejs }}')"
-                            class="btn-icon subtask-action-btn" title="Hapus">
+                            class="btn-icon" title="Hapus"
+                            style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:transparent;border:none;cursor:pointer;transition:all 0.2s;"
+                            onmouseenter="this.style.background='var(--bg-hover)'"
+                            onmouseleave="this.style.background='transparent'">
                             <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--danger);"></i>
                         </button>
                     </div>
@@ -228,22 +236,13 @@
                 rows: '4',
                 maxlength: '255',
                 autocapitalize: 'off',
-                autocomplete: 'off'
+                autocomplete: 'off',
+                style: 'width:100%;box-sizing:border-box;resize:vertical;line-height:1.45;'
             },
             width: 'min(560px, 92vw)',
             customClass: {
                 popup: 'subtask-edit-popup',
                 input: 'subtask-edit-input'
-            },
-            didOpen: () => {
-                const input = Swal.getInput();
-                if (input) {
-                    input.style.width = '100%';
-                    input.style.maxWidth = '100%';
-                    input.style.boxSizing = 'border-box';
-                    input.style.whiteSpace = 'pre-wrap';
-                    input.style.overflowX = 'hidden';
-                }
             },
             showCancelButton: true,
             confirmButtonColor: '#3B82F6',
