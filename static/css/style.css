@@ -1024,17 +1024,133 @@ textarea {
 }
 
 /* ── Subtask Detail + SweetAlert Edit ─────────────────────────── */
+.subtask-section {
+    margin-bottom: 24px;
+}
+
+.subtask-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.subtask-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
+}
+
+.subtask-progress-text {
+    font-size: .85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.subtask-progress-wrap {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    height: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.subtask-form {
+    margin-bottom: 16px;
+}
+
+.subtask-form-row {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.subtask-input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: .9rem;
+    transition: var(--transition);
+}
+
+.subtask-add-btn {
+    padding: 10px 18px;
+    min-width: 52px;
+}
+
+.subtask-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .subtask-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: var(--transition);
     width: 100%;
     max-width: 100%;
 }
 
+.subtask-item:hover {
+    background: #EEF2FF;
+    border-color: #C7D2FE;
+}
+
+.subtask-checkbox {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    cursor: pointer;
+    accent-color: var(--success);
+    flex: 0 0 auto;
+}
+
 .subtask-judul {
+    flex: 1;
     min-width: 0;
     line-height: 1.5;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+.subtask-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity .2s ease;
+    flex: 0 0 auto;
+}
+
+.subtask-item:hover .subtask-actions {
+    opacity: 1;
+}
+
+.subtask-action-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.subtask-action-btn:hover {
+    background: var(--bg-hover);
 }
 
 .swal2-popup.subtask-edit-popup {
@@ -1053,9 +1169,31 @@ textarea {
     box-sizing: border-box !important;
     resize: vertical !important;
     line-height: 1.45;
+    margin: 1rem 0 0 !important;
+    overflow-x: hidden !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 @media (max-width: 768px) {
+    .subtask-form-row {
+        gap: 6px;
+    }
+
+    .subtask-add-btn {
+        padding: 10px 14px;
+        min-width: 46px;
+    }
+
+    .subtask-item {
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .subtask-actions {
+        opacity: 1;
+    }
+
     .swal2-popup.subtask-edit-popup {
         width: calc(100vw - 24px) !important;
         max-width: calc(100vw - 24px) !important;
