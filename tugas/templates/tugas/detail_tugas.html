@@ -110,7 +110,7 @@
                     
                     <!-- Judul (editable on double-click) -->
                     <div class="subtask-judul" style="flex:1;font-size:.9rem;color:var(--text-primary);{% if subtask.selesai %}text-decoration:line-through;opacity:0.6;{% endif %}">
-                        {{ subtask.judul }}
+                        {{ subtask.judul|linebreaksbr }}
                     </div>
 
                     <!-- Action Buttons -->
@@ -229,26 +229,48 @@
     function editSubtask(subtaskId, currentJudul) {
         Swal.fire({
             title: 'Edit Subtask',
-            input: 'text',
+            input: 'textarea',
             inputValue: currentJudul,
             inputPlaceholder: 'Masukkan judul baru',
+            inputAttributes: {
+                rows: '4',
+                maxlength: '255',
+                autocapitalize: 'off',
+                autocomplete: 'off',
+                style: 'width:100%;box-sizing:border-box;resize:vertical;line-height:1.45;'
+            },
+            width: 'min(560px, 92vw)',
+            customClass: {
+                popup: 'subtask-edit-popup',
+                input: 'subtask-edit-input'
+            },
             showCancelButton: true,
             confirmButtonColor: '#3B82F6',
             cancelButtonColor: '#64748B',
             confirmButtonText: 'Simpan',
             cancelButtonText: 'Batal',
+            allowEnterKey: false,
             inputValidator: (value) => {
-                if (!value) return 'Judul tidak boleh kosong!';
+                if (!value || !value.trim()) return 'Judul tidak boleh kosong!';
             }
         }).then((result) => {
             if (result.isConfirmed) {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = `/tugas/subtask/edit/${subtaskId}/`;
-                form.innerHTML = `
-                    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                    <input type="hidden" name="judul" value="${result.value}">
-                `;
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = '{{ csrf_token }}';
+
+                const judulInput = document.createElement('input');
+                judulInput.type = 'hidden';
+                judulInput.name = 'judul';
+                judulInput.value = result.value.trim();
+
+                form.appendChild(csrfInput);
+                form.appendChild(judulInput);
                 document.body.appendChild(form);
                 form.submit();
             }

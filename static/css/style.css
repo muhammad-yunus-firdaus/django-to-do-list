@@ -1023,6 +1023,57 @@ textarea {
     animation: fadeIn .4s ease both;
 }
 
+/* ── Subtask Detail + SweetAlert Edit ─────────────────────────── */
+.subtask-item {
+    width: 100%;
+    max-width: 100%;
+}
+
+.subtask-judul {
+    min-width: 0;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.swal2-popup.subtask-edit-popup {
+    width: min(560px, 92vw) !important;
+    max-width: 92vw !important;
+    padding: 1.5rem !important;
+    overflow: hidden !important;
+}
+
+.swal2-popup.subtask-edit-popup .swal2-input,
+.swal2-popup.subtask-edit-popup .swal2-textarea,
+.swal2-popup.subtask-edit-popup .subtask-edit-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 110px;
+    box-sizing: border-box !important;
+    resize: vertical !important;
+    line-height: 1.45;
+}
+
+@media (max-width: 768px) {
+    .swal2-popup.subtask-edit-popup {
+        width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+        padding: 1.1rem !important;
+    }
+
+    .swal2-popup.subtask-edit-popup .swal2-actions {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .swal2-popup.subtask-edit-popup .swal2-confirm,
+    .swal2-popup.subtask-edit-popup .swal2-cancel {
+        flex: 1 1 0;
+        margin: 0;
+    }
+}
+
 /* Stagger animations for dashboard cards */
 .stagger-1 {
     animation-delay: .05s;
