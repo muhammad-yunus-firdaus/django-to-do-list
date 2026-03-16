@@ -116,7 +116,7 @@ class Subtask(models.Model):
         help_text="Tugas utama yang memiliki subtask ini."
     )
     judul = models.CharField(
-        max_length=255, verbose_name="Judul Subtask",
+        max_length=500, verbose_name="Judul Subtask",
         help_text="Masukkan judul subtask."
     )
     selesai = models.BooleanField(
