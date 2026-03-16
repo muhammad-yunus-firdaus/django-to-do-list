@@ -67,14 +67,18 @@
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                 <h3 style="font-size:1rem;font-weight:600;color:var(--text-primary);">Subtask</h3>
                 {% if tugas.has_subtasks %}
-                <span style="font-size:.85rem;color:var(--text-muted);font-weight:500;">{{ tugas.subtask_progress }}%</span>
+                <span style="font-size:.85rem;color:var(--text-muted);font-weight:500;">{{ tugas.subtask_progress
+                    }}%</span>
                 {% endif %}
             </div>
 
             <!-- Progress Bar -->
             {% if tugas.has_subtasks %}
-            <div style="background:var(--bg-secondary);border-radius:8px;height:8px;margin-bottom:16px;overflow:hidden;">
-                <div style="background:linear-gradient(90deg, #10B981, #059669);height:100%;width:{{ tugas.subtask_progress }}%;transition:width 0.3s ease;"></div>
+            <div
+                style="background:var(--bg-secondary);border-radius:8px;height:8px;margin-bottom:16px;overflow:hidden;">
+                <div
+                    style="background:linear-gradient(90deg, #10B981, #059669);height:100%;width:{{ tugas.subtask_progress }}%;transition:width 0.3s ease;">
+                </div>
             </div>
             {% endif %}
 
@@ -102,22 +106,23 @@
                     style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--bg-secondary);border-radius:8px;transition:all 0.2s;"
                     onmouseenter="this.style.background='var(--bg-hover)'"
                     onmouseleave="this.style.background='var(--bg-secondary)'">
-                    
+
                     <!-- Checkbox -->
                     <input type="checkbox" {% if subtask.selesai %}checked{% endif %}
                         onchange="toggleSubtask({{ subtask.id }})"
                         style="width:18px;height:18px;cursor:pointer;accent-color:var(--success);">
-                    
+
                     <!-- Judul (editable on double-click) -->
-                    <div class="subtask-judul" style="flex:1;font-size:.9rem;color:var(--text-primary);{% if subtask.selesai %}text-decoration:line-through;opacity:0.6;{% endif %}">
+                    <div class="subtask-judul"
+                        style="flex:1;font-size:.9rem;color:var(--text-primary);{% if subtask.selesai %}text-decoration:line-through;opacity:0.6;{% endif %}">
                         {{ subtask.judul|linebreaksbr }}
                     </div>
 
                     <!-- Action Buttons -->
                     {% if not tugas.selesai %}
                     <div style="display:flex;gap:4px;opacity:0;transition:opacity 0.2s;" class="subtask-actions">
-                        <button onclick="editSubtask({{ subtask.id }}, '{{ subtask.judul|escapejs }}')"
-                            class="btn-icon" title="Edit"
+                        <button onclick="editSubtask({{ subtask.id }}, '{{ subtask.judul|escapejs }}')" class="btn-icon"
+                            title="Edit"
                             style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:transparent;border:none;cursor:pointer;transition:all 0.2s;"
                             onmouseenter="this.style.background='var(--bg-hover)'"
                             onmouseleave="this.style.background='transparent'">
@@ -136,7 +141,8 @@
                 {% endfor %}
             </div>
             {% elif tugas.selesai %}
-            <p style="text-align:center;color:var(--text-muted);font-size:.9rem;padding:20px;font-style:italic;">Tidak ada subtask</p>
+            <p style="text-align:center;color:var(--text-muted);font-size:.9rem;padding:20px;font-style:italic;">Tidak
+                ada subtask</p>
             {% endif %}
         </div>
         {% endif %}
@@ -209,21 +215,21 @@
                 'Content-Type': 'application/json'
             }
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update progress bar
-                if (data.progress !== null) {
-                    const progressText = document.querySelector('h3 + span');
-                    const progressBar = document.querySelector('[style*="background:linear-gradient"]');
-                    if (progressText) progressText.textContent = data.progress + '%';
-                    if (progressBar) progressBar.style.width = data.progress + '%';
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update progress bar
+                    if (data.progress !== null) {
+                        const progressText = document.querySelector('h3 + span');
+                        const progressBar = document.querySelector('[style*="background:linear-gradient"]');
+                        if (progressText) progressText.textContent = data.progress + '%';
+                        if (progressBar) progressBar.style.width = data.progress + '%';
+                    }
+                    // Refresh to update UI
+                    location.reload();
                 }
-                // Refresh to update UI
-                location.reload();
-            }
-        })
-        .catch(error => console.error('Error:', error));
+            })
+            .catch(error => console.error('Error:', error));
     }
 
     function editSubtask(subtaskId, currentJudul) {
@@ -231,13 +237,12 @@
             title: 'Edit Subtask',
             input: 'textarea',
             inputValue: currentJudul,
-            inputPlaceholder: 'Masukkan judul baru',
+            inputPlaceholder: 'Tulis subtask Anda...',
             inputAttributes: {
-                rows: '4',
                 maxlength: '255',
                 autocapitalize: 'off',
                 autocomplete: 'off',
-                style: 'width:100%;box-sizing:border-box;resize:vertical;line-height:1.45;'
+                spellcheck: 'false'
             },
             width: 'min(560px, 92vw)',
             customClass: {
@@ -245,13 +250,21 @@
                 input: 'subtask-edit-input'
             },
             showCancelButton: true,
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#64748B',
+            confirmButtonColor: 'var(--primary)',
+            cancelButtonColor: 'var(--secondary)',
             confirmButtonText: 'Simpan',
             cancelButtonText: 'Batal',
-            allowEnterKey: false,
+            allowEnterKey: false, // Prevent Enter from submitting
             inputValidator: (value) => {
                 if (!value || !value.trim()) return 'Judul tidak boleh kosong!';
+            },
+            didOpen: () => {
+                const input = Swal.getInput();
+                if (input) {
+                    input.style.height = 'auto';
+                    input.style.height = input.scrollHeight + 'px';
+                    input.focus();
+                }
             }
         }).then((result) => {
             if (result.isConfirmed) {
