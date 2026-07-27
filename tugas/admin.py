@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Tugas, Subtask, Notification
+from .models import Tugas, Subtask, Notification, AktivitasHarian, EvaluasiMingguan
 
 
 @admin.register(Tugas)
@@ -88,6 +88,75 @@ class NotificationAdmin(admin.ModelAdmin):
         }),
         ("Status", {
             "fields": ("is_read",),
+        }),
+        ("Timestamp", {
+            "fields": ("created_at",),
+        }),
+    )
+
+
+@admin.register(AktivitasHarian)
+class AktivitasHarianAdmin(admin.ModelAdmin):
+    """Konfigurasi admin panel untuk model AktivitasHarian."""
+
+    list_display = (
+        "judul", "user", "tanggal", "jam_mulai", "jam_selesai",
+        "durasi_menit", "status", "is_habit",
+    )
+    list_filter = ("status", "is_habit", "tanggal", "user")
+    search_fields = ("judul", "user__username")
+    list_per_page = 25
+    list_editable = ("status",)
+    date_hierarchy = "tanggal"
+    ordering = ("-tanggal", "jam_mulai")
+
+    readonly_fields = ("jam_selesai", "created_at", "updated_at")
+
+    fieldsets = (
+        ("Informasi Aktivitas", {
+            "fields": ("user", "judul", "tanggal"),
+        }),
+        ("Waktu", {
+            "fields": ("jam_mulai", "durasi_menit", "jam_selesai"),
+        }),
+        ("Status & Habit", {
+            "fields": ("status", "is_habit"),
+        }),
+        ("Timestamps", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
+
+
+@admin.register(EvaluasiMingguan)
+class EvaluasiMingguanAdmin(admin.ModelAdmin):
+    """Konfigurasi admin panel untuk model EvaluasiMingguan."""
+
+    list_display = (
+        "user", "minggu_mulai", "minggu_selesai",
+        "persen_tugas", "persen_aktivitas", "created_at",
+    )
+    list_filter = ("user", "minggu_mulai")
+    search_fields = ("user__username", "catatan_evaluasi")
+    list_per_page = 25
+    date_hierarchy = "minggu_mulai"
+    ordering = ("-minggu_mulai",)
+
+    readonly_fields = ("created_at",)
+
+    fieldsets = (
+        ("Periode", {
+            "fields": ("user", "minggu_mulai", "minggu_selesai"),
+        }),
+        ("Statistik Tugas", {
+            "fields": ("total_tugas", "tugas_selesai", "persen_tugas"),
+        }),
+        ("Statistik Aktivitas", {
+            "fields": ("total_aktivitas", "aktivitas_selesai", "persen_aktivitas"),
+        }),
+        ("Catatan", {
+            "fields": ("catatan_evaluasi",),
         }),
         ("Timestamp", {
             "fields": ("created_at",),

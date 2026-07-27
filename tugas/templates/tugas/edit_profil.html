@@ -1,0 +1,135 @@
+{% extends "sidebar_base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Profil - Manajemen Tugas{% endblock %}
+{% block page_title %}Edit Profil{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;" class="animate-fade-up">
+
+    <!-- Card 1: Informasi Akun -->
+    <div class="card" style="padding:28px;margin-bottom:20px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
+                <i data-lucide="user" style="width:20px;height:20px;color:var(--primary);"></i>
+            </div>
+            <div>
+                <h3 style="margin:0;font-size:1.1rem;">Informasi Akun</h3>
+                <p class="text-xs" style="margin:0;color:var(--text-muted);">Ubah username dan email kamu</p>
+            </div>
+        </div>
+
+        {% if profil_form.errors %}
+        <div class="alert alert-danger" style="margin-bottom:16px;">
+            <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+            <div>
+                {% for field, errors in profil_form.errors.items %}
+                {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="POST" style="display:flex;flex-direction:column;gap:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profil">
+
+            <div>
+                <label class="form-label">Username</label>
+                {{ profil_form.username|add_class:"form-input" }}
+            </div>
+
+            <div>
+                <label class="form-label">Email</label>
+                {{ profil_form.email|add_class:"form-input" }}
+            </div>
+
+            <div style="padding-top:4px;">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="save" style="width:16px;height:16px;"></i> Simpan Perubahan
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Card 2: Ganti Password -->
+    <div class="card" style="padding:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+            <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--accent-warning-light);display:flex;align-items:center;justify-content:center;">
+                <i data-lucide="key-round" style="width:20px;height:20px;color:var(--accent-warning);"></i>
+            </div>
+            <div>
+                <h3 style="margin:0;font-size:1.1rem;">Ganti Password</h3>
+                <p class="text-xs" style="margin:0;color:var(--text-muted);">Pastikan password lama kamu benar</p>
+            </div>
+        </div>
+
+        {% if password_form.errors %}
+        <div class="alert alert-danger" style="margin-bottom:16px;">
+            <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+            <div>
+                {% for field, errors in password_form.errors.items %}
+                {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+                {% endfor %}
+                {% if password_form.non_field_errors %}
+                {% for error in password_form.non_field_errors %}
+                <div>{{ error }}</div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="POST" style="display:flex;flex-direction:column;gap:16px;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_password">
+
+            <div>
+                <label class="form-label">Password Lama</label>
+                {{ password_form.password_lama|add_class:"form-input" }}
+            </div>
+
+            <div>
+                <label class="form-label">Password Baru</label>
+                {{ password_form.password_baru|add_class:"form-input" }}
+                <p class="text-xs" style="color:var(--text-muted);margin-top:4px;">Minimal 8 karakter</p>
+            </div>
+
+            <div>
+                <label class="form-label">Konfirmasi Password Baru</label>
+                {{ password_form.password_konfirmasi|add_class:"form-input" }}
+            </div>
+
+            <div style="padding-top:4px;">
+                <button type="submit" class="btn btn-warning">
+                    <i data-lucide="shield-check" style="width:16px;height:16px;"></i> Ubah Password
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div style="margin-top:16px;">
+        <a href="{% url 'tugas:dashboard' %}" class="btn btn-ghost">
+            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Kembali ke Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // SweetAlert2 auto-trigger dari Django messages
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for message in messages %}
+        Swal.fire({
+            icon: '{% if message.tags == "success" %}success{% elif message.tags == "danger" or message.tags == "error" %}error{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
+            title: '{% if message.tags == "success" %}Berhasil!{% elif message.tags == "danger" or message.tags == "error" %}Gagal!{% else %}Info{% endif %}',
+            text: '{{ message|escapejs }}',
+            confirmButtonColor: '#4F46E5',
+            timer: 3000,
+            timerProgressBar: true,
+        });
+        {% endfor %}
+    });
+</script>
+{% endblock %}

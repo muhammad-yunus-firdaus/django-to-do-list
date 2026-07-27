@@ -53,6 +53,26 @@
                 {{ form.status|add_class:"form-input" }}
             </div>
 
+            <!-- ═══ Dynamic Subtask Section ═══ -->
+            <div class="subtask-section" style="border-top:1px solid var(--border);padding-top:18px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <label class="form-label" style="margin-bottom:0;">
+                        <i data-lucide="list-checks" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;color:var(--primary);"></i>
+                        Subtask (Opsional)
+                    </label>
+                    <span id="subtaskCount" class="badge badge-info" style="display:none;">0 subtask</span>
+                </div>
+
+                <div id="subtaskContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                    <!-- Dynamic subtask inputs will be inserted here by JS -->
+                </div>
+
+                <button type="button" id="addSubtaskBtn" onclick="addSubtaskField()" class="btn btn-ghost" style="width:100%;border-style:dashed;color:var(--primary);border-color:var(--primary-100);">
+                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                    Tambah Subtask
+                </button>
+            </div>
+
             <div style="display:flex;gap:10px;padding-top:8px;">
                 <button type="submit" class="btn btn-primary">
                     <i data-lucide="save" style="width:16px;height:16px;"></i> Simpan Tugas
@@ -62,4 +82,83 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let subtaskIndex = 0;
+
+    function addSubtaskField() {
+        subtaskIndex++;
+        const container = document.getElementById('subtaskContainer');
+
+        const wrapper = document.createElement('div');
+        wrapper.id = `subtask-row-${subtaskIndex}`;
+        wrapper.style.cssText = 'display:flex;gap:8px;align-items:center;animation:fadeUp 0.2s ease;';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'subtasks[]';
+        input.placeholder = `Subtask #${subtaskIndex}`;
+        input.style.cssText = 'flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;font-family:inherit;background:var(--card);color:var(--text-primary);transition:all 0.2s;outline:none;';
+        input.onfocus = function() {
+            this.style.borderColor = 'var(--primary)';
+            this.style.boxShadow = '0 0 0 3px rgba(79, 70, 229, 0.12)';
+        };
+        input.onblur = function() {
+            this.style.borderColor = 'var(--border)';
+            this.style.boxShadow = 'none';
+        };
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.style.cssText = 'width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--accent-danger-light);border:1px solid transparent;cursor:pointer;transition:all 0.2s;flex-shrink:0;';
+        removeBtn.innerHTML = '<i data-lucide="x" style="width:16px;height:16px;color:var(--accent-danger);"></i>';
+        removeBtn.onmouseenter = function() {
+            this.style.background = 'var(--accent-danger)';
+            this.querySelector('i').style.color = '#fff';
+        };
+        removeBtn.onmouseleave = function() {
+            this.style.background = 'var(--accent-danger-light)';
+            this.querySelector('i').style.color = 'var(--accent-danger)';
+        };
+        removeBtn.onclick = function() {
+            wrapper.style.animation = 'fadeOut 0.15s ease forwards';
+            setTimeout(() => {
+                wrapper.remove();
+                updateSubtaskCount();
+            }, 150);
+        };
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+
+        // Re-init Lucide icons untuk tombol hapus yang baru
+        lucide.createIcons();
+
+        // Focus ke input yang baru
+        input.focus();
+
+        updateSubtaskCount();
+    }
+
+    function updateSubtaskCount() {
+        const count = document.querySelectorAll('#subtaskContainer input[name="subtasks[]"]').length;
+        const badge = document.getElementById('subtaskCount');
+        if (count > 0) {
+            badge.style.display = 'inline-flex';
+            badge.textContent = `${count} subtask`;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+</script>
+
+<style>
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(10px); }
+    }
+</style>
 {% endblock %}

@@ -36,4 +36,17 @@ urlpatterns = [
     path("notifications/mark-read/<int:notification_id>/", notification_views.mark_notification_read, name="mark_notification_read"),
     path("notifications/mark-all-read/", notification_views.mark_all_notifications_read, name="mark_all_notifications_read"),
     path("notifications/delete/<int:notification_id>/", notification_views.delete_notification, name="delete_notification"),
+
+    # Edit Profil
+    path("profil/edit/", views.edit_profil_view, name="edit_profil"),
+
+    # Agenda Harian (Daily Time-Blocking + Habit Tracker)
+    path("agenda/", views.agenda_harian_view, name="agenda"),
+    path("agenda/tambah/", views.tambah_aktivitas_view, name="tambah_aktivitas"),
+    path("agenda/toggle/<int:aktivitas_id>/", views.toggle_aktivitas_view, name="toggle_aktivitas"),
+    path("agenda/edit/<int:aktivitas_id>/", views.edit_aktivitas_view, name="edit_aktivitas"),
+    path("agenda/hapus/<int:aktivitas_id>/", views.hapus_aktivitas_view, name="hapus_aktivitas"),
+
+    # Evaluasi Mingguan
+    path("evaluasi/", views.evaluasi_view, name="evaluasi"),
 ]

@@ -1,13 +1,18 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.exceptions import ValidationError
+from datetime import date, timedelta
 
-from .models import Tugas, Subtask
-from .forms import TugasForm, RegisterForm, CustomAuthenticationForm, SubtaskForm
+from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan
+from .forms import (
+    TugasForm, RegisterForm, CustomAuthenticationForm, SubtaskForm,
+    ProfilForm, GantiPasswordForm, AktivitasHarianForm, EvaluasiForm,
+)
 from .notifications import check_subtask_completion, generate_deadline_notifications, generate_overdue_notifications
 from .services import (
     get_dashboard_stats,
@@ -155,13 +160,25 @@ def daftar_tugas(request):
 
 @login_required
 def tambah_tugas(request):
-    # Form buat bikin tugas baru
+    # Form buat bikin tugas baru + dynamic subtask support
     if request.method == "POST":
         form = TugasForm(request.POST)
         if form.is_valid():
             tugas = form.save(commit=False)
             tugas.user = request.user
             tugas.save()
+
+            # Tangkap subtask dinamis dari form
+            subtask_list = request.POST.getlist('subtasks[]')
+            for idx, judul in enumerate(subtask_list):
+                judul_clean = judul.strip()
+                if judul_clean:  # Skip subtask kosong
+                    Subtask.objects.create(
+                        tugas=tugas,
+                        judul=judul_clean,
+                        urutan=idx + 1,
+                    )
+
             messages.success(request, "Tugas berhasil ditambahkan!")
             return redirect("tugas:daftar")
     else:
@@ -403,8 +420,6 @@ def hapus_subtask(request, subtask_id):
 @require_POST
 def toggle_subtask(request, subtask_id):
     # Toggle centang/uncentang subtask (dipanggil via AJAX)
-    from django.http import JsonResponse
-    
     subtask = get_object_or_404(Subtask, id=subtask_id, tugas__user=request.user)
     
     subtask.selesai = not subtask.selesai
@@ -419,3 +434,396 @@ def toggle_subtask(request, subtask_id):
         'selesai': subtask.selesai,
         'progress': subtask.tugas.subtask_progress
     })
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PROFIL - Edit Username, Email, Password
+# ══════════════════════════════════════════════════════════════════════
+
+@login_required
+def edit_profil_view(request):
+    """Halaman edit profil: ubah username/email dan ganti password."""
+    user = request.user
+    profil_form = ProfilForm(user=user)
+    password_form = GantiPasswordForm(user=user)
+    profil_success = False
+    password_success = False
+
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+
+        if action == "update_profil":
+            profil_form = ProfilForm(request.POST, user=user)
+            if profil_form.is_valid():
+                profil_form.save()
+                messages.success(request, "Profil berhasil diperbarui!")
+                profil_success = True
+                return redirect("tugas:edit_profil")
+            else:
+                messages.error(request, "Gagal memperbarui profil. Periksa kembali data kamu.")
+
+        elif action == "update_password":
+            password_form = GantiPasswordForm(request.POST, user=user)
+            if password_form.is_valid():
+                password_form.save()
+                # Update session supaya ga auto-logout setelah ganti password
+                update_session_auth_hash(request, user)
+                messages.success(request, "Password berhasil diubah!")
+                password_success = True
+                return redirect("tugas:edit_profil")
+            else:
+                messages.error(request, "Gagal mengubah password. Periksa kembali data kamu.")
+
+    context = {
+        "profil_form": profil_form,
+        "password_form": password_form,
+        "profil_success": profil_success,
+        "password_success": password_success,
+    }
+    return render(request, "tugas/edit_profil.html", context)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# AGENDA HARIAN - Daily Time-Blocking + Habit Tracker
+# ══════════════════════════════════════════════════════════════════════
+
+def _copy_habits_for_today(user):
+    """
+    Salin semua aktivitas habit ke tanggal hari ini jika belum ada.
+    Dipanggil on-demand saat halaman agenda dibuka (PythonAnywhere compatible).
+    """
+    today = date.today()
+
+    # Ambil semua habit unik milik user (dari hari manapun)
+    habits = AktivitasHarian.objects.filter(
+        user=user,
+        is_habit=True,
+    ).values('judul', 'jam_mulai', 'durasi_menit').distinct()
+
+    for habit in habits:
+        # Cek apakah sudah ada aktivitas dengan judul + jam yang sama di hari ini
+        exists = AktivitasHarian.objects.filter(
+            user=user,
+            tanggal=today,
+            judul=habit['judul'],
+            jam_mulai=habit['jam_mulai'],
+        ).exists()
+
+        if not exists:
+            try:
+                AktivitasHarian.objects.create(
+                    user=user,
+                    judul=habit['judul'],
+                    jam_mulai=habit['jam_mulai'],
+                    durasi_menit=habit['durasi_menit'],
+                    is_habit=True,
+                    tanggal=today,
+                    status='belum',
+                )
+            except ValidationError:
+                # Jika overlap dengan aktivitas lain, skip tanpa error
+                pass
+
+
+@login_required
+def agenda_harian_view(request):
+    """Halaman agenda harian: timeline aktivitas + form tambah + navigasi tanggal."""
+    # Ambil tanggal dari query param, default hari ini
+    tanggal_str = request.GET.get('tanggal', '')
+    if tanggal_str:
+        try:
+            tanggal = date.fromisoformat(tanggal_str)
+        except ValueError:
+            tanggal = date.today()
+    else:
+        tanggal = date.today()
+
+    # Copy habits untuk hari ini (on-demand)
+    if tanggal == date.today():
+        _copy_habits_for_today(request.user)
+
+    # Ambil semua aktivitas di tanggal tersebut
+    aktivitas_list = AktivitasHarian.objects.filter(
+        user=request.user,
+        tanggal=tanggal,
+    ).order_by('jam_mulai')
+
+    # Hitung statistik
+    total = aktivitas_list.count()
+    selesai = aktivitas_list.filter(status='selesai').count()
+    persen = round((selesai / total) * 100, 1) if total > 0 else 0
+
+    # Form untuk tambah aktivitas baru
+    form = AktivitasHarianForm()
+
+    # Navigasi tanggal
+    prev_date = tanggal - timedelta(days=1)
+    next_date = tanggal + timedelta(days=1)
+
+    context = {
+        "aktivitas_list": aktivitas_list,
+        "tanggal": tanggal,
+        "is_today": tanggal == date.today(),
+        "prev_date": prev_date,
+        "next_date": next_date,
+        "form": form,
+        "total_aktivitas": total,
+        "aktivitas_selesai": selesai,
+        "persen_aktivitas": persen,
+    }
+    return render(request, "tugas/agenda_harian.html", context)
+
+
+@login_required
+def tambah_aktivitas_view(request):
+    """Tambah aktivitas harian baru dengan validasi anti-overlap."""
+    if request.method == "POST":
+        form = AktivitasHarianForm(request.POST)
+        tanggal_str = request.POST.get('tanggal', '')
+        tanggal = date.today()
+        if tanggal_str:
+            try:
+                tanggal = date.fromisoformat(tanggal_str)
+            except ValueError:
+                pass
+
+        # Set user and tanggal on form instance before validation so clean() check works
+        form.instance.user = request.user
+        form.instance.tanggal = tanggal
+
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, f"Aktivitas '{form.instance.judul}' berhasil ditambahkan!")
+            except ValidationError as e:
+                error_msg = "; ".join(e.messages) if hasattr(e, 'messages') else str(e)
+                messages.error(request, error_msg)
+        else:
+            # Display form errors to user
+            for field, errors in form.errors.items():
+                for error in errors:
+                    prefix = "" if field == "__all__" else f"{field.capitalize()}: "
+                    messages.error(request, f"{prefix}{error}")
+
+        return redirect(f"/tugas/agenda/?tanggal={tanggal.isoformat()}")
+
+    return redirect("tugas:agenda")
+
+
+@login_required
+@require_POST
+def toggle_aktivitas_view(request, aktivitas_id):
+    """Toggle atau ubah status aktivitas (AJAX-friendly)."""
+    import json
+    aktivitas = get_object_or_404(AktivitasHarian, id=aktivitas_id, user=request.user)
+    
+    target_status = None
+    try:
+        data = json.loads(request.body)
+        target_status = data.get('status')
+    except (json.JSONDecodeError, ValueError, AttributeError):
+        pass
+
+    if target_status in ['belum', 'selesai', 'terlewat']:
+        aktivitas.status = target_status
+    else:
+        # Fallback toggle biasa
+        if aktivitas.status == 'selesai':
+            aktivitas.status = 'belum'
+        else:
+            aktivitas.status = 'selesai'
+
+    # Save tanpa full_clean untuk menghindari overlap check saat toggle status
+    aktivitas.save(update_fields=['status', 'updated_at'])
+
+    # Hitung ulang statistik
+    tanggal = aktivitas.tanggal
+    all_akt = AktivitasHarian.objects.filter(user=request.user, tanggal=tanggal)
+    total = all_akt.count()
+    selesai = all_akt.filter(status='selesai').count()
+    persen = round((selesai / total) * 100, 1) if total > 0 else 0
+
+    return JsonResponse({
+        'success': True,
+        'status': aktivitas.status,
+        'total': total,
+        'selesai': selesai,
+        'persen': persen,
+    })
+
+
+@login_required
+def edit_aktivitas_view(request, aktivitas_id):
+    """Edit data aktivitas harian."""
+    aktivitas = get_object_or_404(AktivitasHarian, id=aktivitas_id, user=request.user)
+    if request.method == "POST":
+        form = AktivitasHarianForm(request.POST, instance=aktivitas)
+        
+        # Set user dan tanggal sebelum validasi
+        form.instance.user = request.user
+        form.instance.tanggal = aktivitas.tanggal
+
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, f"Aktivitas '{form.instance.judul}' berhasil diperbarui!")
+            except ValidationError as e:
+                error_msg = "; ".join(e.messages) if hasattr(e, 'messages') else str(e)
+                messages.error(request, error_msg)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    prefix = "" if field == "__all__" else f"{field.capitalize()}: "
+                    messages.error(request, f"{prefix}{error}")
+                    
+        return redirect(f"/tugas/agenda/?tanggal={aktivitas.tanggal.isoformat()}")
+
+    return redirect("tugas:agenda")
+
+
+@login_required
+@require_POST
+def hapus_aktivitas_view(request, aktivitas_id):
+    """Hapus aktivitas harian."""
+    aktivitas = get_object_or_404(AktivitasHarian, id=aktivitas_id, user=request.user)
+    tanggal = aktivitas.tanggal
+    judul = aktivitas.judul
+    aktivitas.delete()
+    messages.success(request, f"Aktivitas '{judul}' berhasil dihapus!")
+    return redirect(f"/tugas/agenda/?tanggal={tanggal.isoformat()}")
+
+
+# ══════════════════════════════════════════════════════════════════════
+# EVALUASI MINGGUAN - Ringkasan Statistik + Catatan Refleksi
+# ══════════════════════════════════════════════════════════════════════
+
+def _get_week_range(ref_date=None):
+    """Hitung tanggal awal (Senin) dan akhir (Minggu) dari minggu yang mengandung ref_date."""
+    if ref_date is None:
+        ref_date = date.today()
+    # weekday(): Monday=0, Sunday=6
+    start = ref_date - timedelta(days=ref_date.weekday())
+    end = start + timedelta(days=6)
+    return start, end
+
+
+def _get_weekly_stats(user, start_date, end_date):
+    """
+    Hitung statistik mingguan secara real-time.
+    Arsitektur terisolasi — siap untuk diintegrasikan dengan Gemini AI.
+    """
+    # Statistik Tugas Utama
+    from django.utils.timezone import make_aware
+    from datetime import datetime as dt
+
+    tugas_qs = Tugas.objects.filter(user=user)
+    # Tugas yang dibuat dalam rentang minggu tersebut
+    total_tugas = tugas_qs.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date,
+    ).count()
+    tugas_selesai = tugas_qs.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date,
+        status='selesai',
+    ).count()
+    persen_tugas = round((tugas_selesai / total_tugas) * 100, 1) if total_tugas > 0 else 0
+
+    # Statistik Aktivitas Harian
+    akt_qs = AktivitasHarian.objects.filter(
+        user=user,
+        tanggal__gte=start_date,
+        tanggal__lte=end_date,
+    )
+    total_aktivitas = akt_qs.count()
+    aktivitas_selesai = akt_qs.filter(status='selesai').count()
+    persen_aktivitas = round((aktivitas_selesai / total_aktivitas) * 100, 1) if total_aktivitas > 0 else 0
+
+    return {
+        "total_tugas": total_tugas,
+        "tugas_selesai": tugas_selesai,
+        "persen_tugas": persen_tugas,
+        "total_aktivitas": total_aktivitas,
+        "aktivitas_selesai": aktivitas_selesai,
+        "persen_aktivitas": persen_aktivitas,
+    }
+
+
+@login_required
+def evaluasi_view(request):
+    """Halaman evaluasi mingguan: ringkasan statistik + catatan refleksi + riwayat."""
+    user = request.user
+
+    # Hitung rentang minggu ini
+    minggu_mulai, minggu_selesai = _get_week_range()
+
+    # Hitung statistik real-time
+    stats = _get_weekly_stats(user, minggu_mulai, minggu_selesai)
+
+    # Cek apakah sudah ada evaluasi untuk minggu ini
+    evaluasi_existing = EvaluasiMingguan.objects.filter(
+        user=user,
+        minggu_mulai=minggu_mulai,
+    ).first()
+
+    if request.method == "POST":
+        form = EvaluasiForm(request.POST)
+        if form.is_valid():
+            catatan = form.cleaned_data.get("catatan_evaluasi", "")
+
+            if evaluasi_existing:
+                # Update evaluasi yang sudah ada
+                evaluasi_existing.total_tugas = stats["total_tugas"]
+                evaluasi_existing.tugas_selesai = stats["tugas_selesai"]
+                evaluasi_existing.persen_tugas = stats["persen_tugas"]
+                evaluasi_existing.total_aktivitas = stats["total_aktivitas"]
+                evaluasi_existing.aktivitas_selesai = stats["aktivitas_selesai"]
+                evaluasi_existing.persen_aktivitas = stats["persen_aktivitas"]
+                evaluasi_existing.catatan_evaluasi = catatan
+                evaluasi_existing.save()
+            else:
+                # Buat evaluasi baru
+                EvaluasiMingguan.objects.create(
+                    user=user,
+                    minggu_mulai=minggu_mulai,
+                    minggu_selesai=minggu_selesai,
+                    total_tugas=stats["total_tugas"],
+                    tugas_selesai=stats["tugas_selesai"],
+                    persen_tugas=stats["persen_tugas"],
+                    total_aktivitas=stats["total_aktivitas"],
+                    aktivitas_selesai=stats["aktivitas_selesai"],
+                    persen_aktivitas=stats["persen_aktivitas"],
+                    catatan_evaluasi=catatan,
+                )
+
+            messages.success(request, "Evaluasi mingguan berhasil disimpan!")
+            return redirect("tugas:evaluasi")
+    else:
+        initial_catatan = evaluasi_existing.catatan_evaluasi if evaluasi_existing else ""
+        form = EvaluasiForm(initial={"catatan_evaluasi": initial_catatan})
+
+    # Ambil riwayat evaluasi sebelumnya
+    evaluasi_history = EvaluasiMingguan.objects.filter(user=request.user).order_by('-created_at')
+
+    # Ambil rincian data untuk minggu ini
+    tugas_minggu_ini = Tugas.objects.filter(
+        user=user,
+        deadline__date__range=[minggu_mulai, minggu_selesai]
+    ).order_by('deadline')
+    
+    aktivitas_minggu_ini = AktivitasHarian.objects.filter(
+        user=user,
+        tanggal__range=[minggu_mulai, minggu_selesai]
+    ).order_by('tanggal', 'jam_mulai')
+
+    context = {
+        "minggu_mulai": minggu_mulai,
+        "minggu_selesai": minggu_selesai,
+        "stats": stats,
+        "form": form,
+        "evaluasi_existing": evaluasi_existing,
+        "evaluasi_history": evaluasi_history,
+        "tugas_minggu_ini": tugas_minggu_ini,
+        "aktivitas_minggu_ini": aktivitas_minggu_ini,
+    }
+    return render(request, "tugas/evaluasi.html", context)

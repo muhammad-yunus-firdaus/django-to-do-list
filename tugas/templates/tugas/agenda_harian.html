@@ -1,0 +1,376 @@
+{% extends "sidebar_base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Jadwal Hari Ini - Manajemen Tugas{% endblock %}
+{% block page_title %}Jadwal Hari Ini{% endblock %}
+
+{% block content %}
+<!-- Date Navigation + Stats -->
+<div class="card animate-fade-up" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <!-- Date Nav -->
+        <div style="display:flex;align-items:center;gap:8px;">
+            <a href="?tanggal={{ prev_date|date:'Y-m-d' }}" class="btn btn-ghost btn-sm" title="Hari sebelumnya">
+                <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
+            </a>
+            <div style="text-align:center;min-width:160px;">
+                <div style="font-weight:700;font-size:1.1rem;color:var(--text-primary);">
+                    {{ tanggal|date:"l" }}
+                </div>
+                <div class="text-xs" style="color:var(--text-muted);">
+                    {{ tanggal|date:"d F Y" }}
+                    {% if is_today %}<span class="badge badge-info" style="margin-left:4px;">Hari Ini</span>{% endif %}
+                </div>
+            </div>
+            <a href="?tanggal={{ next_date|date:'Y-m-d' }}" class="btn btn-ghost btn-sm" title="Hari berikutnya">
+                <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
+            </a>
+            {% if not is_today %}
+            <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm" style="margin-left:4px;">
+                <i data-lucide="calendar" style="width:14px;height:14px;"></i> Hari Ini
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Quick Stats -->
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div style="text-align:center;">
+                <div style="font-weight:800;font-size:1.25rem;color:var(--primary);" id="statsSelesai">{{ aktivitas_selesai }}</div>
+                <div class="text-xs" style="color:var(--text-muted);">Selesai</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:800;font-size:1.25rem;color:var(--text-primary);" id="statsTotal">{{ total_aktivitas }}</div>
+                <div class="text-xs" style="color:var(--text-muted);">Total</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-weight:800;font-size:1.25rem;color:var(--accent-success);" id="statsPersen">{{ persen_aktivitas|floatformat:0 }}%</div>
+                <div class="text-xs" style="color:var(--text-muted);">Progres</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    {% if total_aktivitas > 0 %}
+    <div style="margin-top:14px;">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:{{ persen_aktivitas|floatformat:0 }}%;"></div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Activity Form -->
+<div class="card animate-fade-up" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--primary);"></i>
+        <h3 style="margin:0;font-size:1rem;">Tambah Aktivitas</h3>
+    </div>
+
+    <form method="POST" action="{% url 'tugas:tambah_aktivitas' %}">
+        {% csrf_token %}
+        <input type="hidden" name="tanggal" value="{{ tanggal|date:'Y-m-d' }}">
+
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end;">
+            <div>
+                <label class="form-label">Aktivitas</label>
+                {{ form.judul|add_class:"form-input" }}
+            </div>
+            <div>
+                <label class="form-label">Jam Mulai</label>
+                {{ form.jam_mulai|add_class:"form-input" }}
+            </div>
+            <div>
+                <label class="form-label">Durasi (Menit)</label>
+                {{ form.durasi_menit|add_class:"form-input" }}
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:10px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.875rem;color:var(--text-secondary);">
+                {{ form.is_habit }}
+                <i data-lucide="repeat" style="width:14px;height:14px;color:var(--primary);"></i>
+                Ulangi Setiap Hari
+            </label>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i> Tambah
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Timeline / Activity List -->
+<div class="animate-fade-up">
+    {% if aktivitas_list %}
+    <div style="display:flex;flex-direction:column;gap:8px;">
+        {% for akt in aktivitas_list %}
+        <div class="card aktivitas-item" data-id="{{ akt.id }}"
+            style="padding:16px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s;{% if akt.status == 'selesai' %}opacity:0.65;{% endif %}">
+
+            <!-- Time Column -->
+            <div style="min-width:90px;text-align:center;flex-shrink:0;">
+                <div style="font-weight:700;font-size:.95rem;color:var(--primary);">
+                    {{ akt.jam_mulai|time:"H:i" }}
+                </div>
+                <div class="text-xs" style="color:var(--text-muted);">
+                    {{ akt.jam_selesai|time:"H:i" }}
+                </div>
+                <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">
+                    {{ akt.durasi_menit }} mnt
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div style="width:3px;height:48px;border-radius:2px;flex-shrink:0;
+                {% if akt.status == 'selesai' %}background:var(--accent-success);
+                {% elif akt.status == 'terlewat' %}background:var(--accent-danger);
+                {% else %}background:var(--primary-100);{% endif %}"></div>
+
+            <!-- Content -->
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);{% if akt.status == 'selesai' %}text-decoration:line-through;{% endif %}">
+                    {{ akt.judul }}
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+                    {% if akt.is_habit %}
+                    <span class="badge badge-info" style="font-size:.65rem;padding:2px 6px;">
+                        <i data-lucide="repeat" style="width:10px;height:10px;"></i> Habit
+                    </span>
+                    {% endif %}
+                    {% if akt.status == 'selesai' %}
+                    <span class="badge badge-success" style="font-size:.65rem;padding:2px 6px;">Selesai</span>
+                    {% elif akt.status == 'terlewat' %}
+                    <span class="badge badge-danger" style="font-size:.65rem;padding:2px 6px;">Terlewat</span>
+                    {% else %}
+                    <span class="badge badge-muted" style="font-size:.65rem;padding:2px 6px;">Belum</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Actions (Always Visible) -->
+            <div class="akt-actions" style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
+                <!-- Edit Button -->
+                <button onclick="editAktivitas({{ akt.id }}, '{{ akt.judul|escapejs }}', '{{ akt.jam_mulai|time:'H:i' }}', {{ akt.durasi_menit }}, {{ akt.is_habit|yesno:'true,false' }})" title="Edit Aktivitas"
+                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
+                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                    <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
+                </button>
+
+                <!-- Status Buttons -->
+                {% if akt.status != 'selesai' %}
+                <button onclick="setAktivitasStatus({{ akt.id }}, 'selesai')" title="Tandai Selesai"
+                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)';"
+                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                    <i data-lucide="check" style="width:16px;height:16px;color:var(--accent-success);"></i>
+                </button>
+                {% endif %}
+
+                {% if akt.status != 'terlewat' %}
+                <button onclick="setAktivitasStatus({{ akt.id }}, 'terlewat')" title="Tandai Terlewat"
+                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)';"
+                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                    <i data-lucide="x" style="width:16px;height:16px;color:var(--accent-warning);"></i>
+                </button>
+                {% endif %}
+
+                {% if akt.status == 'selesai' or akt.status == 'terlewat' %}
+                <button onclick="setAktivitasStatus({{ akt.id }}, 'belum')" title="Kembalikan ke Belum"
+                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)';"
+                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                    <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+                </button>
+                {% endif %}
+
+                <!-- Delete Button -->
+                <form method="POST" action="{% url 'tugas:hapus_aktivitas' akt.id %}" style="margin:0;" id="hapusAkt{{ akt.id }}">
+                    {% csrf_token %}
+                </form>
+                <button onclick="konfirmasiHapusAktivitas({{ akt.id }}, '{{ akt.judul|escapejs }}')" title="Hapus"
+                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                    onmouseenter="this.style.background='var(--accent-danger-light)';this.style.borderColor='var(--accent-danger)'"
+                    onmouseleave="this.style.background='var(--bg)';this.style.borderColor='var(--border)'">
+                    <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--accent-danger);"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:20px;">
+        <div class="empty-state" style="padding:32px;">
+            <i data-lucide="calendar-off" style="width:48px;height:48px;"></i>
+            <p style="font-size:1rem;font-weight:500;margin-top:8px;">Belum ada aktivitas untuk hari ini</p>
+            <p class="text-xs" style="color:var(--text-muted);">Tambahkan aktivitas pertamamu menggunakan form di atas</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setAktivitasStatus(id, targetStatus) {
+        fetch(`/tugas/agenda/toggle/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': window.CSRF_TOKEN,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: targetStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function editAktivitas(id, judul, jamMulai, durasi, isHabit) {
+        Swal.fire({
+            title: 'Edit Aktivitas',
+            html: `
+                <div style="text-align:left; display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <label class="form-label" style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:6px;">Aktivitas</label>
+                        <input id="swal-judul" class="form-input" type="text" value="${judul}">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div>
+                            <label class="form-label" style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:6px;">Jam Mulai</label>
+                            <input id="swal-jam-mulai" class="form-input" type="time" value="${jamMulai}">
+                        </div>
+                        <div>
+                            <label class="form-label" style="display:block; font-size:0.875rem; font-weight:600; margin-bottom:6px;">Durasi (Menit)</label>
+                            <input id="swal-durasi" class="form-input" type="number" min="5" max="480" value="${durasi}">
+                        </div>
+                    </div>
+                    <div style="margin-top:6px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.875rem; color:var(--text-secondary);">
+                            <input id="swal-is-habit" class="form-checkbox" type="checkbox" ${isHabit ? 'checked' : ''}>
+                            <i data-lucide="repeat" style="width:14px; height:14px; color:var(--primary);"></i>
+                            Ulangi Setiap Hari
+                        </label>
+                    </div>
+                </div>
+            `,
+            width: 'min(500px, 92vw)',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--primary)',
+            cancelButtonColor: 'var(--secondary)',
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            focusConfirm: false,
+            didOpen: () => {
+                lucide.createIcons(); // Initialize layout icons
+                const swalTimeInput = document.getElementById('swal-jam-mulai');
+                if (swalTimeInput) {
+                    initTimeInputPicker(swalTimeInput);
+                }
+            },
+            preConfirm: () => {
+                const newJudul = document.getElementById('swal-judul').value.trim();
+                const newJamMulai = document.getElementById('swal-jam-mulai').value;
+                const newDurasi = document.getElementById('swal-durasi').value;
+                const newIsHabit = document.getElementById('swal-is-habit').checked;
+
+                if (!newJudul) {
+                    Swal.showValidationMessage('Judul tidak boleh kosong!');
+                    return false;
+                }
+                if (!newJamMulai) {
+                    Swal.showValidationMessage('Jam mulai harus ditentukan!');
+                    return false;
+                }
+                if (!newDurasi || parseInt(newDurasi) < 5) {
+                    Swal.showValidationMessage('Durasi minimal 5 menit!');
+                    return false;
+                }
+
+                return {
+                    judul: newJudul,
+                    jam_mulai: newJamMulai,
+                    durasi_menit: newDurasi,
+                    is_habit: newIsHabit ? 'on' : ''
+                };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/tugas/agenda/edit/${id}/`;
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = window.CSRF_TOKEN;
+                form.appendChild(csrfInput);
+
+                for (const [key, value] of Object.entries(result.value)) {
+                    if (value !== '') {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = value;
+                        form.appendChild(input);
+                    }
+                }
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    function initTimeInputPicker(input) {
+        if (!input) return;
+        if (input.parentElement) {
+            input.parentElement.style.cursor = 'pointer';
+        }
+        input.addEventListener('click', function() {
+            if (typeof this.showPicker === 'function') {
+                this.showPicker();
+            }
+        });
+    }
+
+    function konfirmasiHapusAktivitas(aktId, judul) {
+        Swal.fire({
+            title: 'Hapus Aktivitas?',
+            text: `Aktivitas "${judul}" akan dihapus.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#F43F5E',
+            cancelButtonColor: '#64748B',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById(`hapusAkt${aktId}`).submit();
+            }
+        });
+    }
+
+    // SweetAlert2 auto-trigger dari Django messages
+    document.addEventListener('DOMContentLoaded', function() {
+        // Init time input picker listeners for all static time inputs
+        const timeInputs = document.querySelectorAll('input[type="time"]');
+        timeInputs.forEach(initTimeInputPicker);
+
+        {% for message in messages %}
+        Swal.fire({
+            icon: '{% if message.tags == "success" %}success{% elif message.tags == "danger" or message.tags == "error" %}error{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
+            title: '{% if message.tags == "success" %}Berhasil!{% elif message.tags == "danger" or message.tags == "error" %}Gagal!{% else %}Info{% endif %}',
+            text: '{{ message|escapejs }}',
+            confirmButtonColor: '#4F46E5',
+            timer: 3000,
+            timerProgressBar: true,
+        });
+        {% endfor %}
+    });
+</script>
+{% endblock %}

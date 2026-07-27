@@ -13,7 +13,6 @@
 <!-- Sidebar -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
-        <i data-lucide="check-square" style="width:24px;height:24px;"></i>
         <span>Manajemen Tugas</span>
     </div>
 
@@ -33,6 +32,16 @@
             <i data-lucide="plus-circle" style="width:20px;height:20px;"></i>
             Tambah Tugas
         </a>
+        <a href="{% url 'tugas:agenda' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'agenda' %}active{% endif %}">
+            <i data-lucide="calendar-clock" style="width:20px;height:20px;"></i>
+            Jadwal Hari Ini
+        </a>
+        <a href="{% url 'tugas:evaluasi' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'evaluasi' %}active{% endif %}">
+            <i data-lucide="bar-chart-3" style="width:20px;height:20px;"></i>
+            Evaluasi Mingguan
+        </a>
     </nav>
 
     <div class="sidebar-footer">
@@ -40,7 +49,11 @@
             <i data-lucide="user-circle" style="width:22px;height:22px;"></i>
             {{ user.username }}
         </div>
-        <a href="{% url 'tugas:logout' %}" class="sidebar-link" style="margin-top:10px;color:rgba(255,255,255,.5);">
+        <a href="{% url 'tugas:edit_profil' %}" class="sidebar-link" style="margin-top:8px;color:rgba(255,255,255,.6);">
+            <i data-lucide="settings" style="width:16px;height:16px;"></i>
+            Edit Profil
+        </a>
+        <a href="{% url 'tugas:logout' %}" class="sidebar-link" style="margin-top:4px;color:rgba(255,255,255,.5);">
             <i data-lucide="log-out" style="width:18px;height:18px;"></i>
             Logout
         </a>
