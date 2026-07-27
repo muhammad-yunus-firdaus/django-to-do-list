@@ -94,8 +94,8 @@ def get_filtered_tugas(user, filters):
             Q(judul__icontains=filters["q"]) | Q(deskripsi__icontains=filters["q"])
         )
 
-    # Urutkan dari yang terbaru ke terlama berdasarkan tanggal dibuat
-    return qs.order_by('-created_at')
+    # Urutkan dari yang terbaru ke terlama berdasarkan tanggal dibuat, optimasi select_related & prefetch_related
+    return qs.select_related('user').prefetch_related('subtasks').order_by('-created_at')
 
 
 # ══════════════════════════════════════════════════════════════════════

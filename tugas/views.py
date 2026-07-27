@@ -542,11 +542,11 @@ def agenda_harian_view(request):
     if tanggal == date.today():
         _copy_habits_for_today(request.user)
 
-    # Ambil semua aktivitas di tanggal tersebut
+    # Ambil semua aktivitas di tanggal tersebut, dioptimasi dengan select_related
     aktivitas_list = AktivitasHarian.objects.filter(
         user=request.user,
         tanggal=tanggal,
-    ).order_by('jam_mulai')
+    ).select_related('user').order_by('jam_mulai')
 
     # Hitung statistik
     total = aktivitas_list.count()
@@ -802,19 +802,19 @@ def evaluasi_view(request):
         initial_catatan = evaluasi_existing.catatan_evaluasi if evaluasi_existing else ""
         form = EvaluasiForm(initial={"catatan_evaluasi": initial_catatan})
 
-    # Ambil riwayat evaluasi sebelumnya
-    evaluasi_history = EvaluasiMingguan.objects.filter(user=request.user).order_by('-created_at')
+    # Ambil riwayat evaluasi sebelumnya, dioptimasi dengan select_related
+    evaluasi_history = EvaluasiMingguan.objects.filter(user=request.user).select_related('user').order_by('-created_at')
 
-    # Ambil rincian data untuk minggu ini
+    # Ambil rincian data untuk minggu ini, dioptimasi dengan select_related dan prefetch_related
     tugas_minggu_ini = Tugas.objects.filter(
         user=user,
         deadline__date__range=[minggu_mulai, minggu_selesai]
-    ).order_by('deadline')
+    ).select_related('user').prefetch_related('subtasks').order_by('deadline')
     
     aktivitas_minggu_ini = AktivitasHarian.objects.filter(
         user=user,
         tanggal__range=[minggu_mulai, minggu_selesai]
-    ).order_by('tanggal', 'jam_mulai')
+    ).select_related('user').order_by('tanggal', 'jam_mulai')
 
     context = {
         "minggu_mulai": minggu_mulai,
