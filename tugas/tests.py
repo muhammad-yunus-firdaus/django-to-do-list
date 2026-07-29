@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from datetime import date, time, timedelta
 
 from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan
-from .views import _get_week_range, _get_weekly_stats
+from .views import _get_week_range, _get_weekly_stats, _get_next_free_slot
 
 
 class UserProfilTests(TestCase):
@@ -211,6 +211,116 @@ class AktivitasHarianTests(TestCase):
         self.assertEqual(response.status_code, 200)
         akt.refresh_from_db()
         self.assertEqual(akt.status, 'terlewat')
+
+
+class SmartDefaultSlotTests(TestCase):
+    """Test logika Smart Default Jam Mulai."""
+    def setUp(self):
+        self.user = User.objects.create_user(username='user1', password='password123')
+
+    def test_next_free_slot_after_existing_activity(self):
+        """Slot berikutnya = jam_selesai terakhir + 1 menit."""
+        tanggal = date.today()
+        # Buat aktivitas 09:00 - 10:00
+        AktivitasHarian.objects.create(
+            user=self.user, judul='Meeting', jam_mulai=time(9, 0),
+            durasi_menit=60, tanggal=tanggal
+        )
+        # Buat aktivitas 10:00 - 11:30
+        AktivitasHarian.objects.create(
+            user=self.user, judul='Coding', jam_mulai=time(10, 0),
+            durasi_menit=90, tanggal=tanggal
+        )
+
+        slot = _get_next_free_slot(self.user, tanggal)
+        # Last activity ends 11:30, so next free slot = 11:31
+        self.assertEqual(slot, '11:31')
+
+    def test_next_free_slot_no_activities_past_date(self):
+        """Jika tidak ada aktivitas di tanggal selain hari ini, default 07:00."""
+        past_date = date.today() - timedelta(days=5)
+        slot = _get_next_free_slot(self.user, past_date)
+        self.assertEqual(slot, '07:00')
+
+
+class CopyJadwalKemarinTests(TestCase):
+    """Test endpoint copy jadwal kemarin."""
+    def setUp(self):
+        self.user = User.objects.create_user(username='user1', password='password123')
+        self.client = Client()
+
+    def test_copy_kemarin_creates_activities(self):
+        self.client.force_login(self.user)
+        tanggal = date.today()
+
+        response = self.client.post(
+            reverse('tugas:copy_jadwal_kemarin'),
+            data='{"tanggal": "' + tanggal.isoformat() + '", "aktivitas": [{"judul": "Meeting Pagi", "jam_mulai": "09:00", "durasi_menit": 60, "is_habit": false}, {"judul": "Lunch Break", "jam_mulai": "12:00", "durasi_menit": 60, "is_habit": false}]}',
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['created'], 2)
+
+        # Verify in DB
+        akt_list = AktivitasHarian.objects.filter(user=self.user, tanggal=tanggal)
+        self.assertEqual(akt_list.count(), 2)
+
+    def test_copy_kemarin_skips_overlap(self):
+        self.client.force_login(self.user)
+        tanggal = date.today()
+
+        # Create existing activity at 09:00
+        AktivitasHarian.objects.create(
+            user=self.user, judul='Existing', jam_mulai=time(9, 0),
+            durasi_menit=60, tanggal=tanggal
+        )
+
+        # Try to copy an activity that overlaps with existing
+        response = self.client.post(
+            reverse('tugas:copy_jadwal_kemarin'),
+            data='{"tanggal": "' + tanggal.isoformat() + '", "aktivitas": [{"judul": "Overlap Meeting", "jam_mulai": "09:30", "durasi_menit": 30, "is_habit": false}]}',
+            content_type='application/json'
+        )
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['created'], 0)
+        self.assertEqual(data['skipped'], 1)
+
+
+class DashboardAgendaTests(TestCase):
+    """Test widget ringkasan jadwal hari ini di Dashboard."""
+    def setUp(self):
+        self.user = User.objects.create_user(username='user1', password='password123')
+        self.client = Client()
+
+    def test_dashboard_contains_agenda_today(self):
+        # Buat aktivitas hari ini
+        AktivitasHarian.objects.create(
+            user=self.user, judul='Standup Meeting', jam_mulai=time(9, 0),
+            durasi_menit=15, tanggal=date.today(), status='belum'
+        )
+        AktivitasHarian.objects.create(
+            user=self.user, judul='Deep Work', jam_mulai=time(10, 0),
+            durasi_menit=120, tanggal=date.today(), status='selesai'
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('tugas:dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+        # Verifikasi konten widget jadwal hari ini
+        self.assertContains(response, 'Ringkasan Jadwal Hari Ini')
+        self.assertContains(response, 'Standup Meeting')
+        self.assertContains(response, 'Deep Work')
+        self.assertContains(response, '1/2 Selesai')
+
+    def test_dashboard_empty_agenda_shows_empty_state(self):
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('tugas:dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Belum ada jadwal untuk hari ini')
 
 
 class EvaluasiMingguanTests(TestCase):

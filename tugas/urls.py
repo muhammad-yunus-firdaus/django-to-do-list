@@ -46,6 +46,7 @@ urlpatterns = [
     path("agenda/toggle/<int:aktivitas_id>/", views.toggle_aktivitas_view, name="toggle_aktivitas"),
     path("agenda/edit/<int:aktivitas_id>/", views.edit_aktivitas_view, name="edit_aktivitas"),
     path("agenda/hapus/<int:aktivitas_id>/", views.hapus_aktivitas_view, name="hapus_aktivitas"),
+    path("agenda/copy-kemarin/", views.copy_jadwal_kemarin_view, name="copy_jadwal_kemarin"),
 
     # Evaluasi Mingguan
     path("evaluasi/", views.evaluasi_view, name="evaluasi"),

@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ValidationError
-from datetime import date, timedelta
+from datetime import date, timedelta, time as dt_time, datetime as dt_datetime
 
 from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan
 from .forms import (
@@ -108,12 +108,26 @@ def dashboard_view(request):
     #         f"Ada {tugas_overdue.count()} tugas yang sudah melewati deadline!"
     #     )
 
+    # Ambil agenda hari ini untuk widget ringkasan jadwal
+    agenda_hari_ini = AktivitasHarian.objects.filter(
+        user=user,
+        tanggal=date.today(),
+    ).select_related('user').order_by('jam_mulai')
+
+    agenda_total = agenda_hari_ini.count()
+    agenda_selesai = agenda_hari_ini.filter(status='selesai').count()
+    agenda_persen = round((agenda_selesai / agenda_total) * 100, 1) if agenda_total > 0 else 0
+
     context = {
         **stats,
         "tugas_deadline_terdekat": tugas_deadline_terdekat,
         "prioritas_tinggi": prioritas_tinggi,
         "tugas_mendekati_deadline": tugas_mendekati_deadline,
         "tugas_overdue": tugas_overdue,
+        "agenda_hari_ini": agenda_hari_ini,
+        "agenda_total": agenda_total,
+        "agenda_selesai": agenda_selesai,
+        "agenda_persen": agenda_persen,
     }
 
     return render(request, "tugas/dashboard.html", context)
@@ -525,6 +539,44 @@ def _copy_habits_for_today(user):
                 pass
 
 
+def _get_next_free_slot(user, tanggal):
+    """
+    Hitung slot waktu kosong berikutnya berdasarkan aktivitas terakhir di hari tersebut.
+    - Jika ada aktivitas, ambil jam_selesai terakhir + 1 menit.
+    - Jika belum ada aktivitas dan tanggal = hari ini, default ke waktu sekarang (dibulatkan ke 5 menit berikutnya).
+    - Jika belum ada aktivitas dan bukan hari ini, default ke 07:00.
+    """
+    last_activity = AktivitasHarian.objects.filter(
+        user=user,
+        tanggal=tanggal,
+    ).order_by('-jam_mulai').first()
+
+    if last_activity and last_activity.jam_selesai:
+        # Tambah 1 menit dari jam selesai aktivitas terakhir
+        last_end_dt = dt_datetime.combine(tanggal, last_activity.jam_selesai)
+        next_slot_dt = last_end_dt + timedelta(minutes=1)
+        # Pastikan tidak melewati 23:59
+        if next_slot_dt.time() < dt_time(23, 59):
+            return next_slot_dt.time().strftime('%H:%M')
+        return '23:00'
+
+    # Belum ada aktivitas
+    if tanggal == date.today():
+        from django.utils.timezone import localtime
+        now_local = localtime()
+        # Bulatkan ke 5 menit berikutnya
+        minute = now_local.minute
+        rounded_minute = ((minute // 5) + 1) * 5
+        if rounded_minute >= 60:
+            next_hour = now_local.hour + 1
+            if next_hour > 23:
+                return '23:00'
+            return dt_time(next_hour, 0).strftime('%H:%M')
+        return dt_time(now_local.hour, rounded_minute).strftime('%H:%M')
+
+    return '07:00'
+
+
 @login_required
 def agenda_harian_view(request):
     """Halaman agenda harian: timeline aktivitas + form tambah + navigasi tanggal."""
@@ -553,8 +605,36 @@ def agenda_harian_view(request):
     selesai = aktivitas_list.filter(status='selesai').count()
     persen = round((selesai / total) * 100, 1) if total > 0 else 0
 
-    # Form untuk tambah aktivitas baru
-    form = AktivitasHarianForm()
+    # ── Preserve Form Input saat Overlap Error ──
+    form_has_error = False
+    saved_form_data = request.session.pop('agenda_form_data', None)
+
+    if saved_form_data:
+        # Kembalikan data form dari session (setelah overlap error)
+        form = AktivitasHarianForm(initial=saved_form_data)
+        form_has_error = True
+    else:
+        # ── Smart Default Jam Mulai ──
+        next_slot = _get_next_free_slot(request.user, tanggal)
+        form = AktivitasHarianForm(initial={'jam_mulai': next_slot})
+
+    # ── Rekomendasi Jadwal Kemarin ──
+    show_yesterday_prompt = False
+    yesterday_activities = []
+    if total == 0:
+        kemarin = tanggal - timedelta(days=1)
+        akt_kemarin = AktivitasHarian.objects.filter(
+            user=request.user,
+            tanggal=kemarin,
+        ).select_related('user').order_by('jam_mulai')
+        if akt_kemarin.exists():
+            show_yesterday_prompt = True
+            yesterday_activities = list(akt_kemarin.values(
+                'judul', 'jam_mulai', 'durasi_menit', 'is_habit'
+            ))
+            # Format jam_mulai ke string untuk JSON serialization di template
+            for akt in yesterday_activities:
+                akt['jam_mulai'] = akt['jam_mulai'].strftime('%H:%M')
 
     # Navigasi tanggal
     prev_date = tanggal - timedelta(days=1)
@@ -567,9 +647,12 @@ def agenda_harian_view(request):
         "prev_date": prev_date,
         "next_date": next_date,
         "form": form,
+        "form_has_error": form_has_error,
         "total_aktivitas": total,
         "aktivitas_selesai": selesai,
         "persen_aktivitas": persen,
+        "show_yesterday_prompt": show_yesterday_prompt,
+        "yesterday_activities_json": yesterday_activities,
     }
     return render(request, "tugas/agenda_harian.html", context)
 
@@ -591,6 +674,15 @@ def tambah_aktivitas_view(request):
         form.instance.user = request.user
         form.instance.tanggal = tanggal
 
+        # Helper: simpan form data ke session untuk preserve saat error
+        def _save_form_to_session():
+            request.session['agenda_form_data'] = {
+                'judul': request.POST.get('judul', ''),
+                'jam_mulai': request.POST.get('jam_mulai', ''),
+                'durasi_menit': request.POST.get('durasi_menit', ''),
+                'is_habit': 'is_habit' in request.POST,
+            }
+
         if form.is_valid():
             try:
                 form.save()
@@ -598,12 +690,14 @@ def tambah_aktivitas_view(request):
             except ValidationError as e:
                 error_msg = "; ".join(e.messages) if hasattr(e, 'messages') else str(e)
                 messages.error(request, error_msg)
+                _save_form_to_session()
         else:
             # Display form errors to user
             for field, errors in form.errors.items():
                 for error in errors:
                     prefix = "" if field == "__all__" else f"{field.capitalize()}: "
                     messages.error(request, f"{prefix}{error}")
+            _save_form_to_session()
 
         return redirect(f"/tugas/agenda/?tanggal={tanggal.isoformat()}")
 
@@ -693,6 +787,66 @@ def hapus_aktivitas_view(request, aktivitas_id):
     return redirect(f"/tugas/agenda/?tanggal={tanggal.isoformat()}")
 
 
+@login_required
+@require_POST
+def copy_jadwal_kemarin_view(request):
+    """Copy jadwal dari hari kemarin (atau tanggal tertentu) ke tanggal target."""
+    import json
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'success': False, 'error': 'Data tidak valid.'}, status=400)
+
+    tanggal_str = data.get('tanggal', date.today().isoformat())
+    try:
+        tanggal_target = date.fromisoformat(tanggal_str)
+    except ValueError:
+        tanggal_target = date.today()
+
+    aktivitas_items = data.get('aktivitas', [])
+    created_count = 0
+    skipped_count = 0
+
+    for item in aktivitas_items:
+        judul = item.get('judul', '').strip()
+        jam_mulai_str = item.get('jam_mulai', '')
+        durasi_menit = item.get('durasi_menit', 30)
+        is_habit = item.get('is_habit', False)
+
+        if not judul or not jam_mulai_str:
+            continue
+
+        try:
+            jam_mulai = dt_time.fromisoformat(jam_mulai_str)
+        except ValueError:
+            continue
+
+        try:
+            durasi_int = int(durasi_menit)
+        except (ValueError, TypeError):
+            durasi_int = 30
+
+        try:
+            AktivitasHarian.objects.create(
+                user=request.user,
+                judul=judul,
+                jam_mulai=jam_mulai,
+                durasi_menit=durasi_int,
+                is_habit=is_habit,
+                tanggal=tanggal_target,
+                status='belum',
+            )
+            created_count += 1
+        except ValidationError:
+            skipped_count += 1
+
+    return JsonResponse({
+        'success': True,
+        'created': created_count,
+        'skipped': skipped_count,
+        'message': f'{created_count} aktivitas berhasil disalin.'
+                   + (f' {skipped_count} dilewati karena jadwal bertabrakan.' if skipped_count > 0 else ''),
+    })
 # ══════════════════════════════════════════════════════════════════════
 # EVALUASI MINGGUAN - Ringkasan Statistik + Catatan Refleksi
 # ══════════════════════════════════════════════════════════════════════

@@ -121,8 +121,9 @@ CSRF_COOKIE_SECURE = not DEBUG
 # Session Security
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = not DEBUG
-SESSION_COOKIE_AGE = 3600  # 1 jam
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_AGE = 18000  # 5 Jam dalam detik (5 * 3600)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Persistent session, user tetap login meski browser ditutup
+SESSION_SAVE_EVERY_REQUEST = True  # Auto-refresh timer 5 jam setiap ada aktivitas user
 
 # XSS & Clickjacking Protection
 SECURE_BROWSER_XSS_FILTER = True

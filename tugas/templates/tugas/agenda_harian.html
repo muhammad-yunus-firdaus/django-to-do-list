@@ -3,6 +3,103 @@
 
 {% block title %}Jadwal Hari Ini - Manajemen Tugas{% endblock %}
 {% block page_title %}Jadwal Hari Ini{% endblock %}
+{% block head %}
+<style>
+    /* Custom SweetAlert2 Styling */
+    .swal-custom-modal {
+        max-width: 680px !important;
+        width: 92% !important;
+        border-radius: 1rem !important;
+        padding: 2rem !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        background: #ffffff !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .btn-indigo-primary {
+        background-color: #4F46E5 !important;
+        color: #ffffff !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3), 0 2px 4px -2px rgba(79, 70, 229, 0.2) !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .btn-indigo-primary:hover {
+        background-color: #4338CA !important;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4) !important;
+    }
+
+    .btn-slate-secondary {
+        background-color: #64748B !important;
+        color: #ffffff !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .btn-slate-secondary:hover {
+        background-color: #475569 !important;
+    }
+
+    .swal-actions-gap {
+        display: flex !important;
+        gap: 0.75rem !important; /* 12px jarak antar tombol */
+        justify-content: center !important;
+        margin-top: 1.5rem !important;
+    }
+
+    /* Modal Input Styling */
+    .swal-custom-modal .form-input-swal {
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        color: #1E293B !important;
+        width: 100% !important;
+        background-color: #ffffff !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+
+    .swal-custom-modal .form-input-swal:focus {
+        border-color: #4F46E5 !important;
+        outline: none !important;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+    }
+
+    .swal-custom-modal .yesterday-item-card {
+        background-color: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 0.75rem !important;
+        margin-bottom: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        transition: border-color 0.2s !important;
+    }
+
+    .swal-custom-modal .yesterday-item-card:hover {
+        border-color: #C7D2FE !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- Date Navigation + Stats -->
@@ -59,11 +156,36 @@
     {% endif %}
 </div>
 
+<!-- Yesterday Reuse Prompt Banner -->
+{% if show_yesterday_prompt %}
+{{ yesterday_activities_json|json_script:"yesterday-data" }}
+<div class="card animate-fade-up" id="yesterdayBanner" style="padding:16px 20px;margin-bottom:20px;background:linear-gradient(135deg, var(--primary-light) 0%, var(--accent-info-light) 100%);border-color:var(--primary);">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <i data-lucide="copy" style="width:24px;height:24px;color:var(--primary);"></i>
+            <div>
+                <div style="font-weight:600;font-size:0.95rem;color:var(--text-primary);">Gunakan Pola Jadwal Kemarin?</div>
+                <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Hari ini belum ada jadwal. Salin jadwal dari hari kemarin untuk memulai lebih cepat.</div>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button id="btnCopyKemarin" class="btn btn-primary btn-sm">
+                <i data-lucide="clipboard-copy" style="width:14px;height:14px;"></i> Gunakan Jadwal Kemarin
+            </button>
+            <button onclick="document.getElementById('yesterdayBanner').style.display='none'" class="btn btn-ghost btn-sm">Nanti</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Add Activity Form -->
-<div class="card animate-fade-up" style="padding:20px;margin-bottom:20px;">
+<div class="card animate-fade-up" id="formTambahCard" style="padding:20px;margin-bottom:20px;{% if form_has_error %}border-color:var(--accent-danger);box-shadow:0 0 0 2px rgba(244,63,94,0.15);{% endif %}">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
         <i data-lucide="plus-circle" style="width:20px;height:20px;color:var(--primary);"></i>
         <h3 style="margin:0;font-size:1rem;">Tambah Aktivitas</h3>
+        {% if form_has_error %}
+        <span class="badge badge-danger" style="font-size:.7rem;">Jadwal Bertabrakan — Sesuaikan Jam</span>
+        {% endif %}
     </div>
 
     <form method="POST" action="{% url 'tugas:tambah_aktivitas' %}">
@@ -354,12 +476,145 @@
             }
         });
     }
+    // Helper to get CSRF cookie value safely
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
     // SweetAlert2 auto-trigger dari Django messages
     document.addEventListener('DOMContentLoaded', function() {
         // Init time input picker listeners for all static time inputs
         const timeInputs = document.querySelectorAll('input[type="time"]');
         timeInputs.forEach(initTimeInputPicker);
+
+        // ── Copy Jadwal Kemarin Event Listener ──
+        const btnCopyKemarin = document.getElementById('btnCopyKemarin');
+        if (btnCopyKemarin) {
+            btnCopyKemarin.addEventListener('click', function() {
+                const yesterdayScript = document.getElementById('yesterday-data');
+                if (!yesterdayScript) return;
+                const yesterdayData = JSON.parse(yesterdayScript.textContent);
+                const tanggalAktif = '{{ tanggal|date:"Y-m-d" }}';
+
+                let checkboxesHtml = yesterdayData.map((akt, idx) => `
+                    <div class="yesterday-item-card">
+                        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+                            <input type="checkbox" id="akt-cb-${idx}" checked style="width:18px;height:18px;cursor:pointer;flex-shrink:0;accent-color:#4F46E5;">
+                            <input type="text" id="akt-judul-${idx}" class="form-input-swal" value="${akt.judul}" style="font-weight:500;" placeholder="Nama aktivitas...">
+                        </div>
+                        <div style="width:110px;flex-shrink:0;">
+                            <input type="time" id="akt-jam-${idx}" class="form-input-swal" value="${akt.jam_mulai}">
+                        </div>
+                        <div style="width:90px;flex-shrink:0;">
+                            <input type="number" id="akt-durasi-${idx}" class="form-input-swal" value="${akt.durasi_menit}" min="5" max="480">
+                        </div>
+                    </div>
+                `).join('');
+
+                Swal.fire({
+                    title: 'Salin Jadwal Kemarin',
+                    html: `
+                        <div style="text-align:left;margin-bottom:12px;">
+                            <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.5;">Pilih aktivitas yang ingin disalin. Anda dapat menyesuaikan nama, jam mulai, dan durasi sebelum menyimpan ke hari ini.</p>
+                            <div style="display:flex;align-items:center;gap:12px;padding:0 1rem;margin-bottom:8px;">
+                                <div style="flex:1;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;gap:8px;padding-left:26px;">Aktivitas</div>
+                                <div style="width:110px;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Jam Mulai</div>
+                                <div style="width:90px;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Durasi (Mnt)</div>
+                            </div>
+                            <div style="max-height:360px;overflow-y:auto;padding-right:4px;">${checkboxesHtml}</div>
+                        </div>
+                    `,
+                    width: '680px',
+                    customClass: {
+                        popup: 'swal-custom-modal',
+                        actions: 'swal-actions-gap',
+                        confirmButton: 'btn-indigo-primary',
+                        cancelButton: 'btn-slate-secondary'
+                    },
+                    buttonsStyling: false,
+                    showCancelButton: true,
+                    confirmButtonText: '<i data-lucide="clipboard-copy" style="width:14px;height:14px;margin-right:4px;"></i> Salin ke Hari Ini',
+                    cancelButtonText: 'Batal',
+                    didOpen: () => {
+                        lucide.createIcons();
+                        // Add time input pickers to dynamically generated inputs inside modal
+                        const modalTimeInputs = Swal.getHtmlContainer().querySelectorAll('input[type="time"]');
+                        modalTimeInputs.forEach(initTimeInputPicker);
+                    },
+                    preConfirm: () => {
+                        const selected = [];
+                        yesterdayData.forEach((akt, idx) => {
+                            const cb = document.getElementById(`akt-cb-${idx}`);
+                            if (cb && cb.checked) {
+                                selected.push({
+                                    judul: document.getElementById(`akt-judul-${idx}`).value.trim(),
+                                    jam_mulai: document.getElementById(`akt-jam-${idx}`).value,
+                                    durasi_menit: parseInt(document.getElementById(`akt-durasi-${idx}`).value) || 30,
+                                    is_habit: akt.is_habit
+                                });
+                            }
+                        });
+                        if (selected.length === 0) {
+                            Swal.showValidationMessage('Pilih minimal 1 aktivitas!');
+                            return false;
+                        }
+                        return selected;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch('{% url "tugas:copy_jadwal_kemarin" %}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken') || window.CSRF_TOKEN,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                tanggal: tanggalAktif,
+                                aktivitas: result.value
+                            })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    confirmButtonColor: '#4F46E5',
+                                    timer: 2000,
+                                    timerProgressBar: true,
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire({ icon: 'error', title: 'Gagal', text: data.error || 'Terjadi kesalahan.' });
+                            }
+                        })
+                        .catch(() => Swal.fire({ icon: 'error', title: 'Error', text: 'Gagal mengirim data.' }));
+                    }
+                });
+            });
+        }
+
+        // Auto-scroll ke form jika ada error overlap
+        {% if form_has_error %}
+        const formCard = document.getElementById('formTambahCard');
+        if (formCard) {
+            formCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            formCard.style.animation = 'fadeUp 0.3s ease';
+        }
+        {% endif %}
 
         {% for message in messages %}
         Swal.fire({

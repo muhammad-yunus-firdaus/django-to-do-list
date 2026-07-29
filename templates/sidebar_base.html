@@ -1,6 +1,141 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block head %}
+{{ block.super }}
+<style>
+    /* Custom SweetAlert2 Styling (Global Sidebar Pages) */
+    .swal-custom-modal {
+        max-width: 500px !important;
+        width: 92% !important;
+        border-radius: 1rem !important;
+        padding: 2rem !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        background: #ffffff !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .btn-indigo-primary {
+        background-color: #4F46E5 !important;
+        color: #ffffff !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3), 0 2px 4px -2px rgba(79, 70, 229, 0.2) !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .btn-indigo-primary:hover {
+        background-color: #4338CA !important;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4) !important;
+    }
+
+    .btn-danger-primary {
+        background-color: #F43F5E !important;
+        color: #ffffff !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.3), 0 2px 4px -2px rgba(244, 63, 94, 0.2) !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .btn-danger-primary:hover {
+        background-color: #E11D48 !important;
+        box-shadow: 0 10px 15px -3px rgba(244, 63, 94, 0.4) !important;
+    }
+
+    .btn-slate-secondary {
+        background-color: #64748B !important;
+        color: #ffffff !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 500 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+    }
+
+    .btn-slate-secondary:hover {
+        background-color: #475569 !important;
+    }
+
+    .swal-actions-gap {
+        display: flex !important;
+        gap: 0.75rem !important;
+        justify-content: center !important;
+        margin-top: 1.5rem !important;
+    }
+
+    /* Custom Logout Modal Classes */
+    .swal-logout-modal {
+        max-width: 420px !important;
+        border-radius: 1.25rem !important;
+        padding: 2rem !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        background: #ffffff !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    }
+
+    .btn-logout-confirm {
+        background-color: #E11D48 !important;
+        color: #ffffff !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .btn-logout-confirm:hover {
+        background-color: #BE123C !important;
+    }
+
+    .btn-logout-cancel {
+        background-color: #F1F5F9 !important;
+        color: #475569 !important;
+        border-radius: 0.75rem !important;
+        padding: 0.625rem 1.25rem !important;
+        font-weight: 600 !important;
+        font-size: 0.875rem !important;
+        border: none !important;
+        transition: all 0.2s !important;
+        cursor: pointer !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .btn-logout-cancel:hover {
+        background-color: #E2E8F0 !important;
+    }
+</style>
+{% endblock %}
+
 {% block layout %}
 <!-- Mobile Toggle -->
 <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Menu">
@@ -53,7 +188,7 @@
             <i data-lucide="settings" style="width:16px;height:16px;"></i>
             Edit Profil
         </a>
-        <a href="{% url 'tugas:logout' %}" class="sidebar-link" style="margin-top:4px;color:rgba(255,255,255,.5);">
+        <a href="{% url 'tugas:logout' %}" id="logoutBtn" data-no-instant class="sidebar-link" style="margin-top:4px;color:rgba(255,255,255,.5);">
             <i data-lucide="log-out" style="width:18px;height:18px;"></i>
             Logout
         </a>
@@ -141,4 +276,46 @@
         {% block content %}{% endblock %}
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoutBtn = document.getElementById('logoutBtn') || document.querySelector('.logout-link');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const targetUrl = this.getAttribute('href') || "{% url 'tugas:logout' %}";
+                
+                Swal.fire({
+                    html: `
+                        <div class="swal-icon-wrapper mb-3" style="width: 56px; height: 56px; background: #FFE4E6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 0.75rem;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E11D48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        </div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: #1E293B; margin-bottom: 0.5rem; text-align: center;">Konfirmasi Logout</h3>
+                        <p style="font-size: 0.95rem; color: #64748B; margin: 0; text-align: center;">Apakah Anda yakin ingin keluar dari aplikasi?</p>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Logout',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'swal-logout-modal',
+                        confirmButton: 'btn-logout-confirm',
+                        cancelButton: 'btn-logout-cancel',
+                        actions: 'swal-actions-gap'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const logoutForm = document.getElementById('logoutForm');
+                        if (logoutForm) {
+                            logoutForm.submit();
+                        } else {
+                            window.location.href = targetUrl;
+                        }
+                    }
+                });
+            });
+        }
+    });
+</script>
 {% endblock layout %}
