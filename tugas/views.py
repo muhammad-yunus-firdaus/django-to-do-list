@@ -8,10 +8,11 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta, time as dt_time, datetime as dt_datetime
 
-from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan
+from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan, Kegiatan
 from .forms import (
     TugasForm, RegisterForm, CustomAuthenticationForm, SubtaskForm,
     ProfilForm, GantiPasswordForm, AktivitasHarianForm, EvaluasiForm,
+    KegiatanForm,
 )
 from .notifications import check_subtask_completion, generate_deadline_notifications, generate_overdue_notifications
 from .services import (
@@ -118,6 +119,20 @@ def dashboard_view(request):
     agenda_selesai = agenda_hari_ini.filter(status='selesai').count()
     agenda_persen = round((agenda_selesai / agenda_total) * 100, 1) if agenda_total > 0 else 0
 
+    # Ambil kegiatan mendatang (maksimal 5)
+    kegiatan_mendatang = Kegiatan.objects.filter(
+        user=user,
+        status='akan_datang',
+        tanggal__gte=date.today(),
+    ).select_related('user').order_by('tanggal', 'jam_mulai')[:5]
+
+    # Hitung progres keseluruhan gabungan (Tugas + Aktivitas Hari Ini)
+    total_tugas = stats.get("total_tugas", 0)
+    tugas_selesai = stats.get("tugas_selesai", 0)
+    total_items = total_tugas + agenda_total
+    completed_items = tugas_selesai + agenda_selesai
+    progres_persen = round((completed_items / total_items * 100)) if total_items > 0 else 0
+
     context = {
         **stats,
         "tugas_deadline_terdekat": tugas_deadline_terdekat,
@@ -128,6 +143,8 @@ def dashboard_view(request):
         "agenda_total": agenda_total,
         "agenda_selesai": agenda_selesai,
         "agenda_persen": agenda_persen,
+        "kegiatan_mendatang": kegiatan_mendatang,
+        "progres_persen": progres_persen,
     }
 
     return render(request, "tugas/dashboard.html", context)
@@ -541,26 +558,38 @@ def _copy_habits_for_today(user):
 
 def _get_next_free_slot(user, tanggal):
     """
-    Hitung slot waktu kosong berikutnya berdasarkan aktivitas terakhir di hari tersebut.
-    - Jika ada aktivitas, ambil jam_selesai terakhir + 1 menit.
-    - Jika belum ada aktivitas dan tanggal = hari ini, default ke waktu sekarang (dibulatkan ke 5 menit berikutnya).
-    - Jika belum ada aktivitas dan bukan hari ini, default ke 07:00.
+    Hitung slot waktu kosong berikutnya berdasarkan aktivitas/kegiatan terakhir di hari tersebut.
+    - Jika ada, ambil jam_selesai terakhir + 1 menit.
+    - Jika belum ada dan tanggal = hari ini, default ke waktu sekarang (dibulatkan ke 5 menit berikutnya).
+    - Jika belum ada dan bukan hari ini, default ke 07:00.
     """
     last_activity = AktivitasHarian.objects.filter(
         user=user,
         tanggal=tanggal,
     ).order_by('-jam_mulai').first()
 
+    last_kegiatan = Kegiatan.objects.filter(
+        user=user,
+        tanggal=tanggal,
+    ).order_by('-jam_mulai').first()
+
+    latest_time = None
     if last_activity and last_activity.jam_selesai:
-        # Tambah 1 menit dari jam selesai aktivitas terakhir
-        last_end_dt = dt_datetime.combine(tanggal, last_activity.jam_selesai)
+        latest_time = last_activity.jam_selesai
+    if last_kegiatan and last_kegiatan.jam_selesai:
+        if latest_time is None or last_kegiatan.jam_selesai > latest_time:
+            latest_time = last_kegiatan.jam_selesai
+
+    if latest_time:
+        # Tambah 1 menit dari jam selesai terakhir
+        last_end_dt = dt_datetime.combine(tanggal, latest_time)
         next_slot_dt = last_end_dt + timedelta(minutes=1)
         # Pastikan tidak melewati 23:59
         if next_slot_dt.time() < dt_time(23, 59):
             return next_slot_dt.time().strftime('%H:%M')
         return '23:00'
 
-    # Belum ada aktivitas
+    # Belum ada aktivitas/kegiatan
     if tanggal == date.today():
         from django.utils.timezone import localtime
         now_local = localtime()
@@ -579,7 +608,7 @@ def _get_next_free_slot(user, tanggal):
 
 @login_required
 def agenda_harian_view(request):
-    """Halaman agenda harian: timeline aktivitas + form tambah + navigasi tanggal."""
+    """Halaman agenda harian: timeline terpadu aktivitas + kegiatan + form tambah + navigasi tanggal."""
     # Ambil tanggal dari query param, default hari ini
     tanggal_str = request.GET.get('tanggal', '')
     if tanggal_str:
@@ -600,7 +629,29 @@ def agenda_harian_view(request):
         tanggal=tanggal,
     ).select_related('user').order_by('jam_mulai')
 
-    # Hitung statistik
+    # Ambil semua kegiatan di tanggal tersebut
+    kegiatan_list = Kegiatan.objects.filter(
+        user=request.user,
+        tanggal=tanggal,
+    ).select_related('user').order_by('jam_mulai')
+
+    # Gabungkan aktivitas dan kegiatan menjadi timeline terpadu
+    timeline_items = []
+    for akt in aktivitas_list:
+        timeline_items.append({
+            'type': 'aktivitas',
+            'item': akt,
+            'jam_mulai': akt.jam_mulai,
+        })
+    for keg in kegiatan_list:
+        timeline_items.append({
+            'type': 'kegiatan',
+            'item': keg,
+            'jam_mulai': keg.jam_mulai,
+        })
+    timeline_items.sort(key=lambda x: x['jam_mulai'])
+
+    # Hitung statistik (berdasarkan aktivitas harian)
     total = aktivitas_list.count()
     selesai = aktivitas_list.filter(status='selesai').count()
     persen = round((selesai / total) * 100, 1) if total > 0 else 0
@@ -642,6 +693,7 @@ def agenda_harian_view(request):
 
     context = {
         "aktivitas_list": aktivitas_list,
+        "timeline_items": timeline_items,
         "tanggal": tanggal,
         "is_today": tanggal == date.today(),
         "prev_date": prev_date,
@@ -719,9 +771,14 @@ def toggle_aktivitas_view(request, aktivitas_id):
         pass
 
     if target_status in ['belum', 'selesai', 'terlewat']:
+        if aktivitas.status == 'selesai' and target_status == 'terlewat':
+            return JsonResponse({
+                'success': False,
+                'error': 'Aktivitas yang sudah selesai tidak boleh ditandai terlewat.'
+            }, status=400)
         aktivitas.status = target_status
     else:
-        # Fallback toggle biasa
+        # Fallback toggle biasa (selesai <-> belum)
         if aktivitas.status == 'selesai':
             aktivitas.status = 'belum'
         else:
@@ -981,3 +1038,301 @@ def evaluasi_view(request):
         "aktivitas_minggu_ini": aktivitas_minggu_ini,
     }
     return render(request, "tugas/evaluasi.html", context)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# KEGIATAN & ACARA - CRUD & Views
+# ══════════════════════════════════════════════════════════════════════
+
+@login_required
+def kegiatan_list_view(request):
+    """Halaman utama daftar & form kegiatan acara dengan filter."""
+    kategori = request.GET.get('kategori', '')
+    status_filter = request.GET.get('status_filter', 'akan_datang')
+    
+    qs = Kegiatan.objects.filter(user=request.user).select_related('user')
+    
+    if kategori:
+        qs = qs.filter(kategori=kategori)
+        
+    today = date.today()
+    if status_filter == 'akan_datang':
+        qs = qs.filter(status='akan_datang').order_by('tanggal', 'jam_mulai')
+    elif status_filter == 'riwayat':
+        from django.db.models import Q
+        qs = qs.filter(Q(status__in=['selesai', 'dibatalkan']) | Q(tanggal__lt=today)).order_by('-tanggal', '-jam_mulai')
+    else:
+        qs = qs.order_by('tanggal', 'jam_mulai')
+
+    form = KegiatanForm()
+    
+    context = {
+        'kegiatan_list': qs,
+        'form': form,
+        'kategori_filter': kategori,
+        'status_filter': status_filter,
+        'kategori_choices': Kegiatan.KATEGORI_CHOICES,
+        'today': today,
+    }
+    return render(request, 'tugas/kegiatan_list.html', context)
+
+
+@login_required
+@require_POST
+def kegiatan_tambah_view(request):
+    """Tambah kegiatan acara baru via AJAX."""
+    form = KegiatanForm(request.POST)
+    if form.is_valid():
+        kegiatan = form.save(commit=False)
+        kegiatan.user = request.user
+        try:
+            kegiatan.save()
+            return JsonResponse({'success': True})
+        except ValidationError as e:
+            return JsonResponse({'success': False, 'error': e.messages[0] if hasattr(e, 'messages') else str(e)})
+    else:
+        errors = []
+        for field, err_list in form.errors.items():
+            for err in err_list:
+                errors.append(f"{form.fields[field].label or field}: {err}")
+        return JsonResponse({'success': False, 'error': "; ".join(errors)})
+
+
+@login_required
+def kegiatan_edit_view(request, kegiatan_id):
+    """Edit kegiatan acara via AJAX."""
+    kegiatan = get_object_or_404(Kegiatan, id=kegiatan_id, user=request.user)
+    if request.method == "POST":
+        form = KegiatanForm(request.POST, instance=kegiatan)
+        if form.is_valid():
+            try:
+                form.save()
+                return JsonResponse({'success': True})
+            except ValidationError as e:
+                return JsonResponse({'success': False, 'error': e.messages[0] if hasattr(e, 'messages') else str(e)})
+        else:
+            errors = []
+            for field, err_list in form.errors.items():
+                for err in err_list:
+                    errors.append(f"{form.fields[field].label or field}: {err}")
+            return JsonResponse({'success': False, 'error': "; ".join(errors)})
+    else:
+        # Request data kegiatan dalam bentuk JSON
+        data = {
+            'id': kegiatan.id,
+            'judul': kegiatan.judul,
+            'kategori': kegiatan.kategori,
+            'tanggal': kegiatan.tanggal.isoformat(),
+            'jam_mulai': kegiatan.jam_mulai.strftime('%H:%M'),
+            'jam_selesai': kegiatan.jam_selesai.strftime('%H:%M'),
+            'lokasi': kegiatan.lokasi,
+            'catatan': kegiatan.catatan,
+            'status': kegiatan.status,
+        }
+        return JsonResponse({'success': True, 'data': data})
+
+
+@login_required
+@require_POST
+def kegiatan_hapus_view(request, kegiatan_id):
+    """Hapus kegiatan acara via AJAX."""
+    kegiatan = get_object_or_404(Kegiatan, id=kegiatan_id, user=request.user)
+    kegiatan.delete()
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def kegiatan_toggle_status_view(request, kegiatan_id):
+    """Toggle atau ubah status kegiatan langsung (AJAX-friendly)."""
+    import json
+    kegiatan = get_object_or_404(Kegiatan, id=kegiatan_id, user=request.user)
+    
+    target_status = None
+    try:
+        data = json.loads(request.body)
+        target_status = data.get('status')
+    except (json.JSONDecodeError, ValueError, AttributeError):
+        pass
+
+    if target_status in ['akan_datang', 'selesai', 'dibatalkan']:
+        kegiatan.status = target_status
+        try:
+            kegiatan.save(update_fields=['status', 'updated_at'])
+            return JsonResponse({'success': True, 'status': kegiatan.status})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    else:
+        return JsonResponse({'success': False, 'error': 'Status tidak valid.'}, status=400)
+
+
+
+@login_required
+def export_jadwal_pdf_view(request):
+    """Download daily agenda schedule in PDF format."""
+    from datetime import date
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+
+    # Ambil tanggal
+    tanggal_str = request.GET.get('tanggal', '')
+    if tanggal_str:
+        try:
+            tanggal = date.fromisoformat(tanggal_str)
+        except ValueError:
+            tanggal = date.today()
+    else:
+        tanggal = date.today()
+
+    user = request.user
+    aktivitas_list = AktivitasHarian.objects.filter(
+        user=user,
+        tanggal=tanggal,
+    ).select_related('user').order_by('jam_mulai')
+
+    kegiatan_list = Kegiatan.objects.filter(
+        user=user,
+        tanggal=tanggal,
+    ).select_related('user').order_by('jam_mulai')
+
+    timeline_items = []
+    for akt in aktivitas_list:
+        timeline_items.append({
+            'type': 'Aktivitas Harian',
+            'judul': akt.judul,
+            'jam_mulai': akt.jam_mulai,
+            'jam_selesai': akt.jam_selesai,
+            'kategori': 'Habit' if akt.is_habit else 'Rutin',
+            'durasi': f"{akt.durasi_menit} mnt",
+            'lokasi': '-',
+            'status': akt.get_status_display() if hasattr(akt, 'get_status_display') else akt.status,
+        })
+        
+    for keg in kegiatan_list:
+        timeline_items.append({
+            'type': 'Kegiatan & Acara',
+            'judul': keg.judul,
+            'jam_mulai': keg.jam_mulai,
+            'jam_selesai': keg.jam_selesai,
+            'kategori': keg.get_kategori_display() if hasattr(keg, 'get_kategori_display') else keg.kategori,
+            'durasi': '-',
+            'lokasi': keg.lokasi or '-',
+            'status': keg.get_status_display() if hasattr(keg, 'get_status_display') else keg.status,
+        })
+
+    timeline_items.sort(key=lambda x: x['jam_mulai'])
+
+    # Hitung statistik
+    total_items = len(timeline_items)
+    selesai_items = sum(1 for item in timeline_items if item['status'].lower() in ['selesai'])
+    progres_persen = round((selesai_items / total_items) * 100) if total_items > 0 else 0
+
+    response = HttpResponse(content_type="application/pdf")
+    filename = f"jadwal_{tanggal.isoformat()}.pdf"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    # Build PDF doc A4 portrait
+    doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+    styles = getSampleStyleSheet()
+
+    # Kustom styles
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=18,
+        textColor=colors.HexColor('#4F46E5'),
+        spaceAfter=6,
+    )
+    meta_style = ParagraphStyle(
+        'DocMeta',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor('#475569'),
+        spaceAfter=15,
+    )
+    summary_style = ParagraphStyle(
+        'SummaryText',
+        parent=styles['Normal'],
+        fontSize=11,
+        textColor=colors.HexColor('#1E293B'),
+        spaceAfter=20,
+    )
+    cell_style = ParagraphStyle(
+        'CellText',
+        parent=styles['Normal'],
+        fontSize=9,
+        textColor=colors.HexColor('#1E293B'),
+    )
+    header_cell_style = ParagraphStyle(
+        'HeaderCellText',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=9,
+        textColor=colors.white,
+    )
+
+    story = []
+
+    # Title
+    story.append(Paragraph(f"Jadwal & Agenda Harian - {user.username}", title_style))
+    # Tanggal
+    formatted_date = tanggal.strftime('%d %B %Y')
+    story.append(Paragraph(f"Tanggal: {formatted_date}", meta_style))
+
+    # Summary
+    summary_text = (
+        f"<b>Ringkasan Hari Ini:</b> Total {total_items} item agenda | "
+        f"{selesai_items} Selesai | Progres: {progres_persen}%"
+    )
+    story.append(Paragraph(summary_text, story_style))
+
+    # Table headers
+    headers = [
+        Paragraph("Jam", header_cell_style),
+        Paragraph("Agenda / Kegiatan", header_cell_style),
+        Paragraph("Kategori", header_cell_style),
+        Paragraph("Durasi", header_cell_style),
+        Paragraph("Lokasi / Link", header_cell_style),
+        Paragraph("Status", header_cell_style)
+    ]
+    data = [headers]
+
+    for item in timeline_items:
+        jam_str = f"{item['jam_mulai'].strftime('%H:%M')} - {item['jam_selesai'].strftime('%H:%M') if item['jam_selesai'] else '?'}"
+        data.append([
+            Paragraph(jam_str, cell_style),
+            Paragraph(f"<b>{item['judul']}</b><br/><font color='#64748B' size='8'>{item['type']}</font>", cell_style),
+            Paragraph(item['kategori'], cell_style),
+            Paragraph(item['durasi'], cell_style),
+            Paragraph(item['lokasi'], cell_style),
+            Paragraph(f"<b>{item['status']}</b>", cell_style)
+        ])
+
+    # 487 pt total width
+    table = Table(data, colWidths=[80, 147, 75, 45, 90, 50])
+    
+    # Alternating rows style
+    t_style = [
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F46E5')),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 6),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+        ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#4338CA')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+    ]
+    
+    for i in range(1, len(data)):
+        if i % 2 == 0:
+            t_style.append(('BACKGROUND', (0, i), (-1, i), colors.HexColor('#F8FAFC')))
+            
+    table.setStyle(TableStyle(t_style))
+    story.append(table)
+
+    doc.build(story)
+    return response

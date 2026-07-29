@@ -108,6 +108,29 @@
         </form>
     </div>
 
+    <!-- Kartu Bantuan & Dukungan Pengembang -->
+    <div class="card animate-fade-up stagger-3" style="padding:24px;margin-top:20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+            <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
+                <i data-lucide="help-circle" style="width:20px;height:20px;color:var(--primary);"></i>
+            </div>
+            <div>
+                <h3 style="margin:0;font-size:1.1rem;color:var(--text-primary);">Bantuan & Dukungan Pengembang</h3>
+                <p class="text-xs" style="margin:0;color:var(--text-muted);">Laporkan bug, kendala sistem, atau sampaikan saran masukan fitur baru.</p>
+            </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:var(--bg-secondary);padding:16px;border-radius:12px;border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <i data-lucide="mail" style="width:18px;height:18px;color:var(--text-secondary);"></i>
+                <span style="font-weight:600;font-size:0.95rem;color:var(--text-primary);">yunusfirdauss123@gmail.com</span>
+            </div>
+            <a href="mailto:yunusfirdauss123@gmail.com" class="btn btn-primary btn-sm" style="text-decoration:none;">
+                <i data-lucide="send" style="width:14px;height:14px;"></i> Kirim Email
+            </a>
+        </div>
+    </div>
+
     <div style="margin-top:16px;">
         <a href="{% url 'tugas:dashboard' %}" class="btn btn-ghost">
             <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Kembali ke Dashboard

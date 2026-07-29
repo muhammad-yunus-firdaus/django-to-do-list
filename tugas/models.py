@@ -255,6 +255,9 @@ class AktivitasHarian(models.Model):
         if not calculated_end:
             return
 
+        if not self.user_id:
+            return
+
         # Cari aktivitas lain di tanggal yang sama milik user ini
         qs = AktivitasHarian.objects.filter(
             user=self.user,
@@ -278,6 +281,19 @@ class AktivitasHarian(models.Model):
                     f"Silakan pilih jam yang berbeda."
                 )
 
+        # Cek overlap dengan Kegiatan
+        kegiatan_qs = Kegiatan.objects.filter(
+            user=self.user,
+            tanggal=self.tanggal,
+        )
+        for keg in kegiatan_qs:
+            if self.jam_mulai < keg.jam_selesai and calculated_end > keg.jam_mulai:
+                raise ValidationError(
+                    f"Jadwal bertabrakan dengan acara/kegiatan \"{keg.judul}\" "
+                    f"({keg.jam_mulai.strftime('%H:%M')} - {keg.jam_selesai.strftime('%H:%M')}). "
+                    f"Silakan pilih jam yang berbeda."
+                )
+
     def save(self, *args, **kwargs):
         """Auto-calculate jam_selesai sebelum save."""
         self.jam_selesai = self._calculate_jam_selesai()
@@ -294,6 +310,9 @@ class AktivitasHarian(models.Model):
         ordering = ['tanggal', 'jam_mulai']
         verbose_name = "Aktivitas Harian"
         verbose_name_plural = "Aktivitas Harian"
+        indexes = [
+            models.Index(fields=['user', 'tanggal']),
+        ]
 
 
 class EvaluasiMingguan(models.Model):
@@ -362,4 +381,98 @@ class EvaluasiMingguan(models.Model):
         verbose_name_plural = "Evaluasi Mingguan"
         # Satu user hanya bisa punya satu evaluasi per minggu
         unique_together = ['user', 'minggu_mulai']
+
+
+class Kegiatan(models.Model):
+    """Model untuk mengelola Kegiatan & Acara (Events & Meetings)."""
+    KATEGORI_CHOICES = [
+        ('akademik', 'Akademik'),
+        ('pekerjaan', 'Pekerjaan'),
+        ('keluarga', 'Keluarga'),
+        ('pribadi_sosial', 'Pribadi & Sosial'),
+        ('acara', 'Acara/Event'),
+        ('lainnya', 'Lainnya'),
+    ]
+
+    STATUS_CHOICES = [
+        ('akan_datang', 'Akan Datang'),
+        ('selesai', 'Selesai'),
+        ('dibatalkan', 'Dibatalkan'),
+    ]
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="kegiatan",
+        verbose_name="Pemilik", db_index=True
+    )
+    judul = models.CharField(max_length=255, verbose_name="Judul Kegiatan")
+    kategori = models.CharField(
+        max_length=20, choices=KATEGORI_CHOICES, default='lainnya',
+        verbose_name="Kategori", db_index=True
+    )
+    tanggal = models.DateField(verbose_name="Tanggal", db_index=True)
+    jam_mulai = models.TimeField(verbose_name="Jam Mulai")
+    jam_selesai = models.TimeField(verbose_name="Jam Selesai")
+    lokasi = models.CharField(max_length=255, blank=True, default="", verbose_name="Lokasi / Link")
+    catatan = models.TextField(blank=True, default="", verbose_name="Catatan")
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='akan_datang',
+        verbose_name="Status", db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Dibuat Pada")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Diperbarui Pada")
+
+    def clean(self):
+        if not self.tanggal or not self.jam_mulai or not self.jam_selesai:
+            return
+
+        if self.jam_selesai <= self.jam_mulai:
+            raise ValidationError("Jam selesai harus setelah jam mulai.")
+
+        if not self.user_id:
+            return
+
+        # 1. Cek overlap dengan Kegiatan lain
+        keg_qs = Kegiatan.objects.filter(
+            user=self.user,
+            tanggal=self.tanggal,
+        )
+        if self.pk:
+            keg_qs = keg_qs.exclude(pk=self.pk)
+
+        for keg in keg_qs:
+            if self.jam_mulai < keg.jam_selesai and self.jam_selesai > keg.jam_mulai:
+                raise ValidationError(
+                    f"Jadwal bertabrakan dengan acara \"{keg.judul}\" "
+                    f"({keg.jam_mulai.strftime('%H:%M')} - {keg.jam_selesai.strftime('%H:%M')})."
+                )
+
+        # 2. Cek overlap dengan Aktivitas Harian
+        akt_qs = AktivitasHarian.objects.filter(
+            user=self.user,
+            tanggal=self.tanggal,
+        )
+        for akt in akt_qs:
+            akt_end = akt.jam_selesai or akt._calculate_jam_selesai()
+            if akt_end:
+                if self.jam_mulai < akt_end and self.jam_selesai > akt.jam_mulai:
+                    raise ValidationError(
+                        f"Jadwal bertabrakan dengan aktivitas \"{akt.judul}\" "
+                        f"({akt.jam_mulai.strftime('%H:%M')} - {akt_end.strftime('%H:%M')})."
+                    )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.judul} ({self.tanggal} {self.jam_mulai.strftime('%H:%M')} - {self.jam_selesai.strftime('%H:%M')})"
+
+    class Meta:
+        ordering = ['tanggal', 'jam_mulai']
+        verbose_name = "Kegiatan & Acara"
+        verbose_name_plural = "Kegiatan & Acara"
+        indexes = [
+            models.Index(fields=['user', 'tanggal']),
+        ]
+
 

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan
+from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan, Kegiatan
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from django.contrib.auth.forms import AuthenticationForm
@@ -308,4 +308,51 @@ class EvaluasiForm(forms.Form):
         }),
         label="Catatan Evaluasi",
     )
+
+
+class KegiatanForm(forms.ModelForm):
+    """Form untuk input & edit Kegiatan & Acara (Events & Meetings)."""
+    class Meta:
+        model = Kegiatan
+        fields = ['judul', 'kategori', 'tanggal', 'jam_mulai', 'jam_selesai', 'lokasi', 'catatan', 'status']
+        widgets = {
+            'judul': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Masukkan judul/nama kegiatan...',
+            }),
+            'kategori': forms.Select(attrs={'class': 'form-select'}),
+            'tanggal': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+            }),
+            'jam_mulai': forms.TimeInput(attrs={
+                'class': 'form-control',
+                'type': 'time',
+            }),
+            'jam_selesai': forms.TimeInput(attrs={
+                'class': 'form-control',
+                'type': 'time',
+            }),
+            'lokasi': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Lokasi fisik atau tautan online...',
+            }),
+            'catatan': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tambahkan deskripsi atau catatan kegiatan...',
+                'rows': 3,
+            }),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+        labels = {
+            'judul': 'Judul Kegiatan',
+            'kategori': 'Kategori',
+            'tanggal': 'Tanggal',
+            'jam_mulai': 'Jam Mulai',
+            'jam_selesai': 'Jam Selesai',
+            'lokasi': 'Lokasi / Link',
+            'catatan': 'Catatan',
+            'status': 'Status',
+        }
+
 

@@ -47,7 +47,15 @@ urlpatterns = [
     path("agenda/edit/<int:aktivitas_id>/", views.edit_aktivitas_view, name="edit_aktivitas"),
     path("agenda/hapus/<int:aktivitas_id>/", views.hapus_aktivitas_view, name="hapus_aktivitas"),
     path("agenda/copy-kemarin/", views.copy_jadwal_kemarin_view, name="copy_jadwal_kemarin"),
+    path("agenda/export-pdf/", views.export_jadwal_pdf_view, name="export_jadwal_pdf"),
 
     # Evaluasi Mingguan
     path("evaluasi/", views.evaluasi_view, name="evaluasi"),
+
+    # Kegiatan & Acara
+    path("kegiatan/", views.kegiatan_list_view, name="kegiatan_list"),
+    path("kegiatan/tambah/", views.kegiatan_tambah_view, name="kegiatan_tambah"),
+    path("kegiatan/edit/<int:kegiatan_id>/", views.kegiatan_edit_view, name="kegiatan_edit"),
+    path("kegiatan/hapus/<int:kegiatan_id>/", views.kegiatan_hapus_view, name="kegiatan_hapus"),
+    path("kegiatan/toggle/<int:kegiatan_id>/", views.kegiatan_toggle_status_view, name="kegiatan_toggle_status"),
 ]

@@ -133,6 +133,13 @@
     .btn-logout-cancel:hover {
         background-color: #E2E8F0 !important;
     }
+
+    /* Reset SweetAlert2 button wrapper styles */
+    .swal2-styled.swal2-confirm, .swal2-styled.swal2-cancel {
+        background-color: transparent !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
 </style>
 {% endblock %}
 
@@ -176,6 +183,11 @@
             class="sidebar-link {% if request.resolver_match.url_name == 'evaluasi' %}active{% endif %}">
             <i data-lucide="bar-chart-3" style="width:20px;height:20px;"></i>
             Evaluasi Mingguan
+        </a>
+        <a href="{% url 'tugas:kegiatan_list' %}"
+            class="sidebar-link {% if request.resolver_match.url_name == 'kegiatan_list' %}active{% endif %}">
+            <i data-lucide="calendar" style="width:20px;height:20px;"></i>
+            Kegiatan & Acara
         </a>
     </nav>
 
@@ -295,8 +307,8 @@
                         <p style="font-size: 0.95rem; color: #64748B; margin: 0; text-align: center;">Apakah Anda yakin ingin keluar dari aplikasi?</p>
                     `,
                     showCancelButton: true,
-                    confirmButtonText: 'Ya, Logout',
-                    cancelButtonText: 'Batal',
+                    confirmButtonText: '<span style="background-color: #E11D48; color: white; padding: 10px 20px; border-radius: 10px; font-weight: 600; display: inline-block; box-shadow: 0 4px 6px -1px rgba(225, 29, 72, 0.3);">Ya, Logout</span>',
+                    cancelButtonText: '<span style="background-color: #F1F5F9; color: #475569; padding: 10px 20px; border-radius: 10px; font-weight: 600; display: inline-block;">Batal</span>',
                     customClass: {
                         popup: 'swal-logout-modal',
                         confirmButton: 'btn-logout-confirm',

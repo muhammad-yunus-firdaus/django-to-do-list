@@ -42,7 +42,7 @@
             <i data-lucide="trending-up" style="width:24px;height:24px;color:var(--primary);"></i>
         </div>
         <div>
-            <div class="stat-value">{{ persentase_selesai|floatformat:0 }}%</div>
+            <div class="stat-value">{{ progres_persen }}%</div>
             <div class="stat-label">Progres</div>
         </div>
     </div>
@@ -52,10 +52,10 @@
 <div class="card animate-fade-up" style="padding:20px;margin-bottom:24px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <span class="text-sm font-bold">Progres Keseluruhan</span>
-        <span class="badge badge-info">{{ persentase_selesai|floatformat:0 }}%</span>
+        <span class="badge badge-info">{{ progres_persen }}%</span>
     </div>
     <div class="progress-bar">
-        <div class="progress-fill" style="width: {{ persentase_selesai|floatformat:0 }}%;"></div>
+        <div class="progress-fill" style="width: {{ progres_persen }}%;"></div>
     </div>
 </div>
 
@@ -88,6 +88,9 @@
         {% if agenda_total > 0 %}
         <div style="display:flex;align-items:center;gap:10px;">
             <span class="badge badge-info" id="dashAgendaStats">{{ agenda_selesai }}/{{ agenda_total }} Selesai ({{ agenda_persen|floatformat:0 }}%)</span>
+            <a href="{% url 'tugas:export_jadwal_pdf' %}" class="btn btn-ghost btn-sm" title="Export PDF">
+                <i data-lucide="file-text" style="width:14px;height:14px;"></i> Export PDF
+            </a>
             <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm">
                 <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Lihat Semua
             </a>
@@ -142,7 +145,7 @@
                                 <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
                             </button>
                             {% endif %}
-                            {% if akt.status != 'terlewat' %}
+                            {% if akt.status == 'belum' %}
                             <button onclick="dashToggle({{ akt.id }}, 'terlewat')" title="Terlewat"
                                 style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                                 onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'"
@@ -154,6 +157,7 @@
                             <button onclick="dashToggle({{ akt.id }}, 'belum')" title="Kembalikan"
                                 style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                                 onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)'"
+                                
                                 onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
                                 <i data-lucide="rotate-ccw" style="width:12px;height:12px;color:var(--text-secondary);"></i>
                             </button>
@@ -171,6 +175,88 @@
         <p>Belum ada jadwal untuk hari ini</p>
         <a href="{% url 'tugas:agenda' %}" class="btn btn-primary btn-sm" style="margin-top:8px;">
             <i data-lucide="plus" style="width:14px;height:14px;"></i> Buat Jadwal
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Janjian & Acara Mendatang -->
+<div class="card animate-fade-up" style="padding:20px;margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <i data-lucide="calendar-range" style="width:20px;height:20px;color:var(--primary);"></i>
+            <h3 style="margin:0;">Janjian & Acara Mendatang</h3>
+        </div>
+        <a href="{% url 'tugas:kegiatan_list' %}" class="btn btn-ghost btn-sm">
+            <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Kelola Semua
+        </a>
+    </div>
+
+    {% if kegiatan_mendatang %}
+    <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;">
+            <thead>
+                <tr style="text-align:left;">
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Waktu</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Acara / Pertemuan</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Lokasi / Link</th>
+                    <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);text-align:center;">Kategori</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for keg in kegiatan_mendatang %}
+                <tr style="transition:all 0.2s;">
+                    <td style="padding:12px;border-bottom:1px solid var(--border);white-space:nowrap;">
+                        <div style="font-weight:600;color:var(--text-primary);">{{ keg.tanggal|date:"d M Y" }}</div>
+                        <div class="text-xs" style="color:var(--primary);margin-top:2px;">{{ keg.jam_mulai|time:"H:i" }} - {{ keg.jam_selesai|time:"H:i" }}</div>
+                    </td>
+                    <td style="padding:12px;border-bottom:1px solid var(--border);">
+                        <div style="font-weight:600;color:var(--text-primary);">{{ keg.judul }}</div>
+                        {% if keg.catatan %}
+                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ keg.catatan }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="padding:12px;border-bottom:1px solid var(--border);">
+                        {% if keg.lokasi %}
+                            {% if "http" in keg.lokasi %}
+                            <a href="{{ keg.lokasi }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;color:var(--primary);text-decoration:none;font-weight:500;">
+                                <i data-lucide="video" style="width:14px;height:14px;"></i> Gabung Pertemuan
+                            </a>
+                            {% else %}
+                            <div style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);">
+                                <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--text-muted);"></i> {{ keg.lokasi }}
+                            </div>
+                            {% endif %}
+                        {% else %}
+                        <span class="text-xs" style="color:var(--text-muted);">Tidak ada lokasi</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:12px;border-bottom:1px solid var(--border);text-align:center;">
+                        {% if keg.kategori == 'akademik' %}
+                        <span class="badge badge-info" style="font-size: 0.75rem;">Akademik</span>
+                        {% elif keg.kategori == 'pekerjaan' %}
+                        <span class="badge badge-warning" style="font-size: 0.75rem;">Pekerjaan</span>
+                        {% elif keg.kategori == 'keluarga' %}
+                        <span class="badge badge-danger" style="font-size: 0.75rem;background-color: #EF4444;color: white;">Keluarga</span>
+                        {% elif keg.kategori == 'pribadi_sosial' %}
+                        <span class="badge badge-success" style="font-size: 0.75rem;">Pribadi & Sosial</span>
+                        {% elif keg.kategori == 'acara' %}
+                        <span class="badge badge-primary" style="font-size: 0.75rem;background-color: #6366F1;color: white;">Acara</span>
+                        {% else %}
+                        <span class="badge badge-muted" style="font-size: 0.75rem;">Lainnya</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:24px;">
+        <i data-lucide="calendar" style="width:36px;height:36px;color:var(--text-muted);"></i>
+        <p>Tidak ada janjian atau acara mendatang</p>
+        <a href="{% url 'tugas:kegiatan_list' %}" class="btn btn-primary btn-sm" style="margin-top:8px;">
+            <i data-lucide="plus" style="width:14px;height:14px;"></i> Buat Acara
         </a>
     </div>
     {% endif %}
@@ -356,7 +442,7 @@
                     if (data.status !== 'selesai') {
                         btns += `<button onclick="dashToggle(${id}, 'selesai')" title="Selesai" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i></button>`;
                     }
-                    if (data.status !== 'terlewat') {
+                    if (data.status === 'belum') {
                         btns += `<button onclick="dashToggle(${id}, 'terlewat')" title="Terlewat" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="x" style="width:14px;height:14px;color:var(--accent-warning);"></i></button>`;
                     }
                     if (data.status === 'selesai' || data.status === 'terlewat') {

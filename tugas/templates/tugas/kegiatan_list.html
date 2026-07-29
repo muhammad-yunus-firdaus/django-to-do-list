@@ -1,0 +1,241 @@
+{% extends "sidebar_base.html" %}
+{% load static %}
+
+{% block title %}Kegiatan & Acara - Manajemen Tugas{% endblock %}
+{% block page_title %}Kegiatan & Acara{% endblock %}
+
+{% block head %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/kegiatan.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Top Filter Bar -->
+<div class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;">
+    <div class="filter-wrapper">
+        <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;margin:0;">
+            <!-- Status Filter -->
+            <div style="display:flex;gap:4px;background:var(--bg-secondary);padding:4px;border-radius:0.75rem;border:1px solid var(--border);">
+                <a href="?status_filter=akan_datang{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}" 
+                   class="btn {% if status_filter == 'akan_datang' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm" 
+                   style="border-radius:0.5rem;padding:6px 12px;">
+                    Akan Datang
+                </a>
+                <a href="?status_filter=riwayat{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}" 
+                   class="btn {% if status_filter == 'riwayat' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm" 
+                   style="border-radius:0.5rem;padding:6px 12px;">
+                    Riwayat Acara
+                </a>
+            </div>
+
+            <!-- Kategori Select -->
+            <div style="display:flex;align-items:center;gap:8px;">
+                <label class="form-label" style="margin:0;font-size:0.8rem;color:var(--text-muted);white-space:nowrap;">Kategori:</label>
+                <select name="kategori" onchange="this.form.submit()" style="font-size:0.875rem;padding:6px 12px;height:36px;border-radius:0.5rem;width:150px;">
+                    <option value="">Semua</option>
+                    {% for key, label in kategori_choices %}
+                    <option value="{{ key }}" {% if kategori_filter == key %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <input type="hidden" name="status_filter" value="{{ status_filter }}">
+            {% if kategori_filter %}
+            <a href="?status_filter={{ status_filter }}" class="btn btn-ghost btn-sm" style="height:36px;">Reset</a>
+            {% endif %}
+        </form>
+
+        <button onclick="bukaModalTambah()" class="btn btn-primary btn-sm" style="height:36px;">
+            <i data-lucide="plus" style="width:16px;height:16px;"></i> Tambah Kegiatan
+        </button>
+    </div>
+</div>
+
+<!-- Kegiatan List -->
+<div class="animate-fade-up">
+    {% if kegiatan_list %}
+    <div class="kegiatan-grid">
+        {% for keg in kegiatan_list %}
+        <div class="keg-card cat-{{ keg.kategori }}">
+            <div>
+                <!-- Header: Judul & Category Badge -->
+                <div class="keg-header">
+                    <h4 class="keg-title">{{ keg.judul }}</h4>
+                    <div>
+                        {% if keg.kategori == 'akademik' %}
+                        <span class="badge badge-info" style="font-size:0.65rem;">Akademik</span>
+                        {% elif keg.kategori == 'pekerjaan' %}
+                        <span class="badge badge-warning" style="font-size:0.65rem;">Pekerjaan</span>
+                        {% elif keg.kategori == 'keluarga' %}
+                        <span class="badge badge-danger" style="font-size:0.65rem;background:#EF4444;color:white;">Keluarga</span>
+                        {% elif keg.kategori == 'pribadi_sosial' %}
+                        <span class="badge badge-success" style="font-size:0.65rem;">Pribadi & Sosial</span>
+                        {% elif keg.kategori == 'acara' %}
+                        <span class="badge badge-primary" style="font-size:0.65rem;background:#6366F1;color:white;">Acara</span>
+                        {% else %}
+                        <span class="badge badge-muted" style="font-size:0.65rem;">Lainnya</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Meta Info -->
+                <div class="keg-meta-item">
+                    <i data-lucide="calendar" style="width:14px;height:14px;"></i>
+                    <span>{{ keg.tanggal|date:"l, d F Y" }}</span>
+                </div>
+                <div class="keg-meta-item">
+                    <i data-lucide="clock" style="width:14px;height:14px;"></i>
+                    <span style="font-weight:600;color:var(--primary);">{{ keg.jam_mulai|time:"H:i" }} - {{ keg.jam_selesai|time:"H:i" }}</span>
+                </div>
+                
+                <div class="keg-meta-item">
+                    <i data-lucide="map-pin" style="width:14px;height:14px;"></i>
+                    {% if keg.lokasi %}
+                        {% if "http" in keg.lokasi %}
+                        <a href="{{ keg.lokasi }}" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                            <i data-lucide="video" style="width:12px;height:12px;"></i> Tautan Virtual
+                        </a>
+                        {% else %}
+                        <span>{{ keg.lokasi }}</span>
+                        {% endif %}
+                    {% else %}
+                    <span style="color:var(--text-muted);font-style:italic;">Tidak ada lokasi</span>
+                    {% endif %}
+                </div>
+
+                <!-- Notes / Description -->
+                {% if keg.catatan %}
+                <div class="keg-notes">
+                    {{ keg.catatan|linebreaksbr }}
+                </div>
+                {% else %}
+                <div style="height:12px;"></div>
+                {% endif %}
+            </div>
+
+            <!-- Footer: Status & Actions -->
+            <div class="keg-footer">
+                <div>
+                    {% if keg.status == 'akan_datang' %}
+                    <span class="badge badge-muted" style="display:inline-flex;align-items:center;gap:4px;">
+                        <i data-lucide="clock-3" style="width:10px;height:10px;"></i> Akan Datang
+                    </span>
+                    {% elif keg.status == 'selesai' %}
+                    <span class="badge badge-success" style="display:inline-flex;align-items:center;gap:4px;">
+                        <i data-lucide="check" style="width:10px;height:10px;"></i> Selesai
+                    </span>
+                    {% elif keg.status == 'dibatalkan' %}
+                    <span class="badge badge-danger" style="display:inline-flex;align-items:center;gap:4px;">
+                        <i data-lucide="x" style="width:10px;height:10px;"></i> Dibatalkan
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div style="display:flex;gap:6px;">
+                    {% if keg.status == 'akan_datang' %}
+                    <button onclick="quickFinishKegiatan({{ keg.id }})" class="btn btn-ghost btn-sm btn-quick-finish" style="padding:6px;min-width:32px;height:32px;" title="Tandai Selesai" data-id="{{ keg.id }}">
+                        <i data-lucide="check-circle" style="width:14px;height:14px;color:var(--accent-success);"></i>
+                    </button>
+                    {% else %}
+                    <button onclick="quickUndoKegiatan({{ keg.id }})" class="btn btn-ghost btn-sm" style="padding:6px;min-width:32px;height:32px;" title="Kembalikan ke Akan Datang" data-id="{{ keg.id }}">
+                        <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+                    </button>
+                    {% endif %}
+                    <button onclick="bukaModalEdit({{ keg.id }})" class="btn btn-ghost btn-sm" style="padding:6px;min-width:32px;height:32px;" title="Edit Acara">
+                        <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
+                    </button>
+                    <button onclick="konfirmasiHapusKegiatan({{ keg.id }}, '{{ keg.judul|escapejs }}', event)" class="btn btn-ghost btn-sm" style="padding:6px;min-width:32px;height:32px;" title="Hapus Acara">
+                        <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--accent-danger);"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="padding:40px 20px;">
+        <div class="empty-state" style="padding:32px;">
+            <i data-lucide="calendar" style="width:48px;height:48px;color:var(--text-muted);"></i>
+            <p style="font-size:1.1rem;font-weight:600;margin-top:12px;">Tidak Ada Kegiatan / Acara</p>
+            <p class="text-xs" style="color:var(--text-muted);max-width:280px;margin-top:4px;">Belum ada kegiatan yang terdaftar dalam kriteria filter Anda.</p>
+            <button onclick="bukaModalTambah()" class="btn btn-primary btn-sm" style="margin-top:16px;">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i> Tambah Kegiatan Baru
+            </button>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Form Template (Hidden) -->
+<div id="kegiatanFormTemplate" style="display:none;">
+    <div class="swal-form-grid">
+        <!-- Error Alert: Full Width -->
+        <div class="swal-form-col-full" id="swal-error-alert" style="display: none; align-items: center; gap: 8px; background: #FFE4E6; border: 1px solid #FECDD3; color: #9F1239; font-weight: 500; font-size: 0.875rem; border-radius: 0.75rem; padding: 0.75rem 1rem; margin-bottom: 0.5rem; justify-content: flex-start; box-shadow: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9F1239" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span class="error-text"></span>
+        </div>
+
+        <!-- Judul Kegiatan: Full Width -->
+        <div class="swal-form-col-full">
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Judul Kegiatan</label>
+            <input type="text" id="swal-judul" class="form-input" style="width:100%;" placeholder="Masukkan nama/judul kegiatan...">
+        </div>
+        
+        <!-- Kategori & Status: 2 Columns -->
+        <div>
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Kategori</label>
+            <select id="swal-kategori" class="form-select" style="width:100%;">
+                <option value="akademik">Akademik</option>
+                <option value="pekerjaan">Pekerjaan</option>
+                <option value="keluarga">Keluarga</option>
+                <option value="pribadi_sosial">Pribadi & Sosial</option>
+                <option value="acara">Acara/Event</option>
+                <option value="lainnya">Lainnya</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Status</label>
+            <select id="swal-status" class="form-select" style="width:100%;">
+                <option value="akan_datang" selected>Akan Datang</option>
+                <option value="selesai">Selesai</option>
+                <option value="dibatalkan">Dibatalkan</option>
+            </select>
+        </div>
+        
+        <!-- Tanggal: Full Width -->
+        <div class="swal-form-col-full">
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Tanggal</label>
+            <input type="date" id="swal-tanggal" class="form-input" style="width:100%;">
+        </div>
+        
+        <!-- Jam Mulai & Jam Selesai: 2 Columns -->
+        <div>
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Jam Mulai</label>
+            <input type="time" id="swal-jam_mulai" class="form-input" style="width:100%;">
+        </div>
+        <div>
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Jam Selesai</label>
+            <input type="time" id="swal-jam_selesai" class="form-input" style="width:100%;">
+        </div>
+        
+        <!-- Lokasi / Link: Full Width -->
+        <div class="swal-form-col-full">
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Lokasi / Link</label>
+            <input type="text" id="swal-lokasi" class="form-input" style="width:100%;" placeholder="Lokasi fisik atau link video conference...">
+        </div>
+        
+        <!-- Catatan: Full Width -->
+        <div class="swal-form-col-full">
+            <label class="form-label" style="font-weight:600;font-size:0.875rem;color:#334155;margin-bottom:6px;display:block;">Catatan (Opsional)</label>
+            <textarea id="swal-catatan" class="form-input" style="width:100%;min-height:90px;height:90px;resize:vertical;" placeholder="Catatan tambahan..."></textarea>
+        </div>
+    </div>
+</div>
+
+<!-- URLs for JS -->
+<div id="kegiatan-urls" data-tambah="{% url 'tugas:kegiatan_tambah' %}" data-toggle="{% url 'tugas:kegiatan_toggle_status' 0 %}" style="display:none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/kegiatan.js' %}"></script>
+{% endblock %}

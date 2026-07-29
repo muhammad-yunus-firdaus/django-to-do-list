@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from datetime import date, time, timedelta
 
-from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan
+from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan, Kegiatan
 from .views import _get_week_range, _get_weekly_stats, _get_next_free_slot
 
 
@@ -212,6 +212,27 @@ class AktivitasHarianTests(TestCase):
         akt.refresh_from_db()
         self.assertEqual(akt.status, 'terlewat')
 
+    def test_api_status_change_validation_lock(self):
+        """Aktivitas dengan status 'selesai' tidak boleh diubah ke 'terlewat'."""
+        akt = AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Membaca Buku 2',
+            jam_mulai=time(16, 0),
+            durasi_menit=45,
+            tanggal=date.today(),
+            status='selesai'
+        )
+
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse('tugas:toggle_aktivitas', args=[akt.id]),
+            '{"status": "terlewat"}',
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        akt.refresh_from_db()
+        self.assertEqual(akt.status, 'selesai')
+
 
 class SmartDefaultSlotTests(TestCase):
     """Test logika Smart Default Jam Mulai."""
@@ -408,3 +429,164 @@ class SecurityIsolationTests(TestCase):
         # Try to delete User A's activity as User B -> should get 404
         response_delete = self.client.post(reverse('tugas:hapus_aktivitas', args=[aktA.id]))
         self.assertEqual(response_delete.status_code, 404)
+
+
+class KegiatanTests(TestCase):
+    def setUp(self):
+        self.userA = User.objects.create_user(username='userA', password='password123')
+        self.userB = User.objects.create_user(username='userB', password='password123')
+        self.client = Client()
+
+    def test_kegiatan_crud_operations(self):
+        self.client.force_login(self.userA)
+        # Create
+        response = self.client.post(reverse('tugas:kegiatan_tambah'), {
+            'judul': 'Meeting Dosen',
+            'kategori': 'akademik',
+            'tanggal': '2026-08-01',
+            'jam_mulai': '09:00',
+            'jam_selesai': '10:00',
+            'lokasi': 'Zoom Link',
+            'catatan': 'Bahas skripsi',
+            'status': 'akan_datang'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        
+        # Check DB
+        keg = Kegiatan.objects.filter(user=self.userA, judul='Meeting Dosen').first()
+        self.assertIsNotNone(keg)
+        self.assertEqual(keg.lokasi, 'Zoom Link')
+
+        # Edit/Update
+        response_edit = self.client.post(reverse('tugas:kegiatan_edit', args=[keg.id]), {
+            'judul': 'Meeting Dosen Updated',
+            'kategori': 'akademik',
+            'tanggal': '2026-08-01',
+            'jam_mulai': '09:00',
+            'jam_selesai': '10:30',
+            'lokasi': 'Zoom Link 2',
+            'catatan': 'Bahas skripsi bab 2',
+            'status': 'selesai'
+        })
+        self.assertEqual(response_edit.status_code, 200)
+        self.assertTrue(response_edit.json()['success'])
+        keg.refresh_from_db()
+        self.assertEqual(keg.judul, 'Meeting Dosen Updated')
+        self.assertEqual(keg.jam_selesai, time(10, 30))
+
+        # Delete
+        response_delete = self.client.post(reverse('tugas:kegiatan_hapus', args=[keg.id]))
+        self.assertEqual(response_delete.status_code, 200)
+        self.assertTrue(response_delete.json()['success'])
+        self.assertEqual(Kegiatan.objects.filter(id=keg.id).count(), 0)
+
+    def test_kegiatan_validation_time_order(self):
+        # jam_selesai <= jam_mulai should fail validation
+        keg = Kegiatan(
+            user=self.userA,
+            judul='Invalid Time Event',
+            kategori='lainnya',
+            tanggal=date(2026, 8, 1),
+            jam_mulai=time(10, 0),
+            jam_selesai=time(9, 0)
+        )
+        with self.assertRaises(ValidationError):
+            keg.full_clean()
+
+    def test_kegiatan_overlap_detection(self):
+        # Create a valid event
+        keg1 = Kegiatan.objects.create(
+            user=self.userA,
+            judul='Event 1',
+            kategori='pekerjaan',
+            tanggal=date(2026, 8, 1),
+            jam_mulai=time(9, 0),
+            jam_selesai=time(10, 0)
+        )
+
+        # Event 2 overlapping keg1 -> should fail clean() / save()
+        keg2 = Kegiatan(
+            user=self.userA,
+            judul='Event 2',
+            kategori='pekerjaan',
+            tanggal=date(2026, 8, 1),
+            jam_mulai=time(9, 30),
+            jam_selesai=time(10, 30)
+        )
+        with self.assertRaises(ValidationError):
+            keg2.save()
+
+        # Activity Harian overlapping keg1 -> should fail Clean
+        akt = AktivitasHarian(
+            user=self.userA,
+            judul='Akt Overlap',
+            jam_mulai=time(9, 15),
+            durasi_menit=30,
+            tanggal=date(2026, 8, 1)
+        )
+        with self.assertRaises(ValidationError):
+            akt.save()
+
+    def test_kegiatan_user_isolation(self):
+        kegA = Kegiatan.objects.create(
+            user=self.userA,
+            judul='User A Secret Event',
+            kategori='pribadi_sosial',
+            tanggal=date(2026, 8, 1),
+            jam_mulai=time(14, 0),
+            jam_selesai=time(15, 0)
+        )
+
+        # Login as User B
+        self.client.force_login(self.userB)
+        
+        # User B tries to view -> should not contain User A's secret event
+        response = self.client.get(reverse('tugas:kegiatan_list'))
+        self.assertNotContains(response, 'User A Secret Event')
+
+        # User B tries to edit User A's event -> 404
+        response_edit = self.client.post(reverse('tugas:kegiatan_edit', args=[kegA.id]), {
+            'judul': 'Hacked',
+            'kategori': 'pribadi_sosial',
+            'tanggal': '2026-08-01',
+            'jam_mulai': '14:00',
+            'jam_selesai': '15:00',
+            'status': 'selesai'
+        })
+        self.assertEqual(response_edit.status_code, 404)
+
+        # User B tries to delete User A's event -> 404
+        response_delete = self.client.post(reverse('tugas:kegiatan_hapus', args=[kegA.id]))
+        self.assertEqual(response_delete.status_code, 404)
+
+    def test_kegiatan_toggle_status(self):
+        keg = Kegiatan.objects.create(
+            user=self.userA,
+            judul='Acara Rapat',
+            kategori='akademik',
+            tanggal=date.today(),
+            jam_mulai=time(10, 0),
+            jam_selesai=time(11, 0),
+            status='akan_datang'
+        )
+        self.client.force_login(self.userA)
+        response = self.client.post(
+            reverse('tugas:kegiatan_toggle_status', args=[keg.id]),
+            '{"status": "selesai"}',
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        keg.refresh_from_db()
+        self.assertEqual(keg.status, 'selesai')
+
+        # Test invalid status
+        response_invalid = self.client.post(
+            reverse('tugas:kegiatan_toggle_status', args=[keg.id]),
+            '{"status": "invalid_status"}',
+            content_type='application/json'
+        )
+        self.assertEqual(response_invalid.status_code, 400)
+
+
