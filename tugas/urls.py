@@ -24,6 +24,8 @@ urlpatterns = [
     path("export/csv/", views.export_csv, name="export_csv"),
     path("export/excel/", views.export_excel, name="export_excel"),
     path("export/pdf/", views.export_pdf, name="export_pdf"),
+    path("export/kegiatan/pdf/", views.export_kegiatan_pdf, name="export_kegiatan_pdf"),
+    path("export/kegiatan/excel/", views.export_kegiatan_excel, name="export_kegiatan_excel"),
 
     # Subtask
     path("subtask/tambah/<int:tugas_id>/", views.tambah_subtask, name="tambah_subtask"),

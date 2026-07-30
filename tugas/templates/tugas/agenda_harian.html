@@ -35,9 +35,9 @@
                 <i data-lucide="calendar" style="width:14px;height:14px;"></i> Hari Ini
             </a>
             {% endif %}
-            <a href="{% url 'tugas:export_jadwal_pdf' %}?tanggal={{ tanggal|date:'Y-m-d' }}" class="btn btn-ghost btn-sm" style="margin-left:4px;" title="Export PDF">
-                <i data-lucide="file-text" style="width:14px;height:14px;"></i> Export PDF
-            </a>
+            <button type="button" onclick="openExportModal('{{ tanggal|date:'Y-m-d' }}')" class="btn btn-ghost btn-sm export-btn" style="margin-left:4px;" title="Export PDF">
+                <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i> Export PDF
+            </button>
         </div>
 
         <!-- Quick Stats -->

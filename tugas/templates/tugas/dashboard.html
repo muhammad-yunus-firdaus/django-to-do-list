@@ -88,9 +88,9 @@
         {% if agenda_total > 0 %}
         <div style="display:flex;align-items:center;gap:10px;">
             <span class="badge badge-info" id="dashAgendaStats">{{ agenda_selesai }}/{{ agenda_total }} Selesai ({{ agenda_persen|floatformat:0 }}%)</span>
-            <a href="{% url 'tugas:export_jadwal_pdf' %}" class="btn btn-ghost btn-sm" title="Export PDF">
-                <i data-lucide="file-text" style="width:14px;height:14px;"></i> Export PDF
-            </a>
+            <button type="button" onclick="openExportModal()" class="btn btn-ghost btn-sm export-btn" title="Export PDF">
+                <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i> Export PDF
+            </button>
             <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm">
                 <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Lihat Semua
             </a>

@@ -29,16 +29,11 @@
                 <span class="hide-mobile">Tambah</span>
                 <span class="show-mobile">Tambah</span>
             </a>
-            <a href="{% url 'tugas:export_excel' %}" class="btn btn-ghost btn-sm export-btn">
-                <i data-lucide="file-spreadsheet" style="width:16px;height:16px;color:var(--accent-success);"></i>
-                <span class="hide-mobile">Export Excel</span>
-                <span class="show-mobile">Excel</span>
-            </a>
-            <a href="{% url 'tugas:export_pdf' %}" class="btn btn-ghost btn-sm export-btn">
+            <button type="button" onclick="openExportModal()" class="btn btn-ghost btn-sm export-btn" title="Export Data">
                 <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i>
-                <span class="hide-mobile">Export PDF</span>
-                <span class="show-mobile">PDF</span>
-            </a>
+                <span class="hide-mobile">Export Data</span>
+                <span class="show-mobile">Export</span>
+            </button>
         </div>
     </div>
 </div>

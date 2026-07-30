@@ -403,6 +403,108 @@ def export_pdf(request):
     return response
 
 
+@login_required
+def export_kegiatan_pdf(request):
+    """Download all kegiatan/acara in PDF format."""
+    from reportlab.lib.pagesizes import letter, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    response = HttpResponse(content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="kegiatan.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter))
+    styles = getSampleStyleSheet()
+    style_normal = styles["Normal"]
+
+    data = [["Judul", "Deskripsi", "Tanggal", "Jam Mulai", "Jam Selesai", "Lokasi", "Kategori", "Status"]]
+
+    kegiatan = Kegiatan.objects.filter(user=request.user).order_by('tanggal', 'jam_mulai')
+    for keg in kegiatan:
+        data.append([
+            Paragraph(keg.judul, style_normal),
+            Paragraph(keg.deskripsi or '-', style_normal),
+            keg.tanggal.isoformat(),
+            keg.jam_mulai.strftime('%H:%M'),
+            keg.jam_selesai.strftime('%H:%M') if keg.jam_selesai else '-',
+            Paragraph(keg.lokasi or '-', style_normal),
+            keg.get_kategori_display(),
+            keg.get_status_display(),
+        ])
+
+    table = Table(data, colWidths=[120, 180, 80, 60, 60, 100, 100, 100])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.gray),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 1), (-1, -1), 'TOP'),
+    ]))
+
+    doc.build([table])
+    return response
+
+
+@login_required
+def export_kegiatan_excel(request):
+    """Download all kegiatan/acara in Excel (.xlsx) format."""
+    from openpyxl import Workbook
+    from openpyxl.styles.borders import Border, Side
+    from openpyxl.styles import Font, Alignment, PatternFill
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="kegiatan.xlsx"'
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Kegiatan & Acara"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+    border_style = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["Judul", "Deskripsi", "Tanggal", "Jam Mulai", "Jam Selesai", "Lokasi", "Kategori", "Status"]
+    sheet.append(headers)
+
+    for cell in sheet[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = border_style
+
+    kegiatan = Kegiatan.objects.filter(user=request.user).order_by('tanggal', 'jam_mulai')
+    for row_idx, keg in enumerate(kegiatan, start=2):
+        sheet.append([
+            keg.judul,
+            keg.deskripsi or '-',
+            keg.tanggal.isoformat(),
+            keg.jam_mulai.strftime('%H:%M'),
+            keg.jam_selesai.strftime('%H:%M') if keg.jam_selesai else '-',
+            keg.lokasi or '-',
+            keg.get_kategori_display(),
+            keg.get_status_display()
+        ])
+        for cell in sheet[row_idx]:
+            cell.alignment = Alignment(horizontal="left", vertical="center")
+            cell.border = border_style
+
+    for col in sheet.columns:
+        max_len = max((len(str(c.value or "")) for c in col), default=0)
+        sheet.column_dimensions[col[0].column_letter].width = max_len + 2
+
+    workbook.save(response)
+    return response
+
+
 # ══════════════════════════════════════════════════════════════════════
 # SUBTASK - Kelola Sub-tugas
 # ══════════════════════════════════════════════════════════════════════
@@ -1438,7 +1540,7 @@ def export_jadwal_pdf_view(request):
         f"<b>Ringkasan Hari Ini:</b> Total {total_items} item agenda | "
         f"{selesai_items} Selesai | Progres: {progres_persen}%"
     )
-    story.append(Paragraph(summary_text, story_style))
+    story.append(Paragraph(summary_text, summary_style))
 
     # Table headers
     headers = [
