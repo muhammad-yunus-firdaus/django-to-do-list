@@ -50,6 +50,7 @@ urlpatterns = [
     path("agenda/hapus/<int:aktivitas_id>/", views.hapus_aktivitas_view, name="hapus_aktivitas"),
     path("agenda/copy-kemarin/", views.copy_jadwal_kemarin_view, name="copy_jadwal_kemarin"),
     path("agenda/export-pdf/", views.export_jadwal_pdf_view, name="export_jadwal_pdf"),
+    path("agenda/export-excel/", views.export_jadwal_excel_view, name="export_jadwal_excel"),
     path("agenda/api/today/", views.api_jadwal_hari_ini, name="api_jadwal_today"),
 
     # Evaluasi Mingguan

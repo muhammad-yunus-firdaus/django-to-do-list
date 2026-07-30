@@ -1589,3 +1589,107 @@ def export_jadwal_pdf_view(request):
 
     doc.build(story)
     return response
+
+
+@login_required
+def export_jadwal_excel_view(request):
+    """Download daily agenda schedule in Excel (.xlsx) format."""
+    from datetime import date
+    from openpyxl import Workbook
+    from openpyxl.styles.borders import Border, Side
+    from openpyxl.styles import Font, Alignment, PatternFill
+
+    tanggal_str = request.GET.get('tanggal', '')
+    if tanggal_str:
+        try:
+            tanggal = date.fromisoformat(tanggal_str)
+        except ValueError:
+            tanggal = date.today()
+    else:
+        tanggal = date.today()
+
+    user = request.user
+    aktivitas_list = AktivitasHarian.objects.filter(
+        user=user,
+        tanggal=tanggal,
+    ).select_related('user').order_by('jam_mulai')
+
+    kegiatan_list = Kegiatan.objects.filter(
+        user=user,
+        tanggal=tanggal,
+    ).select_related('user').order_by('jam_mulai')
+
+    timeline_items = []
+    for akt in aktivitas_list:
+        timeline_items.append({
+            'type': 'Aktivitas Harian',
+            'judul': akt.judul,
+            'jam_mulai': akt.jam_mulai,
+            'jam_selesai': akt.jam_selesai,
+            'kategori': 'Habit' if akt.is_habit else 'Rutin',
+            'durasi': f"{akt.durasi_menit} mnt",
+            'lokasi': '-',
+            'status': akt.get_status_display() if hasattr(akt, 'get_status_display') else akt.status,
+        })
+        
+    for keg in kegiatan_list:
+        timeline_items.append({
+            'type': 'Kegiatan & Acara',
+            'judul': keg.judul,
+            'jam_mulai': keg.jam_mulai,
+            'jam_selesai': keg.jam_selesai,
+            'kategori': keg.get_kategori_display() if hasattr(keg, 'get_kategori_display') else keg.kategori,
+            'durasi': '-',
+            'lokasi': keg.lokasi or '-',
+            'status': keg.get_status_display() if hasattr(keg, 'get_status_display') else keg.status,
+        })
+
+    timeline_items.sort(key=lambda x: x['jam_mulai'])
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    filename = f"jadwal_{tanggal.isoformat()}.xlsx"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = f"Jadwal {tanggal.isoformat()}"
+
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4F46E5", end_color="4F46E5", fill_type="solid")
+    border_style = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+
+    headers = ["Jam", "Tipe", "Judul", "Kategori", "Durasi", "Lokasi / Link", "Status"]
+    sheet.append(headers)
+
+    for cell in sheet[1]:
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = border_style
+
+    for row_idx, item in enumerate(timeline_items, start=2):
+        jam_str = f"{item['jam_mulai'].strftime('%H:%M')} - {item['jam_selesai'].strftime('%H:%M') if item['jam_selesai'] else '?'}"
+        sheet.append([
+            jam_str,
+            item['type'],
+            item['judul'],
+            item['kategori'],
+            item['durasi'],
+            item['lokasi'],
+            item['status']
+        ])
+        for cell in sheet[row_idx]:
+            cell.alignment = Alignment(horizontal="left", vertical="center")
+            cell.border = border_style
+
+    for col in sheet.columns:
+        max_len = max((len(str(c.value or "")) for c in col), default=0)
+        sheet.column_dimensions[col[0].column_letter].width = max_len + 2
+
+    workbook.save(response)
+    return response
