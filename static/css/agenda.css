@@ -1,3 +1,7 @@
+/* ══════════════════════════════════════════════════════════════════════
+   AGENDA.CSS — Timeline 24 Jam, Filter, Empty Slots, Reminder Toast
+   ══════════════════════════════════════════════════════════════════════ */
+
 /* Custom SweetAlert2 Styling */
 .swal-custom-modal {
     max-width: 680px !important;
@@ -53,7 +57,7 @@
 
 .swal-actions-gap {
     display: flex !important;
-    gap: 0.75rem !important; /* 12px jarak antar tombol */
+    gap: 0.75rem !important;
     justify-content: center !important;
     margin-top: 1.5rem !important;
 }
@@ -90,4 +94,155 @@
 
 .swal-custom-modal .yesterday-item-card:hover {
     border-color: #C7D2FE !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   FILTER BUTTONS — Segmented Control
+   ══════════════════════════════════════════════════════════════════════ */
+
+.timeline-filter-group {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-secondary, #F1F5F9);
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid var(--border, #E2E8F0);
+}
+
+.timeline-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted, #94A3B8);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.timeline-filter-btn:hover {
+    color: var(--text-secondary, #64748B);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.timeline-filter-btn.active {
+    color: var(--primary, #4F46E5);
+    background: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   EMPTY SLOT — Waktu Kosong Card
+   ══════════════════════════════════════════════════════════════════════ */
+
+.timeline-slot-empty {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 20px;
+    background: var(--bg-secondary, #F8FAFC);
+    border: 1px dashed var(--border, #E2E8F0);
+    border-radius: var(--radius-md, 12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.timeline-slot-empty:hover {
+    border-color: var(--primary, #4F46E5);
+    background: rgba(79, 70, 229, 0.03);
+    border-style: solid;
+}
+
+.btn-add-slot {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--primary, #4F46E5);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+}
+
+.timeline-slot-empty:hover .btn-add-slot {
+    opacity: 1;
+    border-color: var(--primary, #4F46E5);
+    background: var(--primary-light, rgba(79, 70, 229, 0.08));
+}
+
+.btn-add-slot:hover {
+    background: var(--primary, #4F46E5) !important;
+    color: #ffffff !important;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════
+   REMINDER TOAST — SweetAlert2 Pengingat Jadwal
+   ══════════════════════════════════════════════════════════════════════ */
+
+.swal-reminder-toast {
+    border-radius: 12px !important;
+    padding: 14px 18px !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    background: #ffffff !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06) !important;
+}
+
+.swal-reminder-toast .swal2-title {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #1E293B !important;
+}
+
+.swal-reminder-toast .swal2-icon {
+    width: 36px !important;
+    height: 36px !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+.swal-reminder-toast .swal2-timer-progress-bar {
+    background: var(--primary, #4F46E5) !important;
+}
+
+/* ── Mobile SweetAlert2 Modals & Grids ───────────────────────────────── */
+.swal-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    text-align: left;
+}
+
+@media (max-width: 576px) {
+    .swal-custom-modal {
+        width: 92% !important;
+        padding: 1.25rem !important;
+    }
+    .swal-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .swal-custom-modal .yesterday-item-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 0.75rem !important;
+    }
+    .swal-custom-modal .yesterday-item-card > div {
+        width: 100% !important;
+    }
 }

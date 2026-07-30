@@ -60,6 +60,26 @@
             document.getElementById('sidebarOverlay').classList.toggle('open');
         }
 
+        // Global Password Visibility Toggle
+        function togglePasswordVisibility(button) {
+            const input = button.parentElement.querySelector('input');
+            if (!input) return;
+            const icon = button.querySelector('[data-lucide]');
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'eye-off');
+                    if (window.lucide) lucide.createIcons();
+                }
+            } else {
+                input.type = 'password';
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'eye');
+                    if (window.lucide) lucide.createIcons();
+                }
+            }
+        }
+
         // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

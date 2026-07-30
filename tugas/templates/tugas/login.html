@@ -41,7 +41,12 @@
                     <i data-lucide="lock"
                         style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);"></i>
                     <input type="password" name="password" placeholder="Masukkan password"
-                        autocomplete="current-password" required style="padding-left:40px;">
+                        autocomplete="current-password" required style="padding-left:40px;padding-right:40px;">
+                    <button type="button" onclick="togglePasswordVisibility(this)"
+                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;z-index:10;"
+                        title="Tampilkan/Sembunyikan Password">
+                        <i data-lucide="eye" style="width:18px;height:18px;color:var(--text-muted);"></i>
+                    </button>
                 </div>
             </div>
 

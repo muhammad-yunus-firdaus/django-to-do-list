@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -126,11 +128,20 @@ def dashboard_view(request):
         tanggal__gte=date.today(),
     ).select_related('user').order_by('tanggal', 'jam_mulai')[:5]
 
-    # Hitung progres keseluruhan gabungan (Tugas + Aktivitas Hari Ini)
+    # Hitung kegiatan hari ini untuk statistik gabungan
+    kegiatan_hari_ini = Kegiatan.objects.filter(
+        user=user,
+        tanggal=date.today(),
+    )
+    kegiatan_total_today = kegiatan_hari_ini.count()
+    kegiatan_selesai_today = kegiatan_hari_ini.filter(status='selesai').count()
+
+    # Hitung progres keseluruhan gabungan (Tugas + Aktivitas Hari Ini + Kegiatan Hari Ini)
     total_tugas = stats.get("total_tugas", 0)
     tugas_selesai = stats.get("tugas_selesai", 0)
-    total_items = total_tugas + agenda_total
-    completed_items = tugas_selesai + agenda_selesai
+    total_items = total_tugas + agenda_total + kegiatan_total_today
+    completed_items = tugas_selesai + agenda_selesai + kegiatan_selesai_today
+    belum_items = total_items - completed_items
     progres_persen = round((completed_items / total_items * 100)) if total_items > 0 else 0
 
     context = {
@@ -144,6 +155,9 @@ def dashboard_view(request):
         "agenda_selesai": agenda_selesai,
         "agenda_persen": agenda_persen,
         "kegiatan_mendatang": kegiatan_mendatang,
+        "total_items": total_items,
+        "completed_items": completed_items,
+        "belum_items": belum_items,
         "progres_persen": progres_persen,
     }
 
@@ -606,6 +620,82 @@ def _get_next_free_slot(user, tanggal):
     return '07:00'
 
 
+def _generate_24h_timeline(aktivitas_list, kegiatan_list):
+    """
+    Membuat timeline 24 jam dengan slot 30 menit.
+    Aktivitas/kegiatan disisipkan secara presisi ke slot yang sesuai.
+    Slot kosong ditandai sebagai 'kosong'.
+    Returns list of dicts siap dijadikan JSON.
+    """
+    # Kumpulkan semua occupied intervals
+    occupied = []
+    for akt in aktivitas_list:
+        end_time = akt.jam_selesai or akt._calculate_jam_selesai()
+        if end_time:
+            occupied.append({
+                'type': 'aktivitas',
+                'id': akt.id,
+                'judul': akt.judul,
+                'jam_mulai': akt.jam_mulai.strftime('%H:%M'),
+                'jam_selesai': end_time.strftime('%H:%M'),
+                'durasi_menit': akt.durasi_menit,
+                'status': akt.status,
+                'is_habit': akt.is_habit,
+                'start_minutes': akt.jam_mulai.hour * 60 + akt.jam_mulai.minute,
+                'end_minutes': end_time.hour * 60 + end_time.minute,
+            })
+    for keg in kegiatan_list:
+        if keg.jam_selesai:
+            occupied.append({
+                'type': 'kegiatan',
+                'id': keg.id,
+                'judul': keg.judul,
+                'jam_mulai': keg.jam_mulai.strftime('%H:%M'),
+                'jam_selesai': keg.jam_selesai.strftime('%H:%M'),
+                'kategori': keg.kategori,
+                'status': keg.status,
+                'lokasi': keg.lokasi or '',
+                'start_minutes': keg.jam_mulai.hour * 60 + keg.jam_mulai.minute,
+                'end_minutes': keg.jam_selesai.hour * 60 + keg.jam_selesai.minute,
+            })
+
+    # Sort by start time
+    occupied.sort(key=lambda x: x['start_minutes'])
+
+    # Build timeline: iterate through 24h in 30-min slots, inserting items precisely
+    timeline = []
+    cursor = 0  # current position in minutes from 00:00
+
+    for item in occupied:
+        # Fill gap before this item with empty slots (30-min chunks)
+        while cursor < item['start_minutes']:
+            slot_end = min(cursor + 30, item['start_minutes'])
+            timeline.append({
+                'type': 'kosong',
+                'jam_mulai': f"{cursor // 60:02d}:{cursor % 60:02d}",
+                'jam_selesai': f"{slot_end // 60:02d}:{slot_end % 60:02d}",
+            })
+            cursor = slot_end
+
+        # Add the occupied item
+        timeline.append(item)
+        cursor = max(cursor, item['end_minutes'])
+
+    # Fill remaining time after last item until 24:00
+    while cursor < 1440:
+        slot_end = min(cursor + 30, 1440)
+        end_h = slot_end // 60 if slot_end < 1440 else 23
+        end_m = slot_end % 60 if slot_end < 1440 else 59
+        timeline.append({
+            'type': 'kosong',
+            'jam_mulai': f"{cursor // 60:02d}:{cursor % 60:02d}",
+            'jam_selesai': f"{end_h:02d}:{end_m:02d}",
+        })
+        cursor = slot_end
+
+    return timeline
+
+
 @login_required
 def agenda_harian_view(request):
     """Halaman agenda harian: timeline terpadu aktivitas + kegiatan + form tambah + navigasi tanggal."""
@@ -687,6 +777,9 @@ def agenda_harian_view(request):
             for akt in yesterday_activities:
                 akt['jam_mulai'] = akt['jam_mulai'].strftime('%H:%M')
 
+    # Generate timeline 24 jam
+    timeline_24h_json = _generate_24h_timeline(aktivitas_list, kegiatan_list)
+
     # Navigasi tanggal
     prev_date = tanggal - timedelta(days=1)
     next_date = tanggal + timedelta(days=1)
@@ -694,6 +787,7 @@ def agenda_harian_view(request):
     context = {
         "aktivitas_list": aktivitas_list,
         "timeline_items": timeline_items,
+        "timeline_24h_json": timeline_24h_json,
         "tanggal": tanggal,
         "is_today": tanggal == date.today(),
         "prev_date": prev_date,
@@ -738,12 +832,33 @@ def tambah_aktivitas_view(request):
         if form.is_valid():
             try:
                 form.save()
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': f"Aktivitas '{form.instance.judul}' berhasil ditambahkan!"
+                    })
                 messages.success(request, f"Aktivitas '{form.instance.judul}' berhasil ditambahkan!")
             except ValidationError as e:
                 error_msg = "; ".join(e.messages) if hasattr(e, 'messages') else str(e)
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': False,
+                        'error': error_msg
+                    }, status=400)
                 messages.error(request, error_msg)
                 _save_form_to_session()
         else:
+            errors_list = []
+            for field, errors in form.errors.items():
+                for error in errors:
+                    prefix = "" if field == "__all__" else f"{field.capitalize()}: "
+                    errors_list.append(f"{prefix}{error}")
+            error_msg = "; ".join(errors_list)
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                }, status=400)
             # Display form errors to user
             for field, errors in form.errors.items():
                 for error in errors:
@@ -751,6 +866,8 @@ def tambah_aktivitas_view(request):
                     messages.error(request, f"{prefix}{error}")
             _save_form_to_session()
 
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'success': True})
         return redirect(f"/tugas/agenda/?tanggal={tanggal.isoformat()}")
 
     return redirect("tugas:agenda")
@@ -842,6 +959,40 @@ def hapus_aktivitas_view(request, aktivitas_id):
     aktivitas.delete()
     messages.success(request, f"Aktivitas '{judul}' berhasil dihapus!")
     return redirect(f"/tugas/agenda/?tanggal={tanggal.isoformat()}")
+
+
+@login_required
+def api_jadwal_hari_ini(request):
+    """API endpoint: return jadwal hari ini berstatus 'belum' untuk notifikasi pengingat."""
+    today = date.today()
+    aktivitas = AktivitasHarian.objects.filter(
+        user=request.user,
+        tanggal=today,
+        status='belum',
+    ).order_by('jam_mulai')
+
+    kegiatan = Kegiatan.objects.filter(
+        user=request.user,
+        tanggal=today,
+        status='akan_datang',
+    ).order_by('jam_mulai')
+
+    items = []
+    for akt in aktivitas:
+        items.append({
+            'judul': akt.judul,
+            'jam_mulai': akt.jam_mulai.strftime('%H:%M'),
+            'type': 'aktivitas',
+        })
+    for keg in kegiatan:
+        items.append({
+            'judul': keg.judul,
+            'jam_mulai': keg.jam_mulai.strftime('%H:%M'),
+            'type': 'kegiatan',
+        })
+
+    items.sort(key=lambda x: x['jam_mulai'])
+    return JsonResponse({'items': items})
 
 
 @login_required

@@ -99,7 +99,7 @@
         {% endif %}
     </div>
 
-    <form method="POST" action="{% url 'tugas:tambah_aktivitas' %}">
+    <form id="formTambahAktivitas" method="POST" action="{% url 'tugas:tambah_aktivitas' %}">
         {% csrf_token %}
         <input type="hidden" name="tanggal" value="{{ tanggal|date:'Y-m-d' }}">
 
@@ -131,99 +131,82 @@
     </form>
 </div>
 
-<!-- Timeline / Activity List -->
-<div class="animate-fade-up">
-    {% if timeline_items %}
+<!-- Filter Bar -->
+<div class="card animate-fade-up" style="padding:14px 20px;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+            <i data-lucide="filter" style="width:16px;height:16px;color:var(--text-muted);"></i>
+            <span style="font-size:.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Tampilan</span>
+        </div>
+        <div class="timeline-filter-group">
+            <button class="timeline-filter-btn" data-filter="all" title="Tampilkan seluruh timeline 24 jam">
+                <i data-lucide="clock" style="width:13px;height:13px;"></i> Semua (24 Jam)
+            </button>
+            <button class="timeline-filter-btn active bg-white shadow-sm" data-filter="filled" title="Tampilkan hanya jadwal terisi">
+                <i data-lucide="calendar-check" style="width:13px;height:13px;"></i> Hanya Terisi
+            </button>
+            <button class="timeline-filter-btn" data-filter="empty" title="Tampilkan hanya slot waktu kosong">
+                <i data-lucide="calendar-x" style="width:13px;height:13px;"></i> Hanya Waktu Kosong
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline / Activity List (JS-driven with server fallback) -->
+<div class="animate-fade-up" id="timelineContainer">
     <div style="display:flex;flex-direction:column;gap:8px;">
-        {% for entry in timeline_items %}
-            {% if entry.type == 'aktivitas' %}
-                {% with akt=entry.item %}
-                <div class="card aktivitas-item" data-id="{{ akt.id }}"
-                    style="padding:16px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s;{% if akt.status == 'selesai' %}opacity:0.65;{% endif %}">
-
-                    <!-- Time Column -->
+        {% for item in timeline_items %}
+            {% if item.type == 'aktivitas' %}
+                <div class="card aktivitas-item slot-filled" data-id="{{ item.item.id }}"
+                    style="padding:16px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s;{% if item.item.status == 'selesai' %}opacity:0.65;{% endif %}">
                     <div style="min-width:90px;text-align:center;flex-shrink:0;">
-                        <div style="font-weight:700;font-size:.95rem;color:var(--primary);">
-                            {{ akt.jam_mulai|time:"H:i" }}
-                        </div>
-                        <div class="text-xs" style="color:var(--text-muted);">
-                            {{ akt.jam_selesai|time:"H:i" }}
-                        </div>
-                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">
-                            {{ akt.durasi_menit }} mnt
-                        </div>
+                        <div style="font-weight:700;font-size:.95rem;color:var(--primary);">{{ item.item.jam_mulai|time:"H:i" }}</div>
+                        <div class="text-xs" style="color:var(--text-muted);">{{ item.item.jam_selesai|time:"H:i" }}</div>
+                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">{{ item.item.durasi_menit }} mnt</div>
                     </div>
-
-                    <!-- Divider -->
-                    <div style="width:3px;height:48px;border-radius:2px;flex-shrink:0;
-                        {% if akt.status == 'selesai' %}background:var(--accent-success);
-                        {% elif akt.status == 'terlewat' %}background:var(--accent-danger);
-                        {% else %}background:var(--primary-100);{% endif %}"></div>
-
-                    <!-- Content -->
+                    <div style="width:3px;height:48px;border-radius:2px;flex-shrink:0;background:{% if item.item.status == 'selesai' %}var(--accent-success){% elif item.item.status == 'terlewat' %}var(--accent-danger){% else %}var(--primary-100){% endif %};"></div>
                     <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);{% if akt.status == 'selesai' %}text-decoration:line-through;{% endif %}">
-                            {{ akt.judul }}
-                        </div>
+                        <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);{% if item.item.status == 'selesai' %}text-decoration:line-through;{% endif %}">{{ item.item.judul }}</div>
                         <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
-                            {% if akt.is_habit %}
-                            <span class="badge badge-info" style="font-size:.65rem;padding:2px 6px;">
-                                <i data-lucide="repeat" style="width:10px;height:10px;"></i> Habit
-                            </span>
+                            {% if item.item.is_habit %}
+                            <span class="badge badge-info" style="font-size:.65rem;padding:2px 6px;"><i data-lucide="repeat" style="width:10px;height:10px;"></i> Habit</span>
                             {% endif %}
-                            {% if akt.status == 'selesai' %}
+                            {% if item.item.status == 'selesai' %}
                             <span class="badge badge-success" style="font-size:.65rem;padding:2px 6px;">Selesai</span>
-                            {% elif akt.status == 'terlewat' %}
+                            {% elif item.item.status == 'terlewat' %}
                             <span class="badge badge-danger" style="font-size:.65rem;padding:2px 6px;">Terlewat</span>
                             {% else %}
                             <span class="badge badge-muted" style="font-size:.65rem;padding:2px 6px;">Belum</span>
                             {% endif %}
                         </div>
                     </div>
-
-                    <!-- Actions (Always Visible) -->
                     <div class="akt-actions" style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-                        <!-- Edit Button -->
-                        <button onclick="editAktivitas({{ akt.id }}, '{{ akt.judul|escapejs }}', '{{ akt.jam_mulai|time:'H:i' }}', {{ akt.durasi_menit }}, {{ akt.is_habit|yesno:'true,false' }})" title="Edit Aktivitas"
+                        <button onclick="editAktivitas({{ item.item.id }}, '{{ item.item.judul|escapejs }}', '{{ item.item.jam_mulai|time:'H:i' }}', {{ item.item.durasi_menit }}, {{ item.item.is_habit|yesno:'true,false' }})" title="Edit Aktivitas"
                             style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                             onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
                             onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
                             <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
                         </button>
-
-                        <!-- Status Buttons -->
-                        {% if akt.status != 'selesai' %}
-                        <button onclick="setAktivitasStatus({{ akt.id }}, 'selesai')" title="Tandai Selesai"
+                        {% if item.item.status != 'selesai' %}
+                        <button onclick="setAktivitasStatus({{ item.item.id }}, 'selesai')" title="Tandai Selesai"
                             style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                             onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)';"
                             onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
                             <i data-lucide="check" style="width:16px;height:16px;color:var(--accent-success);"></i>
                         </button>
                         {% endif %}
-
-                        {% if akt.status == 'belum' %}
-                        <button onclick="setAktivitasStatus({{ akt.id }}, 'terlewat')" title="Tandai Terlewat"
-                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                            onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)';"
-                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                            <i data-lucide="x" style="width:16px;height:16px;color:var(--accent-warning);"></i>
-                        </button>
-                        {% endif %}
-
-                        {% if akt.status == 'selesai' or akt.status == 'terlewat' %}
-                        <button onclick="setAktivitasStatus({{ akt.id }}, 'belum')" title="Kembalikan ke Belum"
+                        {% if item.item.status == 'selesai' or item.item.status == 'terlewat' %}
+                        <button onclick="setAktivitasStatus({{ item.item.id }}, 'belum')" title="Kembalikan ke Belum"
                             style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                             onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)';"
                             onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
                             <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
                         </button>
                         {% endif %}
-
-                        <!-- Delete Button -->
-                        <form method="POST" action="{% url 'tugas:hapus_aktivitas' akt.id %}" style="margin:0;" id="hapusAkt{{ akt.id }}">
+                        <form method="POST" action="/tugas/agenda/hapus/{{ item.item.id }}/" style="margin:0;" id="hapusAkt{{ item.item.id }}">
                             {% csrf_token %}
                         </form>
-                        <button onclick="konfirmasiHapusAktivitas({{ akt.id }}, '{{ akt.judul|escapejs }}')" title="Hapus"
+                        <button onclick="konfirmasiHapusAktivitas({{ item.item.id }}, '{{ item.item.judul|escapejs }}')" title="Hapus"
                             style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                             onmouseenter="this.style.background='var(--accent-danger-light)';this.style.borderColor='var(--accent-danger)'"
                             onmouseleave="this.style.background='var(--bg)';this.style.borderColor='var(--border)'">
@@ -231,80 +214,37 @@
                         </button>
                     </div>
                 </div>
-                {% endwith %}
-            {% else %}
-                {% with keg=entry.item %}
-                <div class="card kegiatan-item"
-                    style="padding:16px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s;border-left: 4px solid #6366F1;{% if keg.status == 'selesai' %}opacity:0.65;{% elif keg.status == 'dibatalkan' %}opacity:0.5;background:var(--border);{% endif %}">
-                    
-                    <!-- Time Column -->
+            {% elif item.type == 'kegiatan' %}
+                <div class="card kegiatan-item slot-filled"
+                    style="padding:16px 20px;display:flex;align-items:center;gap:14px;transition:all 0.2s;border-left:4px solid #6366F1;{% if item.item.status == 'selesai' %}opacity:0.65;{% elif item.item.status == 'dibatalkan' %}opacity:0.5;background:var(--border);{% endif %}">
                     <div style="min-width:90px;text-align:center;flex-shrink:0;">
-                        <div style="font-weight:700;font-size:.95rem;color:#6366F1;">
-                            {{ keg.jam_mulai|time:"H:i" }}
-                        </div>
-                        <div class="text-xs" style="color:var(--text-muted);">
-                            {{ keg.jam_selesai|time:"H:i" }}
-                        </div>
-                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">
-                            Acara
-                        </div>
+                        <div style="font-weight:700;font-size:.95rem;color:#6366F1;">{{ item.item.jam_mulai|time:"H:i" }}</div>
+                        <div class="text-xs" style="color:var(--text-muted);">{{ item.item.jam_selesai|time:"H:i" }}</div>
+                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">Acara</div>
                     </div>
-
-                    <!-- Divider -->
-                    <div style="width:3px;height:48px;border-radius:2px;flex-shrink:0;
-                        {% if keg.status == 'selesai' %}background:var(--accent-success);
-                        {% elif keg.status == 'dibatalkan' %}background:var(--text-muted);
-                        {% else %}background:#6366F1;{% endif %}"></div>
-
-                    <!-- Content -->
+                    <div style="width:3px;height:48px;border-radius:2px;flex-shrink:0;background:{% if item.item.status == 'selesai' %}var(--accent-success){% elif item.item.status == 'dibatalkan' %}var(--text-muted){% else %}#6366F1{% endif %};"></div>
                     <div style="flex:1;min-width:0;">
-                        <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);{% if keg.status == 'selesai' %}text-decoration:line-through;{% endif %}">
-                            {{ keg.judul }}
-                        </div>
-                        
+                        <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);{% if item.item.status == 'selesai' %}text-decoration:line-through;{% endif %}">{{ item.item.judul }}</div>
                         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;">
-                            <!-- Category Badge -->
-                            {% if keg.kategori == 'akademik' %}
-                            <span class="badge badge-info" style="font-size:.65rem;padding:2px 6px;">Akademik</span>
-                            {% elif keg.kategori == 'pekerjaan' %}
-                            <span class="badge badge-warning" style="font-size:.65rem;padding:2px 6px;">Pekerjaan</span>
-                            {% elif keg.kategori == 'keluarga' %}
-                            <span class="badge badge-danger" style="font-size:.65rem;padding:2px 6px;background-color: #EF4444;color: white;">Keluarga</span>
-                            {% elif keg.kategori == 'pribadi_sosial' %}
-                            <span class="badge badge-success" style="font-size:.65rem;padding:2px 6px;">Pribadi & Sosial</span>
-                            {% elif keg.kategori == 'acara' %}
-                            <span class="badge badge-primary" style="font-size:.65rem;padding:2px 6px;background-color: #6366F1;color: white;">Acara</span>
-                            {% else %}
-                            <span class="badge badge-muted" style="font-size:.65rem;padding:2px 6px;">Lainnya</span>
-                            {% endif %}
-
-                            <!-- Status Badge -->
-                            {% if keg.status == 'selesai' %}
+                            <span class="badge badge-info" style="font-size:.65rem;padding:2px 6px;">{{ item.item.get_kategori_display }}</span>
+                            {% if item.item.status == 'selesai' %}
                             <span class="badge badge-success" style="font-size:.65rem;padding:2px 6px;">Selesai</span>
-                            {% elif keg.status == 'dibatalkan' %}
+                            {% elif item.item.status == 'dibatalkan' %}
                             <span class="badge badge-danger" style="font-size:.65rem;padding:2px 6px;">Dibatalkan</span>
                             {% else %}
                             <span class="badge badge-muted" style="font-size:.65rem;padding:2px 6px;">Akan Datang</span>
                             {% endif %}
-
-                            <!-- Location Link/Text -->
-                            {% if keg.lokasi %}
-                                {% if "http" in keg.lokasi %}
-                                <a href="{{ keg.lokasi }}" target="_blank" class="text-xs" style="display:inline-flex;align-items:center;gap:4px;color:var(--primary);text-decoration:none;font-weight:500;">
-                                    <i data-lucide="video" style="width:12px;height:12px;"></i> Zoom/Meet
-                                </a>
+                            {% if item.item.lokasi %}
+                                {% if "http" in item.item.lokasi %}
+                                <a href="{{ item.item.lokasi }}" target="_blank" class="text-xs" style="display:inline-flex;align-items:center;gap:4px;color:var(--primary);text-decoration:none;font-weight:500;"><i data-lucide="video" style="width:12px;height:12px;"></i> Zoom/Meet</a>
                                 {% else %}
-                                <span class="text-xs" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);">
-                                    <i data-lucide="map-pin" style="width:12px;height:12px;"></i> {{ keg.lokasi }}
-                                </span>
+                                <span class="text-xs" style="display:inline-flex;align-items:center;gap:4px;color:var(--text-muted);"><i data-lucide="map-pin" style="width:12px;height:12px;"></i> {{ item.item.lokasi }}</span>
                                 {% endif %}
                             {% endif %}
                         </div>
                     </div>
-
-                    <!-- Actions (Go to Kegiatan) -->
                     <div style="flex-shrink:0;">
-                        <a href="{% url 'tugas:kegiatan_list' %}?kategori={{ keg.kategori }}&status_filter={{ keg.status }}" title="Kelola Kegiatan"
+                        <a href="{% url 'tugas:kegiatan_list' %}?kategori={{ item.item.kategori }}&status_filter={{ item.item.status }}" title="Kelola Kegiatan"
                             style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
                             onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
                             onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
@@ -312,20 +252,21 @@
                         </a>
                     </div>
                 </div>
-                {% endwith %}
             {% endif %}
+        {% empty %}
+            <div class="card" style="padding:20px;">
+                <div class="empty-state" style="padding:32px;">
+                    <i data-lucide="calendar-off" style="width:48px;height:48px;"></i>
+                    <p style="font-size:1rem;font-weight:500;margin-top:8px;">Belum ada aktivitas atau acara yang dijadwalkan</p>
+                    <p class="text-xs" style="color:var(--text-muted);">Tambahkan aktivitas menggunakan form di atas atau buat kegiatan acara baru</p>
+                </div>
+            </div>
         {% endfor %}
     </div>
-    {% else %}
-    <div class="card" style="padding:20px;">
-        <div class="empty-state" style="padding:32px;">
-            <i data-lucide="calendar-off" style="width:48px;height:48px;"></i>
-            <p style="font-size:1rem;font-weight:500;margin-top:8px;">Belum ada aktivitas atau acara hari ini</p>
-            <p class="text-xs" style="color:var(--text-muted);">Tambahkan aktivitas menggunakan form di atas atau buat kegiatan acara baru</p>
-        </div>
-    </div>
-    {% endif %}
 </div>
+
+<!-- Timeline 24h Data Injection -->
+{{ timeline_24h_json|json_script:"timeline-24h-data" }}
 {% endblock %}
 
 {% block scripts %}
@@ -334,5 +275,11 @@
     <span class="django-message" data-tags="{{ message.tags }}" data-text="{{ message|escapejs }}"></span>
     {% endfor %}
 </div>
+<div id="agenda-config" style="display:none;"
+    data-is-today="{{ is_today|yesno:'true,false' }}"
+    data-api-today-url="{% url 'tugas:api_jadwal_today' %}"
+    data-tanggal="{{ tanggal|date:'Y-m-d' }}">
+</div>
 <script src="{% static 'js/agenda.js' %}"></script>
 {% endblock %}
+

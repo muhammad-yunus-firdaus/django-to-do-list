@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'manajemen-tugas-v1';
+const CACHE_NAME = 'manajemen-tugas-v3';
 const urlsToCache = [
   '/tugas/dashboard/',
   '/tugas/daftar/',
@@ -42,8 +42,13 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - serve from cache, fallback to network (GET requests only)
 self.addEventListener('fetch', (event) => {
+  // Only intercept GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

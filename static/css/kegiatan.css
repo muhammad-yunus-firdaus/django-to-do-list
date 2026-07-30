@@ -201,3 +201,10 @@
     padding: 0 !important;
 }
 
+@media (max-width: 576px) {
+    .swal-kegiatan-modal {
+        width: 92% !important;
+        padding: 1.25rem !important;
+    }
+}
+

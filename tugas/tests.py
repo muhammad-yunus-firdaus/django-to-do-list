@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from datetime import date, time, timedelta
 
 from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan, Kegiatan
-from .views import _get_week_range, _get_weekly_stats, _get_next_free_slot
+from .views import _get_week_range, _get_weekly_stats, _get_next_free_slot, _generate_24h_timeline
 
 
 class UserProfilTests(TestCase):
@@ -590,3 +590,115 @@ class KegiatanTests(TestCase):
         self.assertEqual(response_invalid.status_code, 400)
 
 
+class Timeline24hTests(TestCase):
+    """Tests untuk timeline 24 jam generator, API jadwal, dan dashboard combined stats."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='timeuser', password='pass123')
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_24h_timeline_generator(self):
+        """Verifikasi helper _generate_24h_timeline menghasilkan slot kosong + item terisi."""
+        akt = AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Morning Run',
+            jam_mulai=time(7, 0),
+            durasi_menit=30,
+            tanggal=date.today(),
+        )
+        aktivitas_list = AktivitasHarian.objects.filter(user=self.user, tanggal=date.today())
+        kegiatan_list = Kegiatan.objects.filter(user=self.user, tanggal=date.today())
+
+        timeline = _generate_24h_timeline(aktivitas_list, kegiatan_list)
+
+        # Timeline should not be empty
+        self.assertTrue(len(timeline) > 0)
+
+        # Should contain the aktivitas item
+        filled_items = [t for t in timeline if t['type'] == 'aktivitas']
+        self.assertEqual(len(filled_items), 1)
+        self.assertEqual(filled_items[0]['judul'], 'Morning Run')
+        self.assertEqual(filled_items[0]['jam_mulai'], '07:00')
+
+        # Should contain empty slots
+        empty_items = [t for t in timeline if t['type'] == 'kosong']
+        self.assertTrue(len(empty_items) > 0)
+
+        # Total coverage: all slots should cover 0 to 1440 minutes without gaps
+        all_starts = []
+        for item in timeline:
+            h, m = item['jam_mulai'].split(':')
+            all_starts.append(int(h) * 60 + int(m))
+        self.assertEqual(all_starts[0], 0, 'Timeline should start at 00:00')
+
+    def test_api_jadwal_today(self):
+        """Verifikasi endpoint API jadwal hari ini returns correct data."""
+        AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Test Task',
+            jam_mulai=time(14, 0),
+            durasi_menit=30,
+            tanggal=date.today(),
+            status='belum',
+        )
+        AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Done Task',
+            jam_mulai=time(15, 0),
+            durasi_menit=30,
+            tanggal=date.today(),
+            status='selesai',
+        )
+        response = self.client.get(reverse('tugas:api_jadwal_today'))
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('items', data)
+        # Only 'belum' status should be returned
+        self.assertEqual(len(data['items']), 1)
+        self.assertEqual(data['items'][0]['judul'], 'Test Task')
+
+    def test_dashboard_combined_stats(self):
+        """Verifikasi dashboard menghitung gabungan Tugas + Jadwal + Kegiatan."""
+        # Create 1 tugas (selesai)
+        Tugas.objects.create(
+            user=self.user,
+            judul='Tugas A',
+            status='selesai',
+        )
+        # Create 1 tugas (belum)
+        Tugas.objects.create(
+            user=self.user,
+            judul='Tugas B',
+            status='belum',
+        )
+        # Create 1 aktivitas (selesai)
+        AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Aktivitas Selesai',
+            jam_mulai=time(8, 0),
+            durasi_menit=30,
+            tanggal=date.today(),
+            status='selesai',
+        )
+        # Create 1 kegiatan (selesai)
+        Kegiatan.objects.create(
+            user=self.user,
+            judul='Kegiatan Done',
+            tanggal=date.today(),
+            jam_mulai=time(10, 0),
+            jam_selesai=time(11, 0),
+            status='selesai',
+        )
+
+        response = self.client.get(reverse('tugas:dashboard'))
+        self.assertEqual(response.status_code, 200)
+
+        # total_items = 2 tugas + 1 aktivitas + 1 kegiatan = 4
+        self.assertEqual(response.context['total_items'], 4)
+        # completed_items = 1 tugas selesai + 1 aktivitas selesai + 1 kegiatan selesai = 3
+        self.assertEqual(response.context['completed_items'], 3)
+        # belum_items = 4 - 3 = 1
+        self.assertEqual(response.context['belum_items'], 1)
+        # progres = round(3/4 * 100) = 75
+        self.assertEqual(response.context['progres_persen'], 75)

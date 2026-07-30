@@ -775,6 +775,10 @@ textarea {
     z-index: 30;
 }
 
+.page-header h1 {
+    margin: 0;
+}
+
 .page-body {
     padding: 28px 32px;
 }
@@ -915,6 +919,14 @@ textarea {
 }
 
 /* ── Mobile Nav Toggle ─────────────────────────────────────────── */
+.mobile-toggle-btn {
+    display: none;
+}
+@media (min-width: 768px) {
+    .mobile-toggle-btn {
+        display: none !important;
+    }
+}
 .mobile-toggle {
     display: none;
     position: fixed;
@@ -1142,8 +1154,21 @@ textarea {
         display: block;
     }
 
-    .mobile-toggle {
-        display: flex;
+    .mobile-toggle-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: var(--radius-md);
+        color: var(--text-primary);
+        transition: var(--transition);
+    }
+    
+    .mobile-toggle-btn:hover {
+        background: var(--bg-hover);
     }
 
     .main-content {
@@ -1154,7 +1179,7 @@ textarea {
     }
 
     .page-header {
-        padding: 16px 16px 16px 64px;
+        padding: 16px 16px;
     }
 
     .page-body {
@@ -1164,8 +1189,25 @@ textarea {
     }
 
     .stat-card {
-        flex-direction: column;
-        text-align: center;
+        flex-direction: row;
+        text-align: left;
+        padding: 14px 16px;
+        gap: 12px;
+    }
+    
+    .stat-card .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: var(--radius-md);
+    }
+    
+    .stat-card .stat-icon i {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 1.35rem;
     }
 
     .card {
@@ -1261,7 +1303,7 @@ textarea {
 
     /* Grid fixes */
     .grid-stats {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
     }
 
@@ -1278,6 +1320,9 @@ textarea {
 @media (max-width: 480px) {
     .auth-card {
         padding: 28px 20px;
+    }
+    .grid-stats {
+        grid-template-columns: 1fr;
     }
 }
 

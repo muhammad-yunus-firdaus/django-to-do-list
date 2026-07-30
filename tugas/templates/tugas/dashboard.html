@@ -12,8 +12,8 @@
             <i data-lucide="layers" style="width:24px;height:24px;color:var(--primary);"></i>
         </div>
         <div>
-            <div class="stat-value">{{ total_tugas }}</div>
-            <div class="stat-label">Total Tugas</div>
+            <div class="stat-value">{{ total_items }}</div>
+            <div class="stat-label">Total Items</div>
         </div>
     </div>
 
@@ -22,7 +22,7 @@
             <i data-lucide="check-circle-2" style="width:24px;height:24px;color:var(--accent-success);"></i>
         </div>
         <div>
-            <div class="stat-value" style="color:var(--accent-success);">{{ tugas_selesai }}</div>
+            <div class="stat-value" style="color:var(--accent-success);">{{ completed_items }}</div>
             <div class="stat-label">Selesai</div>
         </div>
     </div>
@@ -32,7 +32,7 @@
             <i data-lucide="clock" style="width:24px;height:24px;color:var(--accent-warning);"></i>
         </div>
         <div>
-            <div class="stat-value" style="color:var(--accent-warning);">{{ tugas_belum_selesai }}</div>
+            <div class="stat-value" style="color:var(--accent-warning);">{{ belum_items }}</div>
             <div class="stat-label">Belum Selesai</div>
         </div>
     </div>
@@ -99,7 +99,7 @@
     </div>
 
     {% if agenda_hari_ini %}
-    <div style="overflow-x:auto;">
+    <div class="table-responsive" style="overflow-x:auto;">
         <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;">
             <thead>
                 <tr style="text-align:left;">
@@ -139,7 +139,7 @@
                         <div style="display:flex;gap:4px;justify-content:center;" id="dashActions{{ akt.id }}">
                             {% if akt.status != 'selesai' %}
                             <button onclick="dashToggle({{ akt.id }}, 'selesai')" title="Selesai"
-                                style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                                 onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)'"
                                 onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
                                 <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
@@ -147,7 +147,7 @@
                             {% endif %}
                             {% if akt.status == 'belum' %}
                             <button onclick="dashToggle({{ akt.id }}, 'terlewat')" title="Terlewat"
-                                style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                                 onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'"
                                 onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
                                 <i data-lucide="x" style="width:14px;height:14px;color:var(--accent-warning);"></i>
@@ -155,9 +155,8 @@
                             {% endif %}
                             {% if akt.status == 'selesai' or akt.status == 'terlewat' %}
                             <button onclick="dashToggle({{ akt.id }}, 'belum')" title="Kembalikan"
-                                style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
                                 onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)'"
-                                
                                 onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
                                 <i data-lucide="rotate-ccw" style="width:12px;height:12px;color:var(--text-secondary);"></i>
                             </button>
@@ -440,13 +439,13 @@
                 if (actionsCell) {
                     let btns = '';
                     if (data.status !== 'selesai') {
-                        btns += `<button onclick="dashToggle(${id}, 'selesai')" title="Selesai" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i></button>`;
+                        btns += `<button onclick="dashToggle(${id}, 'selesai')" title="Selesai" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i></button>`;
                     }
                     if (data.status === 'belum') {
-                        btns += `<button onclick="dashToggle(${id}, 'terlewat')" title="Terlewat" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="x" style="width:14px;height:14px;color:var(--accent-warning);"></i></button>`;
+                        btns += `<button onclick="dashToggle(${id}, 'terlewat')" title="Terlewat" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="x" style="width:14px;height:14px;color:var(--accent-warning);"></i></button>`;
                     }
                     if (data.status === 'selesai' || data.status === 'terlewat') {
-                        btns += `<button onclick="dashToggle(${id}, 'belum')" title="Kembalikan" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="rotate-ccw" style="width:12px;height:12px;color:var(--text-secondary);"></i></button>`;
+                        btns += `<button onclick="dashToggle(${id}, 'belum')" title="Kembalikan" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="rotate-ccw" style="width:12px;height:12px;color:var(--text-secondary);"></i></button>`;
                     }
                     actionsCell.innerHTML = btns;
                     lucide.createIcons();
