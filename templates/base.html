@@ -81,169 +81,70 @@
         }
 
         // Global Export Dialog Modal
+        // Global Export Dialog Modal
         function openExportModal(targetDate) {
             const dateParam = targetDate ? '?tanggal=' + targetDate : '';
             
             Swal.fire({
                 title: 'Ekspor Data Aplikasi',
-                width: '800px',
                 html: `
-                    <style>
-                        .swal-export-container {
-                            display: grid;
-                            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-                            gap: 16px;
-                            margin-top: 15px;
-                            text-align: left;
-                        }
-                        .swal-export-card {
-                            background: var(--card, #ffffff);
-                            border: 1px solid var(--border, #e2e8f0);
-                            border-radius: 12px;
-                            padding: 20px;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: space-between;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-                            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                        }
-                        .swal-export-card:hover {
-                            transform: translateY(-4px);
-                            box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-                            border-color: var(--primary, #4f46e5);
-                        }
-                        .swal-export-header {
-                            display: flex;
-                            align-items: center;
-                            gap: 10px;
-                            margin-bottom: 12px;
-                        }
-                        .swal-export-icon-box {
-                            width: 36px;
-                            height: 36px;
-                            border-radius: 8px;
-                            background: var(--primary-light, #e0e7ff);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            color: var(--primary, #4f46e5);
-                            flex-shrink: 0;
-                        }
-                        .swal-export-title {
-                            font-weight: 700;
-                            font-size: 0.95rem;
-                            color: var(--text-primary, #1e293b);
-                            margin: 0;
-                        }
-                        .swal-export-desc {
-                            font-size: 0.775rem;
-                            color: var(--text-muted, #64748b);
-                            margin: 0 0 20px 0;
-                            line-height: 1.4;
-                        }
-                        .swal-export-actions {
-                            display: flex;
-                            gap: 8px;
-                            margin-top: auto;
-                        }
-                        .swal-export-btn {
-                            flex: 1;
-                            text-decoration: none;
-                            display: inline-flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 6px;
-                            padding: 10px 12px;
-                            border-radius: 8px;
-                            font-size: 0.775rem;
-                            font-weight: 600;
-                            color: white;
-                            transition: all 0.2s;
-                            border: none;
-                            cursor: pointer;
-                        }
-                        .swal-export-btn:hover {
-                            opacity: 0.9;
-                            transform: translateY(-1px);
-                        }
-                        .swal-export-btn-pdf {
-                            background: linear-gradient(135deg, #EF4444, #F87171);
-                        }
-                        .swal-export-btn-excel {
-                            background: linear-gradient(135deg, #10B981, #34D399);
-                        }
-                    </style>
-
-                    <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:20px;text-align:center;">
-                        Pilih kategori data dan format dokumen yang ingin Anda unduh secara instan:
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:18px;text-align:center;">
+                        Pilih kategori data dan format dokumen yang ingin Anda unduh:
                     </p>
-                    
-                    <div class="swal-export-container">
-                        <!-- Card 1: Jadwal Hari Ini -->
-                        <div class="swal-export-card">
-                            <div>
-                                <div class="swal-export-header">
-                                    <div class="swal-export-icon-box">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                                    </div>
-                                    <h4 class="swal-export-title">Jadwal Hari Ini</h4>
-                                </div>
-                                <p class="swal-export-desc">Mengunduh daftar agenda, aktivitas harian, serta habit tracker hari ini.</p>
+                    <div style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+                        <!-- Opsi 1: Jadwal Hari Ini -->
+                        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg-secondary);">
+                            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                Jadwal Hari Ini
                             </div>
-                            <div class="swal-export-actions">
-                                <a href="/tugas/agenda/export-pdf/${dateParam}" class="swal-export-btn swal-export-btn-pdf" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                    PDF
+                            <p class="text-xs" style="color:var(--text-muted);margin:4px 0 10px 0;">Mengunduh agenda harian & habit tracker hari ini.</p>
+                            <div style="display:flex;gap:8px;">
+                                <a href="/tugas/agenda/export-pdf/${dateParam}" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#EF4444;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                                    Unduh PDF
                                 </a>
-                                <a href="/tugas/agenda/export-excel/${dateParam}" class="swal-export-btn swal-export-btn-excel" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
-                                    Excel
+                                <a href="/tugas/agenda/export-excel/${dateParam}" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10B981;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
+                                    Unduh Excel
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <!-- Opsi 2: Daftar Tugas -->
+                        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg-secondary);">
+                            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/><rect x="3" y="11" width="6" height="6" rx="1"/></svg>
+                                Seluruh Daftar Tugas
+                            </div>
+                            <p class="text-xs" style="color:var(--text-muted);margin:4px 0 10px 0;">Mengunduh berkas lengkap daftar tugas dan statusnya.</p>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                <a href="/tugas/export/pdf/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#EF4444;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                                    Unduh PDF
+                                </a>
+                                <a href="/tugas/export/excel/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10B981;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
+                                    Unduh Excel
                                 </a>
                             </div>
                         </div>
 
-                        <!-- Card 2: Daftar Tugas -->
-                        <div class="swal-export-card">
-                            <div>
-                                <div class="swal-export-header">
-                                    <div class="swal-export-icon-box" style="background:#e0f2fe;color:#0284c7;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/><rect x="3" y="11" width="6" height="6" rx="1"/></svg>
-                                    </div>
-                                    <h4 class="swal-export-title">Daftar Tugas</h4>
-                                </div>
-                                <p class="swal-export-desc">Mengunduh seluruh daftar tugas beserta deskripsi, status, dan prioritasnya.</p>
+                        <!-- Opsi 3: Kegiatan & Acara -->
+                        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg-secondary);">
+                            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                                Seluruh Kegiatan & Acara
                             </div>
-                            <div class="swal-export-actions">
-                                <a href="/tugas/export/pdf/" class="swal-export-btn swal-export-btn-pdf" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                    PDF
+                            <p class="text-xs" style="color:var(--text-muted);margin:4px 0 10px 0;">Mengunduh berkas lengkap agenda kegiatan & acara terjadwal.</p>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                <a href="/tugas/export/kegiatan/pdf/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#EF4444;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                                    Unduh PDF
                                 </a>
-                                <a href="/tugas/export/excel/" class="swal-export-btn swal-export-btn-excel" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
-                                    Excel
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Card 3: Kegiatan & Acara -->
-                        <div class="swal-export-card">
-                            <div>
-                                <div class="swal-export-header">
-                                    <div class="swal-export-icon-box" style="background:#fef3c7;color:#d97706;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
-                                    </div>
-                                    <h4 class="swal-export-title">Kegiatan & Acara</h4>
-                                </div>
-                                <p class="swal-export-desc">Mengunduh seluruh agenda kegiatan luar, acara sosial, dan acara pribadi.</p>
-                            </div>
-                            <div class="swal-export-actions">
-                                <a href="/tugas/export/kegiatan/pdf/" class="swal-export-btn swal-export-btn-pdf" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                    PDF
-                                </a>
-                                <a href="/tugas/export/kegiatan/excel/" class="swal-export-btn swal-export-btn-excel" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
-                                    Excel
+                                <a href="/tugas/export/kegiatan/excel/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10B981;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
+                                    Unduh Excel
                                 </a>
                             </div>
                         </div>
@@ -254,7 +155,7 @@
                 cancelButtonText: 'Batal',
                 cancelButtonColor: 'var(--border)',
                 customClass: {
-                    popup: 'swal-export-modern-popup'
+                    popup: 'swal-export-custom'
                 }
             });
         }
