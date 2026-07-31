@@ -736,6 +736,7 @@ textarea {
     display: flex;
     align-items: center;
     gap: 10px;
+    color: var(--sidebar-active-text);
 }
 
 .sidebar-brand i {
