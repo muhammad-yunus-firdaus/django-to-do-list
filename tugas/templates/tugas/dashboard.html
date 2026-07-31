@@ -456,7 +456,7 @@
 
         {% if agenda_hari_ini %}
         <div style="display:flex; flex-direction:column; gap:8px; padding:0 16px; margin-bottom:16px;">
-            {% for akt in agenda_hari_ini|slice:":3" %}
+            {% for akt in agenda_hari_ini %}
             <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
                 <div style="min-width:0; flex:1;">
                     <span style="font-size:0.8rem; font-weight:600; color:var(--text-primary); {% if akt.status == 'selesai' %}text-decoration:line-through; color:var(--text-muted);{% endif %}">{{ akt.judul }}</span>
