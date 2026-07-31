@@ -35,11 +35,11 @@
     height: 100%;
 }
 
-.keg-card.cat-akademik::before { background: #06B6D4; } /* Cyan */
+.keg-card.cat-akademik::before { background: #14b8a6; } /* Teal */
 .keg-card.cat-pekerjaan::before { background: #F59E0B; } /* Amber */
 .keg-card.cat-keluarga::before { background: #EF4444; } /* Red */
 .keg-card.cat-pribadi_sosial::before { background: #10B981; } /* Emerald */
-.keg-card.cat-acara::before { background: #6366F1; } /* Indigo */
+.keg-card.cat-acara::before { background: #84cc16; } /* Lime */
 .keg-card.cat-lainnya::before { background: #64748B; } /* Slate */
 
 .keg-header {
@@ -128,9 +128,9 @@
 .swal-kegiatan-modal .form-select:focus,
 .swal-custom-modal .form-input:focus, 
 .swal-custom-modal .form-select:focus {
-    border-color: #6366F1 !important;
+    border-color: var(--primary) !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
 }
 
 .swal-kegiatan-modal .form-select,

@@ -5,10 +5,30 @@
 
 /* ── CSS Variables ─────────────────────────────────────────────── */
 :root {
-    --primary: #4F46E5;
-    --primary-hover: #4338CA;
-    --primary-light: #EEF2FF;
-    --primary-100: #C7D2FE;
+    /* Sidebar Tetap Obsidian Dark */
+    --sidebar-bg: #121212;
+    --sidebar-hover: #1f1f1f;
+    --sidebar-text: #a1a1aa;
+    --sidebar-active-text: #ffffff;
+    --sidebar-active-bg: #1f1f1f;
+
+    /* Aksen Komponen UI Cerah (Vivid Electric Cyan) */
+    --primary: #0ea5e9;          /* Electric Cyan Cerah untuk Tombol Utama */
+    --primary-hover: #0284c7;    /* Sky Blue Dark Hover */
+    --primary-soft: #f0f9ff;     /* Soft Sky Tint Pastel untuk Background Badge/Icon */
+    --primary-accent: #0284c7;   /* Sky Accent untuk Ikon & Highlight Teks */
+    --primary-text: #ffffff;     /* Teks Putih pada Tombol Utama */
+    
+    /* Background Canvas & Card Container Cerah */
+    --bg-main: #f8fafc;          /* Off-white Bright Slate Canvas */
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+
+    /* Original variables mapped to the new theme variables */
+    --primary-light: var(--primary-soft);
+    --primary-100: #e0f2fe;      /* Light sky blue/cyan tint */
     --secondary: #475569;
     --accent-success: #10B981;
     --accent-success-light: #D1FAE5;
@@ -16,14 +36,12 @@
     --accent-warning-light: #FEF3C7;
     --accent-danger: #F43F5E;
     --accent-danger-light: #FFE4E6;
-    --bg: #F8FAFC;
+    --bg: var(--bg-main);
     --bg-secondary: #F1F5F9;
     --bg-hover: #E2E8F0;
-    --card: #FFFFFF;
-    --text-primary: #1E293B;
-    --text-secondary: #64748B;
+    --card: var(--card-bg);
     --text-muted: #94A3B8;
-    --border: #E2E8F0;
+    --border: var(--border-color);
     --success: #10B981;
     --danger: #F43F5E;
     --radius-sm: 6px;
@@ -510,13 +528,13 @@ a:hover {
 
 .btn-primary {
     background: var(--primary);
-    color: #fff;
+    color: var(--primary-text);
 }
 
 .btn-primary:hover {
     background: var(--primary-hover);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, .35);
+    color: var(--primary-text);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, .35);
 }
 
 .btn-success {
@@ -685,8 +703,8 @@ textarea {
     left: 0;
     bottom: 0;
     width: 260px;
-    background: linear-gradient(180deg, #1E1B4B 0%, #312E81 100%);
-    color: #fff;
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
     display: flex;
     flex-direction: column;
     z-index: 50;
@@ -698,14 +716,14 @@ textarea {
     font-size: 1.25rem;
     font-weight: 800;
     letter-spacing: -0.03em;
-    border-bottom: 1px solid rgba(255, 255, 255, .1);
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
     display: flex;
     align-items: center;
     gap: 10px;
 }
 
 .sidebar-brand i {
-    color: #A5B4FC;
+    color: var(--primary-accent);
 }
 
 .sidebar-nav {
@@ -724,19 +742,19 @@ textarea {
     border-radius: var(--radius-md);
     font-size: .9rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, .7);
+    color: var(--sidebar-text);
     transition: var(--transition);
     text-decoration: none;
 }
 
 .sidebar-link:hover {
-    background: rgba(255, 255, 255, .1);
-    color: #fff;
+    background: var(--sidebar-hover);
+    color: var(--sidebar-active-text);
 }
 
 .sidebar-link.active {
-    background: rgba(255, 255, 255, .15);
-    color: #fff;
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
     font-weight: 600;
 }
 
@@ -746,7 +764,7 @@ textarea {
 
 .sidebar-footer {
     padding: 16px 20px;
-    border-top: 1px solid rgba(255, 255, 255, .1);
+    border-top: 1px solid rgba(255, 255, 255, .05);
     font-size: .85rem;
 }
 
@@ -755,7 +773,7 @@ textarea {
     align-items: center;
     gap: 10px;
     font-weight: 600;
-    color: rgba(255, 255, 255, .9);
+    color: var(--sidebar-active-text);
 }
 
 /* ── Main Content ───────────────────────────────────────────────── */
@@ -916,7 +934,7 @@ textarea {
 .progress-fill {
     height: 100%;
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--primary), #818CF8);
+    background: linear-gradient(90deg, var(--primary), var(--primary-accent));
     transition: width .8s cubic-bezier(.4, 0, .2, 1);
 }
 
@@ -961,7 +979,7 @@ textarea {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);
+    background: linear-gradient(135deg, #09090b 0%, #18181b 50%, #27272a 100%);
     padding: 20px;
 }
 
@@ -979,10 +997,7 @@ textarea {
     font-size: 1.5rem;
     font-weight: 800;
     text-align: center;
-    background: linear-gradient(135deg, var(--primary), #818CF8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--primary-accent);
     margin-bottom: 8px;
 }
 
@@ -1599,5 +1614,172 @@ input[type="time"] {
     /* Stack riwayat badges */
     .riwayat-detail .badge {
         font-size: .6rem !important;
+    }
+}
+
+/* Responsive Mobile Navigation & Layout Styles */
+.mobile-topbar-header {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.mobile-app-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--primary-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.mobile-topbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.mobile-avatar-link {
+    text-decoration: none;
+}
+
+.mobile-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #EEF2F6;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.mobile-avatar-placeholder:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.03);
+    z-index: 1000;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    text-decoration: none;
+    font-size: 0.675rem;
+    font-weight: 600;
+    gap: 4px;
+    transition: all 0.2s ease-in-out;
+    padding: 6px 10px;
+    border-radius: 12px;
+    height: 48px;
+    max-width: 70px;
+    margin: 0 2px;
+}
+
+.bottom-nav-item i {
+    color: #64748b;
+    transition: color 0.2s;
+}
+
+.bottom-nav-item.active {
+    background: var(--primary-soft);
+    color: var(--primary-accent);
+}
+
+.bottom-nav-item.active i {
+    color: var(--primary-accent);
+}
+
+.bottom-nav-fab {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px -4px rgba(14, 165, 233, 0.4);
+    margin-top: -24px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    flex-shrink: 0;
+}
+
+.bottom-nav-fab:active {
+    transform: scale(0.95);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        display: none !important;
+    }
+    
+    .mobile-topbar-header {
+        display: flex;
+    }
+    
+    .mobile-bottom-nav {
+        display: flex;
+    }
+    
+    .main-content {
+        padding-top: 60px !important;
+        padding-bottom: 80px !important;
+    }
+    
+    .sidebar {
+        z-index: 1001 !important;
+    }
+    
+    .sidebar-overlay {
+        z-index: 1000 !important;
+    }
+}
+
+/* Responsive Layout Helper Classes */
+.desktop-only-layout {
+    display: block;
+}
+.mobile-only-layout {
+    display: none;
+}
+@media (max-width: 768px) {
+    .desktop-only-layout {
+        display: none !important;
+    }
+    .mobile-only-layout {
+        display: block !important;
     }
 }

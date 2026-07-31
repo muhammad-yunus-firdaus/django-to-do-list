@@ -62,4 +62,8 @@ urlpatterns = [
     path("kegiatan/edit/<int:kegiatan_id>/", views.kegiatan_edit_view, name="kegiatan_edit"),
     path("kegiatan/hapus/<int:kegiatan_id>/", views.kegiatan_hapus_view, name="kegiatan_hapus"),
     path("kegiatan/toggle/<int:kegiatan_id>/", views.kegiatan_toggle_status_view, name="kegiatan_toggle_status"),
+
+    # AJAX Task Utils
+    path("tambah-cepat/", views.tambah_tugas_cepat, name="tambah_tugas_cepat"),
+    path("toggle-tugas/<int:tugas_id>/", views.toggle_tugas_view, name="toggle_tugas"),
 ]

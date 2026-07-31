@@ -103,7 +103,7 @@
         {% csrf_token %}
         <input type="hidden" name="tanggal" value="{{ tanggal|date:'Y-m-d' }}">
 
-        <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end;">
+        <div class="agenda-form-grid">
             <div>
                 <label class="form-label">Aktivitas</label>
                 {{ form.judul|add_class:"form-input" }}

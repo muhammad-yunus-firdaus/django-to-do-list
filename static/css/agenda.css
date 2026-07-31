@@ -15,14 +15,14 @@
 }
 
 .btn-indigo-primary {
-    background-color: #4F46E5 !important;
+    background-color: var(--primary) !important;
     color: #ffffff !important;
     border-radius: 0.75rem !important;
     padding: 0.625rem 1.25rem !important;
     font-weight: 500 !important;
     font-size: 0.875rem !important;
     border: none !important;
-    box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3), 0 2px 4px -2px rgba(79, 70, 229, 0.2) !important;
+    box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3), 0 2px 4px -2px rgba(14, 165, 233, 0.2) !important;
     transition: all 0.2s !important;
     cursor: pointer !important;
     display: inline-flex !important;
@@ -31,8 +31,8 @@
 }
 
 .btn-indigo-primary:hover {
-    background-color: #4338CA !important;
-    box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4) !important;
+    background-color: var(--primary-hover) !important;
+    box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.4) !important;
 }
 
 .btn-slate-secondary {
@@ -75,9 +75,9 @@
 }
 
 .swal-custom-modal .form-input-swal:focus {
-    border-color: #4F46E5 !important;
+    border-color: var(--primary) !important;
     outline: none !important;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
 }
 
 .swal-custom-modal .yesterday-item-card {
@@ -93,7 +93,7 @@
 }
 
 .swal-custom-modal .yesterday-item-card:hover {
-    border-color: #C7D2FE !important;
+    border-color: var(--primary-accent) !important;
 }
 
 
@@ -156,8 +156,8 @@
 }
 
 .timeline-slot-empty:hover {
-    border-color: var(--primary, #4F46E5);
-    background: rgba(79, 70, 229, 0.03);
+    border-color: var(--primary);
+    background: rgba(14, 165, 233, 0.03);
     border-style: solid;
 }
 
@@ -168,7 +168,7 @@
     padding: 4px 10px;
     font-size: 0.72rem;
     font-weight: 500;
-    color: var(--primary, #4F46E5);
+    color: var(--primary);
     background: transparent;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -179,12 +179,12 @@
 
 .timeline-slot-empty:hover .btn-add-slot {
     opacity: 1;
-    border-color: var(--primary, #4F46E5);
-    background: var(--primary-light, rgba(79, 70, 229, 0.08));
+    border-color: var(--primary);
+    background: var(--primary-light, rgba(14, 165, 233, 0.08));
 }
 
 .btn-add-slot:hover {
-    background: var(--primary, #4F46E5) !important;
+    background: var(--primary) !important;
     color: #ffffff !important;
 }
 
@@ -247,5 +247,19 @@
     }
     .yesterday-header-row {
         display: none !important;
+    }
+}
+
+.agenda-form-grid {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    align-items: end;
+}
+
+@media (max-width: 576px) {
+    .agenda-form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
     }
 }

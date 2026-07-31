@@ -1693,3 +1693,78 @@ def export_jadwal_excel_view(request):
 
     workbook.save(response)
     return response
+
+
+from django.http import JsonResponse
+import json
+from django.views.decorators.http import require_POST
+
+@login_required
+@require_POST
+def tambah_tugas_cepat(request):
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body.decode('utf-8'))
+        else:
+            data = request.POST
+            
+        judul = data.get('judul', '').strip()
+        deskripsi = data.get('deskripsi', '').strip()
+        deadline_str = data.get('deadline', '').strip()
+        prioritas = data.get('prioritas', 'sedang').strip()
+        kategori = data.get('kategori', 'kerja').strip()
+        
+        if not judul:
+            return JsonResponse({'success': False, 'message': 'Judul tugas tidak boleh kosong'}, status=400)
+        
+        deadline = None
+        if deadline_str:
+            try:
+                deadline = datetime.strptime(deadline_str, "%Y-%m-%dT%H:%M")
+            except ValueError:
+                try:
+                    deadline = datetime.strptime(deadline_str, "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    pass
+                    
+        if not deadline:
+            return JsonResponse({'success': False, 'message': 'Deadline tidak boleh kosong'}, status=400)
+            
+        from django.utils.timezone import is_aware, make_aware, get_current_timezone
+        if deadline < now().replace(tzinfo=None):
+            if is_aware(now()):
+                deadline = make_aware(deadline, get_current_timezone())
+            if deadline < now():
+                return JsonResponse({'success': False, 'message': 'Deadline harus di masa depan'}, status=400)
+        
+        if not is_aware(deadline) and is_aware(now()):
+            deadline = make_aware(deadline, get_current_timezone())
+
+        Tugas.objects.create(
+            user=request.user,
+            judul=judul,
+            deskripsi=deskripsi,
+            deadline=deadline,
+            prioritas=prioritas,
+            kategori=kategori,
+            status='belum'
+        )
+        return JsonResponse({'success': True, 'message': 'Tugas berhasil ditambahkan!'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def toggle_tugas_view(request, tugas_id):
+    tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
+    if tugas.status == 'selesai':
+        tugas.status = 'belum'
+    else:
+        tugas.status = 'selesai'
+    tugas.save()
+    return JsonResponse({
+        'success': True,
+        'status': tugas.status,
+        'judul': tugas.judul
+    })

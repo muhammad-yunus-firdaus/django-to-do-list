@@ -206,6 +206,18 @@
 
 <!-- Main Content -->
 <div class="main-content">
+    <!-- Mobile Topbar Header -->
+    <header class="mobile-topbar-header">
+        <span class="mobile-app-title">Manajemen Tugas</span>
+        <div class="mobile-topbar-right">
+            <a href="{% url 'tugas:edit_profil' %}" class="mobile-avatar-link" title="Edit Profil">
+                <div class="mobile-avatar-placeholder">
+                    <i data-lucide="user" style="width:16px;height:16px;color:#4F46E5;"></i>
+                </div>
+            </a>
+        </div>
+    </header>
+
     <!-- Top Bar -->
     <header class="page-header">
         <div style="display:flex;align-items:center;gap:12px;">
@@ -331,5 +343,164 @@
             });
         }
     });
+
+    // Quick Task Add modal JS trigger
+    function openQuickAddTaskModal() {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(12, 0, 0, 0);
+        const tzOffset = tomorrow.getTimezoneOffset() * 60000;
+        const localTomorrow = new Date(tomorrow - tzOffset);
+        const defaultDeadline = localTomorrow.toISOString().slice(0, 16);
+
+        Swal.fire({
+            title: 'Tambah Tugas Cepat',
+            html: `
+                <div style="text-align:left; display:flex; flex-direction:column; gap:12px;">
+                    <div>
+                        <label style="font-weight:600; font-size:0.8rem; color:var(--text-secondary); margin-bottom:4px; display:block;">Judul Tugas</label>
+                        <input type="text" id="quick-task-judul" class="form-control" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:10px;" placeholder="Masukkan judul tugas...">
+                    </div>
+                    <div>
+                        <label style="font-weight:600; font-size:0.8rem; color:var(--text-secondary); margin-bottom:4px; display:block;">Deskripsi</label>
+                        <textarea id="quick-task-deskripsi" class="form-control" rows="2" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:10px; font-family:inherit;" placeholder="Tambahkan deskripsi singkat..."></textarea>
+                    </div>
+                    <div>
+                        <label style="font-weight:600; font-size:0.8rem; color:var(--text-secondary); margin-bottom:4px; display:block;">Batas Waktu</label>
+                        <input type="datetime-local" id="quick-task-deadline" class="form-control" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:10px;" value="${defaultDeadline}">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <label style="font-weight:600; font-size:0.8rem; color:var(--text-secondary); margin-bottom:4px; display:block;">Prioritas</label>
+                            <select id="quick-task-prioritas" class="form-select" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:10px; height:42px; background-color:#fff;">
+                                <option value="tinggi">Tinggi</option>
+                                <option value="sedang" selected>Sedang</option>
+                                <option value="rendah">Rendah</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-weight:600; font-size:0.8rem; color:var(--text-secondary); margin-bottom:4px; display:block;">Kategori</label>
+                            <select id="quick-task-kategori" class="form-select" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:10px; height:42px; background-color:#fff;">
+                                <option value="kerja" selected>Kerja</option>
+                                <option value="pribadi">Pribadi</option>
+                                <option value="perkuliahan">Perkuliahan</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Simpan Tugas',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#4F46E5',
+            cancelButtonColor: 'var(--border)',
+            customClass: {
+                popup: 'swal-custom-modal'
+            },
+            preConfirm: () => {
+                const judul = document.getElementById('quick-task-judul').value.trim();
+                const deskripsi = document.getElementById('quick-task-deskripsi').value.trim();
+                const deadline = document.getElementById('quick-task-deadline').value;
+                const prioritas = document.getElementById('quick-task-prioritas').value;
+                const kategori = document.getElementById('quick-task-kategori').value;
+
+                if (!judul) {
+                    Swal.showValidationMessage('Judul tugas tidak boleh kosong');
+                    return false;
+                }
+                if (!deadline) {
+                    Swal.showValidationMessage('Batas waktu tidak boleh kosong');
+                    return false;
+                }
+
+                const selectedDate = new Date(deadline);
+                if (selectedDate < new Date()) {
+                    Swal.showValidationMessage('Batas waktu harus di masa depan');
+                    return false;
+                }
+
+                return { judul, deskripsi, deadline, prioritas, kategori };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const getCookie = (name) => {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                };
+
+                const csrftoken = getCookie('csrftoken');
+
+                fetch('/tugas/tambah-cepat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify(result.value)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil!',
+                            text: 'Tugas telah ditambahkan secara cepat.',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Gagal!',
+                            text: data.message || 'Terjadi kesalahan saat menambahkan tugas.'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Koneksi ke server terganggu.'
+                    });
+                });
+            }
+        });
+    }
 </script>
+
+<!-- Mobile Bottom Navigation Bar -->
+<nav class="mobile-bottom-nav">
+    <a href="{% url 'tugas:dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i data-lucide="home" style="width:20px;height:20px;"></i>
+        <span>Beranda</span>
+    </a>
+    <a href="{% url 'tugas:daftar' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'daftar' %}active{% endif %}">
+        <i data-lucide="check-square" style="width:20px;height:20px;"></i>
+        <span>Tugas</span>
+    </a>
+    <button type="button" onclick="openQuickAddTaskModal()" class="bottom-nav-fab" aria-label="Tambah Tugas Cepat">
+        <i data-lucide="plus" style="width:24px;height:24px;color:#ffffff;"></i>
+    </button>
+    <a href="{% url 'tugas:agenda' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'agenda' %}active{% endif %}">
+        <i data-lucide="calendar" style="width:20px;height:20px;"></i>
+        <span>Jadwal</span>
+    </a>
+    <a href="{% url 'tugas:kegiatan_list' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'kegiatan_list' %}active{% endif %}">
+        <i data-lucide="bookmark" style="width:20px;height:20px;"></i>
+        <span>Acara</span>
+    </a>
+</nav>
 {% endblock layout %}
