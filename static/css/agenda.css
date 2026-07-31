@@ -245,4 +245,7 @@
     .swal-custom-modal .yesterday-item-card > div {
         width: 100% !important;
     }
+    .yesterday-header-row {
+        display: none !important;
+    }
 }

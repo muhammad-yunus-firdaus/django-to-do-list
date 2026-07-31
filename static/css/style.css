@@ -501,6 +501,7 @@ a:hover {
     transition: var(--transition);
     text-decoration: none;
     line-height: 1.4;
+    white-space: nowrap;
 }
 
 .btn:active {
@@ -649,6 +650,7 @@ textarea {
     font-size: .75rem;
     font-weight: 600;
     line-height: 1.2;
+    white-space: nowrap;
 }
 
 .badge-danger {

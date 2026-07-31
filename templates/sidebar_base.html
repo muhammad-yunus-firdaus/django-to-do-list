@@ -208,7 +208,12 @@
 <div class="main-content">
     <!-- Top Bar -->
     <header class="page-header">
-        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+        <div style="display:flex;align-items:center;gap:12px;">
+            <button class="mobile-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle Menu" style="margin-left:-8px;">
+                <i data-lucide="menu" style="width:24px;height:24px;color:var(--text-primary);"></i>
+            </button>
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+        </div>
         <div class="flex items-center gap-3">
             <!-- Notification Bell -->
             <div style="position:relative;">

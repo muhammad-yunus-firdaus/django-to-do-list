@@ -580,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 html: `
                     <div style="text-align:left;margin-bottom:12px;">
                         <p style="font-size:.875rem;color:var(--text-secondary);margin:0 0 16px 0;line-height:1.5;">Pilih aktivitas yang ingin disalin. Anda dapat menyesuaikan nama, jam mulai, dan durasi sebelum menyimpan ke hari ini.</p>
-                        <div style="display:flex;align-items:center;gap:12px;padding:0 1rem;margin-bottom:8px;">
+                        <div class="yesterday-header-row" style="display:flex;align-items:center;gap:12px;padding:0 1rem;margin-bottom:8px;">
                             <div style="flex:1;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;gap:8px;padding-left:26px;">Aktivitas</div>
                             <div style="width:110px;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Jam Mulai</div>
                             <div style="width:90px;font-size:.75rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Durasi (Mnt)</div>
