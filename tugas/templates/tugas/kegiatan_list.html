@@ -14,16 +14,15 @@
 <div class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;">
     <div class="filter-wrapper">
         <form method="GET" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;margin:0;">
-            <!-- Status Filter -->
-            <div style="display:flex;gap:4px;background:var(--bg-secondary);padding:4px;border-radius:0.75rem;border:1px solid var(--border);">
+            <div class="hide-scrollbar" style="display:flex;gap:4px;background:var(--bg-secondary);padding:4px;border-radius:0.75rem;border:1px solid var(--border);">
                 <a href="?status_filter=akan_datang{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}" 
                    class="btn {% if status_filter == 'akan_datang' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm" 
-                   style="border-radius:0.5rem;padding:6px 12px;">
+                   style="border-radius:0.5rem;padding:6px 12px;flex-shrink:0;">
                     Akan Datang
                 </a>
                 <a href="?status_filter=riwayat{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}" 
                    class="btn {% if status_filter == 'riwayat' %}btn-primary{% else %}btn-ghost{% endif %} btn-sm" 
-                   style="border-radius:0.5rem;padding:6px 12px;">
+                   style="border-radius:0.5rem;padding:6px 12px;flex-shrink:0;">
                     Riwayat Acara
                 </a>
             </div>

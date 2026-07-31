@@ -10,28 +10,27 @@ def user_stats(request):
     completed_tasks_count = Tugas.objects.filter(user=request.user, status='selesai').count()
     level = 1 + (completed_tasks_count // 5)
     
-    # Hitung streak: jumlah hari beruntun ke belakang di mana user menyelesaikan minimal 1 tugas atau aktivitas
+    # Ambil semua tanggal unik penyelesaian tugas dan aktivitas untuk optimasi query (menghindari query di dalam loop)
+    completed_task_dates = set(
+        Tugas.objects.filter(user=request.user, status='selesai')
+        .values_list('updated_at__date', flat=True)
+    )
+    
+    completed_activity_dates = set(
+        AktivitasHarian.objects.filter(user=request.user, status='selesai')
+        .values_list('tanggal', flat=True)
+    )
+    
+    activity_dates = completed_task_dates.union(completed_activity_dates)
+    
+    # Hitung streak secara in-memory
     streak = 0
     today = now().date()
     current_date = today
-    
-    # Kita izinkan streak hari ini/kemarin sebagai pemeliharaan streak aktif
     checked_today = False
     
     while True:
-        has_task = Tugas.objects.filter(
-            user=request.user,
-            status='selesai',
-            updated_at__date=current_date
-        ).exists()
-        
-        has_activity = AktivitasHarian.objects.filter(
-            user=request.user,
-            status='selesai',
-            tanggal=current_date
-        ).exists()
-        
-        if has_task or has_activity:
+        if current_date in activity_dates:
             streak += 1
             current_date -= timedelta(days=1)
             checked_today = True

@@ -528,13 +528,36 @@ document.addEventListener('DOMContentLoaded', function() {
     renderTimeline('filled');
 
     // ── Filter Button Handlers ──
-    document.querySelectorAll('[data-filter]').forEach(btn => {
+    document.querySelectorAll('.timeline-filter-group [data-filter]').forEach(btn => {
         btn.addEventListener('click', function() {
             // Hapus class active dari semua filter button
-            document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active', 'bg-white', 'shadow-sm'));
+            document.querySelectorAll('.timeline-filter-group [data-filter]').forEach(b => b.classList.remove('active', 'bg-white', 'shadow-sm'));
             this.classList.add('active', 'bg-white', 'shadow-sm');
 
             const filterType = this.getAttribute('data-filter'); // 'all', 'filled', 'empty'
+
+            // Sinkronisasi dengan custom dropdown mobile
+            const dropdown = document.getElementById('mobileTimelineFilterDropdown');
+            if (dropdown) {
+                const items = dropdown.querySelectorAll('.custom-dropdown-item');
+                const selectedLabel = document.getElementById('mobileSelectedLabel');
+                const selectedIcon = document.getElementById('mobileSelectedIcon');
+
+                items.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-value') === filterType) {
+                        item.classList.add('active');
+                        if (selectedLabel) selectedLabel.textContent = item.textContent.trim();
+                        const itemIcon = item.querySelector('i');
+                        if (itemIcon && selectedIcon) {
+                            selectedIcon.setAttribute('data-lucide', itemIcon.getAttribute('data-lucide'));
+                            if (window.lucide) {
+                                lucide.createIcons();
+                            }
+                        }
+                    }
+                });
+            }
 
             renderTimeline(filterType);
 
@@ -549,6 +572,64 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // ── Custom Dropdown Handler for Mobile ──
+    const mobileDropdown = document.getElementById('mobileTimelineFilterDropdown');
+    if (mobileDropdown) {
+        const trigger = mobileDropdown.querySelector('.custom-dropdown-trigger');
+        const items = mobileDropdown.querySelectorAll('.custom-dropdown-item');
+        const selectedLabel = document.getElementById('mobileSelectedLabel');
+        const selectedIcon = document.getElementById('mobileSelectedIcon');
+
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            mobileDropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function() {
+            mobileDropdown.classList.remove('open');
+        });
+
+        items.forEach(item => {
+            item.addEventListener('click', function() {
+                const filterType = this.getAttribute('data-value');
+
+                items.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+
+                if (selectedLabel) selectedLabel.textContent = this.textContent.trim();
+                const itemIcon = this.querySelector('i');
+                if (itemIcon && selectedIcon) {
+                    selectedIcon.setAttribute('data-lucide', itemIcon.getAttribute('data-lucide'));
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                }
+
+                mobileDropdown.classList.remove('open');
+
+                // Sinkronisasi dengan button desktop
+                document.querySelectorAll('.timeline-filter-group [data-filter]').forEach(b => {
+                    b.classList.remove('active', 'bg-white', 'shadow-sm');
+                    if (b.getAttribute('data-filter') === filterType) {
+                        b.classList.add('active', 'bg-white', 'shadow-sm');
+                    }
+                });
+
+                renderTimeline(filterType);
+
+                if (filterType === 'all') {
+                    document.querySelectorAll('.slot-filled, .slot-empty').forEach(el => el.style.display = 'flex');
+                } else if (filterType === 'filled') {
+                    document.querySelectorAll('.slot-filled').forEach(el => el.style.display = 'flex');
+                    document.querySelectorAll('.slot-empty').forEach(el => el.style.display = 'none');
+                } else if (filterType === 'empty') {
+                    document.querySelectorAll('.slot-filled').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.slot-empty').forEach(el => el.style.display = 'flex');
+                }
+            });
+        });
+    }
 
     // ── Copy Jadwal Kemarin Event Listener ──
     const btnCopyKemarin = document.getElementById('btnCopyKemarin');

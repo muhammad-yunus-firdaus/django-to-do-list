@@ -12,47 +12,52 @@
 {% block content %}
 <!-- Date Navigation + Stats -->
 <div class="card animate-fade-up" style="padding:20px;margin-bottom:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <!-- Date Nav -->
-        <div style="display:flex;align-items:center;gap:8px;">
+    <div class="agenda-header-wrapper">
+        <!-- Date Nav Wrapper -->
+        <div class="agenda-date-nav">
             <a href="?tanggal={{ prev_date|date:'Y-m-d' }}" class="btn btn-ghost btn-sm" title="Hari sebelumnya">
                 <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
             </a>
-            <div style="text-align:center;min-width:160px;">
-                <div style="font-weight:700;font-size:1.1rem;color:var(--text-primary);">
-                    {{ tanggal|date:"l" }}
-                </div>
-                <div class="text-xs" style="color:var(--text-muted);">
+            <div class="agenda-date-text">
+                <div class="agenda-day-name">{{ tanggal|date:"l" }}</div>
+                <div class="agenda-full-date">
                     {{ tanggal|date:"d F Y" }}
-                    {% if is_today %}<span class="badge badge-info" style="margin-left:4px;">Hari Ini</span>{% endif %}
+                    {% if is_today %}<span class="badge badge-info">Hari Ini</span>{% endif %}
                 </div>
             </div>
             <a href="?tanggal={{ next_date|date:'Y-m-d' }}" class="btn btn-ghost btn-sm" title="Hari berikutnya">
                 <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
             </a>
+        </div>
+        
+        <!-- Date Actions -->
+        <div class="agenda-header-actions">
             {% if not is_today %}
-            <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm" style="margin-left:4px;">
+            <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm" style="padding:6px 10px;height:32px;font-size:0.8rem;text-decoration:none;">
                 <i data-lucide="calendar" style="width:14px;height:14px;"></i> Hari Ini
             </a>
             {% endif %}
-            <button type="button" onclick="openExportModal('{{ tanggal|date:'Y-m-d' }}')" class="btn btn-ghost btn-sm export-btn" style="margin-left:4px;" title="Export PDF">
-                <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i> Export PDF
-            </button>
+            <a href="/tugas/agenda/export-pdf/?tanggal={{ tanggal|date:'Y-m-d' }}" class="btn btn-ghost btn-sm export-btn" style="padding:6px 10px;height:32px;font-size:0.8rem;text-decoration:none;" title="Export PDF">
+                <i data-lucide="file-text" style="width:14px;height:14px;color:var(--accent-danger);"></i> Export PDF
+            </a>
+            <a href="/tugas/agenda/export-excel/?tanggal={{ tanggal|date:'Y-m-d' }}" class="btn btn-ghost btn-sm export-btn" style="padding:6px 10px;height:32px;font-size:0.8rem;text-decoration:none;" title="Export Excel">
+                <i data-lucide="file-spreadsheet" style="width:14px;height:14px;color:var(--accent-success);"></i> Export Excel
+            </a>
         </div>
 
         <!-- Quick Stats -->
-        <div style="display:flex;align-items:center;gap:16px;">
-            <div style="text-align:center;">
-                <div style="font-weight:800;font-size:1.25rem;color:var(--primary);" id="statsSelesai">{{ aktivitas_selesai }}</div>
-                <div class="text-xs" style="color:var(--text-muted);">Selesai</div>
+        <div class="agenda-quick-stats">
+            <div class="stat-item">
+                <div class="stat-num" id="statsSelesai">{{ aktivitas_selesai }}</div>
+                <div class="stat-lbl">Selesai</div>
             </div>
-            <div style="text-align:center;">
-                <div style="font-weight:800;font-size:1.25rem;color:var(--text-primary);" id="statsTotal">{{ total_aktivitas }}</div>
-                <div class="text-xs" style="color:var(--text-muted);">Total</div>
+            <div class="stat-item">
+                <div class="stat-num" id="statsTotal">{{ total_aktivitas }}</div>
+                <div class="stat-lbl">Total</div>
             </div>
-            <div style="text-align:center;">
-                <div style="font-weight:800;font-size:1.25rem;color:var(--accent-success);" id="statsPersen">{{ persen_aktivitas|floatformat:0 }}%</div>
-                <div class="text-xs" style="color:var(--text-muted);">Progres</div>
+            <div class="stat-item">
+                <div class="stat-num" id="statsPersen">{{ persen_aktivitas|floatformat:0 }}%</div>
+                <div class="stat-lbl">Progres</div>
             </div>
         </div>
     </div>
@@ -131,22 +136,53 @@
 </div>
 
 <!-- Filter Bar -->
-<div class="card animate-fade-up" style="padding:14px 20px;margin-bottom:12px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-            <i data-lucide="filter" style="width:16px;height:16px;color:var(--text-muted);"></i>
-            <span style="font-size:.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Tampilan</span>
+<div class="card animate-fade-up" style="padding:14px 20px;margin-bottom:12px;overflow:visible !important;z-index:10;position:relative;">
+    <!-- Tampilan Filter Group (Desktop) -->
+    <div class="desktop-only-layout" style="width:100%;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <i data-lucide="filter" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                <span style="font-size:.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Tampilan</span>
+            </div>
+            <div class="timeline-filter-group">
+                <button class="timeline-filter-btn" data-filter="all" title="Tampilkan seluruh timeline 24 jam">
+                    <i data-lucide="clock" style="width:13px;height:13px;"></i> Semua (24 Jam)
+                </button>
+                <button class="timeline-filter-btn active bg-white shadow-sm" data-filter="filled" title="Tampilkan hanya jadwal terisi">
+                    <i data-lucide="calendar-check" style="width:13px;height:13px;"></i> Hanya Terisi
+                </button>
+                <button class="timeline-filter-btn" data-filter="empty" title="Tampilkan hanya slot waktu kosong">
+                    <i data-lucide="calendar-x" style="width:13px;height:13px;"></i> Hanya Waktu Kosong
+                </button>
+            </div>
         </div>
-        <div class="timeline-filter-group">
-            <button class="timeline-filter-btn" data-filter="all" title="Tampilkan seluruh timeline 24 jam">
-                <i data-lucide="clock" style="width:13px;height:13px;"></i> Semua (24 Jam)
-            </button>
-            <button class="timeline-filter-btn active bg-white shadow-sm" data-filter="filled" title="Tampilkan hanya jadwal terisi">
-                <i data-lucide="calendar-check" style="width:13px;height:13px;"></i> Hanya Terisi
-            </button>
-            <button class="timeline-filter-btn" data-filter="empty" title="Tampilkan hanya slot waktu kosong">
-                <i data-lucide="calendar-x" style="width:13px;height:13px;"></i> Hanya Waktu Kosong
-            </button>
+    </div>
+
+    <!-- Tampilan Filter Group (Mobile) -->
+    <div class="mobile-only-layout" style="width:100%;">
+        <div style="display:flex;align-items:center;gap:10px;width:100%;">
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <i data-lucide="filter" style="width:16px;height:16px;color:var(--text-muted);"></i>
+                <span style="font-size:.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Tampilan</span>
+            </div>
+            <div class="custom-dropdown" id="mobileTimelineFilterDropdown">
+                <button class="custom-dropdown-trigger" type="button">
+                    <i data-lucide="calendar-check" class="icon-left" id="mobileSelectedIcon"></i>
+                    <span id="mobileSelectedLabel">Hanya Terisi</span>
+                    <i data-lucide="chevron-down" class="icon-right"></i>
+                </button>
+                <div class="custom-dropdown-menu">
+                    <div class="custom-dropdown-item" data-value="all">
+                        <i data-lucide="clock" class="icon-item"></i> Semua (24 Jam)
+                    </div>
+                    <div class="custom-dropdown-item active" data-value="filled">
+                        <i data-lucide="calendar-check" class="icon-item"></i> Hanya Terisi
+                    </div>
+                    <div class="custom-dropdown-item" data-value="empty">
+                        <i data-lucide="calendar-x" class="icon-item"></i> Hanya Waktu Kosong
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -1134,7 +1134,7 @@ textarea {
 .swal2-popup.subtask-edit-popup .subtask-edit-input:focus {
     border-color: var(--primary) !important;
     background: var(--card) !important;
-    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1) !important;
     outline: none !important;
 }
 
@@ -1609,7 +1609,7 @@ input[type="time"] {
     /* Style action buttons to take full width */
     .aktivitas-item .akt-actions {
         width: 100% !important;
-        justify-content: flex-start !important;
+        justify-content: flex-end !important;
         border-top: 1px solid var(--border) !important;
         padding-top: 10px !important;
         margin-top: 4px !important;
@@ -1654,10 +1654,7 @@ input[type="time"] {
 .mobile-app-title {
     font-size: 1.15rem;
     font-weight: 800;
-    background: linear-gradient(135deg, var(--primary), var(--primary-accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--text-primary);
 }
 
 .mobile-topbar-right {
@@ -1728,34 +1725,37 @@ input[type="time"] {
 }
 
 .bottom-nav-item.active {
-    background: var(--primary-soft);
-    color: var(--primary-accent);
+    background: #f4f4f5;
+    color: #18181b;
 }
 
 .bottom-nav-item.active i {
-    color: var(--primary-accent);
+    color: #18181b;
 }
 
 .bottom-nav-fab {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: var(--primary);
+    background: #09090b;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 20px -4px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 8px 20px -4px rgba(9, 9, 11, 0.4);
     margin-top: -24px;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     flex-shrink: 0;
 }
 
+.bottom-nav-fab:hover {
+    background: #27272a;
+}
+
 .bottom-nav-fab:active {
     transform: scale(0.95);
-    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
-}
+    box-shadow: 0 4px 10px rgba(9, 9, 11, 0.2);
 }
 
 @media (max-width: 768px) {
@@ -1799,4 +1799,79 @@ input[type="time"] {
     .mobile-only-layout {
         display: block !important;
     }
+}
+
+/* ── Global Custom SweetAlert2 Styling ─────────────────────────── */
+.swal2-popup {
+    border-radius: var(--radius-xl) !important;
+    padding: 2rem !important;
+    font-family: inherit !important;
+    background: var(--card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-xl) !important;
+}
+
+.swal2-popup .swal2-title {
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    color: var(--text-primary) !important;
+    margin-bottom: 1.25rem !important;
+    letter-spacing: -0.02em !important;
+}
+
+.swal2-popup .swal2-actions {
+    margin-top: 1.5rem !important;
+    gap: 0.75rem !important;
+}
+
+.swal2-popup .swal2-styled.swal2-confirm {
+    background-color: var(--primary) !important;
+    color: var(--primary-text) !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 10px 22px !important;
+    box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3) !important;
+    transition: var(--transition) !important;
+    border: none !important;
+}
+
+.swal2-popup .swal2-styled.swal2-confirm:hover {
+    background-color: var(--primary-hover) !important;
+    box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.4) !important;
+}
+
+.swal2-popup .swal2-styled.swal2-confirm:focus {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3) !important;
+}
+
+.swal2-popup .swal2-styled.swal2-cancel {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    padding: 10px 22px !important;
+    transition: var(--transition) !important;
+    border: none !important;
+}
+
+.swal2-popup .swal2-styled.swal2-cancel:hover {
+    background-color: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+.swal2-popup .swal2-styled.swal2-cancel:focus {
+    box-shadow: 0 0 0 3px rgba(226, 232, 240, 0.5) !important;
+}
+
+/* ── Hide Scrollbar Helper Class ─────────────────────────── */
+.hide-scrollbar {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+.hide-scrollbar::-webkit-scrollbar {
+    display: none !important;
 }
