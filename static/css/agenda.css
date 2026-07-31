@@ -252,7 +252,7 @@
 
 .agenda-form-grid {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr 140px 160px;
     gap: 12px;
     align-items: end;
 }
