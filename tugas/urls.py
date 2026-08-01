@@ -18,6 +18,7 @@ urlpatterns = [
     path("edit/<int:tugas_id>/", views.edit_tugas, name="edit"),
     path("hapus/<int:tugas_id>/", views.hapus_tugas, name="hapus"),
     path("selesai/<int:tugas_id>/", views.tandai_selesai, name="selesai"),
+    path("belum/<int:tugas_id>/", views.tandai_belum, name="belum"),
     path("detail/<int:tugas_id>/", views.detail_tugas, name="detail"),
 
     # Export

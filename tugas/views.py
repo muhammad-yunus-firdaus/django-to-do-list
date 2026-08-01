@@ -281,6 +281,17 @@ def tandai_selesai(request, tugas_id):
 
 
 @login_required
+@require_POST
+def tandai_belum(request, tugas_id):
+    # Kembalikan tugas ke status belum selesai, cuma bisa lewat POST
+    tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
+    tugas.status = 'belum'
+    tugas.save()
+    messages.success(request, f"Tugas '{tugas.judul}' dikembalikan ke belum selesai.")
+    return redirect("tugas:daftar")
+
+
+@login_required
 def detail_tugas(request, tugas_id):
     # Halaman detail tugas, nampilin info lengkap sama subtask-nya
     tugas = get_object_or_404(Tugas, id=tugas_id, user=request.user)
@@ -1310,7 +1321,7 @@ def kegiatan_list_view(request):
         
     today = date.today()
     if status_filter == 'akan_datang':
-        qs = qs.filter(status='akan_datang').order_by('tanggal', 'jam_mulai')
+        qs = qs.filter(status='akan_datang', tanggal__gte=today).order_by('tanggal', 'jam_mulai')
     elif status_filter == 'riwayat':
         from django.db.models import Q
         qs = qs.filter(Q(status__in=['selesai', 'dibatalkan']) | Q(tanggal__lt=today)).order_by('-tanggal', '-jam_mulai')

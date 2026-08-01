@@ -132,18 +132,32 @@
                 </td>
                 <td style="text-align:right;">
                     <div style="display:flex;gap:6px;justify-content:flex-end;">
-                        <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-ghost btn-sm" title="Edit">
-                            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                        <a href="{% url 'tugas:edit' tugas.id %}" title="Edit"
+                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
+                            onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
+                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                            <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
                         </a>
-                        {% if not tugas.selesai %}
-                        <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
-                            class="btn btn-success btn-sm" title="Selesai">
-                            <i data-lucide="check" style="width:14px;height:14px;"></i>
+                        {% if tugas.selesai %}
+                        <button onclick="konfirmasiBelum('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Kembalikan ke Belum"
+                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                            onmouseenter="this.style.borderColor='var(--text-secondary)';this.style.background='var(--bg-secondary)';"
+                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                            <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+                        </button>
+                        {% else %}
+                        <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Selesai"
+                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                            onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)';"
+                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                            <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
                         </button>
                         {% endif %}
-                        <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
-                            class="btn btn-danger btn-sm" title="Hapus">
-                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Hapus"
+                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                            onmouseenter="this.style.borderColor='var(--accent-danger)';this.style.background='var(--accent-danger-light)';"
+                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--accent-danger);"></i>
                         </button>
                     </div>
                 </td>
@@ -196,26 +210,39 @@
             </div>
         </div>
         
-        <div class="task-card-actions">
-            <a href="{% url 'tugas:detail' tugas.id %}" class="btn btn-ghost btn-sm">
-                <i data-lucide="eye" style="width:16px;height:16px;"></i>
-                Detail
+        <div class="task-card-actions" style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
+            <a href="{% url 'tugas:detail' tugas.id %}" title="Detail"
+                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
+                onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)';"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                <i data-lucide="eye" style="width:14px;height:14px;color:var(--text-secondary);"></i>
             </a>
-            <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-ghost btn-sm">
-                <i data-lucide="pencil" style="width:16px;height:16px;"></i>
-                Edit
+            <a href="{% url 'tugas:edit' tugas.id %}" title="Edit"
+                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
+                onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
             </a>
-            {% if tugas.status != "selesai" %}
-            <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
-                class="btn btn-success btn-sm">
-                <i data-lucide="check" style="width:16px;height:16px;"></i>
-                Selesai
+            {% if tugas.status == "selesai" %}
+            <button onclick="konfirmasiBelum('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Kembalikan ke Belum"
+                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                onmouseenter="this.style.borderColor='var(--text-secondary)';this.style.background='var(--bg-secondary)';"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
+            </button>
+            {% else %}
+            <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Selesai"
+                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)';"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
             </button>
             {% endif %}
-            <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')"
-                class="btn btn-danger btn-sm">
-                <i data-lucide="trash-2" style="width:16px;height:16px;"></i>
-                Hapus
+            <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Hapus"
+                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
+                onmouseenter="this.style.borderColor='var(--accent-danger)';this.style.background='var(--accent-danger-light)';"
+                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--accent-danger);"></i>
             </button>
         </div>
     </div>
@@ -288,6 +315,7 @@
 <!-- Hidden POST forms -->
 <form id="hapusForm" method="POST" style="display:none;">{% csrf_token %}</form>
 <form id="selesaiForm" method="POST" style="display:none;">{% csrf_token %}</form>
+<form id="belumForm" method="POST" style="display:none;">{% csrf_token %}</form>
 {% endblock %}
 
 {% block scripts %}
@@ -388,6 +416,25 @@
                 playCompletionSound(); // Play sound when confirmed
                 const form = document.getElementById("selesaiForm");
                 form.action = "/tugas/selesai/" + id + "/";
+                form.submit();
+            }
+        });
+    }
+
+    function konfirmasiBelum(id, judul) {
+        Swal.fire({
+            title: "Kembalikan ke Belum Selesai?",
+            text: 'Tandai "' + judul + '" sebagai belum selesai?',
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#4F46E5",
+            cancelButtonColor: "#64748B",
+            confirmButtonText: "Ya, Kembalikan",
+            cancelButtonText: "Batal"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById("belumForm");
+                form.action = "/tugas/belum/" + id + "/";
                 form.submit();
             }
         });

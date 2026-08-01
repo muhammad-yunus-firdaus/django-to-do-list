@@ -5,81 +5,139 @@
 {% block page_title %}Tambah Tugas{% endblock %}
 
 {% block content %}
-<div style="max-width:640px;" class="animate-fade-up">
-    <div class="card" style="padding:28px;">
-        {% if form.errors %}
-        <div class="alert alert-danger" style="margin-bottom:20px;">
-            <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
-            <div>
-                <strong>Perbaiki kesalahan berikut:</strong>
-                {% for field, errors in form.errors.items %}
-                {% for error in errors %}<div>{{ error }}</div>{% endfor %}
-                {% endfor %}
+<div class="tambah-tugas-grid" style="display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; width: 100%;">
+    <!-- Left Column: Form Card -->
+    <div class="animate-fade-up">
+        <div class="card form-card">
+            {% if form.errors %}
+            <div class="alert alert-danger" style="margin-bottom:20px;">
+                <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <div>
+                    <strong>Perbaiki kesalahan berikut:</strong>
+                    {% for field, errors in form.errors.items %}
+                    {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="POST" style="display:flex;flex-direction:column;gap:18px;">
+                {% csrf_token %}
+
+                <div>
+                    <label class="form-label">Judul Tugas</label>
+                    {{ form.judul|add_class:"form-input" }}
+                </div>
+
+                <div>
+                    <label class="form-label">Deskripsi</label>
+                    {{ form.deskripsi|add_class:"form-input" }}
+                </div>
+
+                <div>
+                    <label class="form-label">Deadline</label>
+                    {{ form.deadline|add_class:"form-input" }}
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div>
+                        <label class="form-label">Prioritas</label>
+                        {{ form.prioritas|add_class:"form-input" }}
+                    </div>
+                    <div>
+                        <label class="form-label">Kategori</label>
+                        {{ form.kategori|add_class:"form-input" }}
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Status</label>
+                    {{ form.status|add_class:"form-input" }}
+                </div>
+
+                <!-- ═══ Dynamic Subtask Section ═══ -->
+                <div class="subtask-section" style="border-top:1px solid var(--border);padding-top:18px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <label class="form-label" style="margin-bottom:0;">
+                            <i data-lucide="list-checks" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;color:var(--primary);"></i>
+                            Subtask (Opsional)
+                        </label>
+                        <span id="subtaskCount" class="badge badge-info" style="display:none;">0 subtask</span>
+                    </div>
+
+                    <div id="subtaskContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                        <!-- Dynamic subtask inputs will be inserted here by JS -->
+                    </div>
+
+                    <button type="button" id="addSubtaskBtn" onclick="addSubtaskField()" class="btn btn-ghost" style="width:100%;border-style:dashed;color:var(--primary);border-color:var(--primary-100);">
+                        <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                        Tambah Subtask
+                    </button>
+                </div>
+
+                <div style="display:flex;gap:10px;padding-top:8px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="save" style="width:16px;height:16px;"></i> Simpan Tugas
+                    </button>
+                    <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost">Batal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Live Preview & Productivity Tips -->
+    <div class="tambah-tugas-sidebar animate-fade-up" style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; height: fit-content;">
+        <!-- Live Preview Card -->
+        <div class="card" style="padding: 24px; border: 1px dashed var(--primary-100); background: var(--card);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Pratinjau Live</span>
+                <span class="badge badge-info" style="font-size: 0.7rem; display: flex; align-items: center; gap: 4px;"><i data-lucide="eye" style="width:12px;height:12px;"></i> Live Preview</span>
+            </div>
+            
+            <div id="previewCard" class="card" style="margin: 0; padding: 20px; border: 1px solid var(--border); background: var(--bg); transition: all 0.3s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <h4 id="previewTitle" style="font-weight: 700; color: var(--text-primary); margin: 0; word-wrap: break-word; font-size: 1.1rem; line-height: 1.4;">
+                            Judul Tugas Anda
+                        </h4>
+                    </div>
+                    <div id="previewCategoryBadge" class="badge badge-info" style="flex-shrink: 0; font-size: 0.75rem;">
+                        Kerja
+                    </div>
+                </div>
+                
+                <p id="previewDesc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; word-wrap: break-word; line-height: 1.5; font-style: italic; white-space: pre-wrap;">
+                    Deskripsi tugas akan muncul di sini...
+                </p>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
+                        <i data-lucide="calendar" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                        <span id="previewDeadline">Belum ditentukan</span>
+                    </div>
+                    <div id="previewPriorityBadge" class="badge badge-warning" style="font-size: 0.75rem;">
+                        Sedang
+                    </div>
+                </div>
+                
+                <div id="previewSubtaskWrapper" style="display: none; align-items: center; gap: 6px; margin-top: 12px; font-size: 0.8rem; color: var(--text-secondary);">
+                    <i data-lucide="list-checks" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                    <span id="previewSubtaskText">0 Subtask ditambahkan</span>
+                </div>
             </div>
         </div>
-        {% endif %}
-
-        <form method="POST" style="display:flex;flex-direction:column;gap:18px;">
-            {% csrf_token %}
-
-            <div>
-                <label class="form-label">Judul Tugas</label>
-                {{ form.judul|add_class:"form-input" }}
-            </div>
-
-            <div>
-                <label class="form-label">Deskripsi</label>
-                {{ form.deskripsi|add_class:"form-input" }}
-            </div>
-
-            <div>
-                <label class="form-label">Deadline</label>
-                {{ form.deadline|add_class:"form-input" }}
-            </div>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-                <div>
-                    <label class="form-label">Prioritas</label>
-                    {{ form.prioritas|add_class:"form-input" }}
-                </div>
-                <div>
-                    <label class="form-label">Kategori</label>
-                    {{ form.kategori|add_class:"form-input" }}
-                </div>
-            </div>
-
-            <div>
-                <label class="form-label">Status</label>
-                {{ form.status|add_class:"form-input" }}
-            </div>
-
-            <!-- ═══ Dynamic Subtask Section ═══ -->
-            <div class="subtask-section" style="border-top:1px solid var(--border);padding-top:18px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                    <label class="form-label" style="margin-bottom:0;">
-                        <i data-lucide="list-checks" style="width:16px;height:16px;display:inline-block;vertical-align:middle;margin-right:6px;color:var(--primary);"></i>
-                        Subtask (Opsional)
-                    </label>
-                    <span id="subtaskCount" class="badge badge-info" style="display:none;">0 subtask</span>
-                </div>
-
-                <div id="subtaskContainer" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-                    <!-- Dynamic subtask inputs will be inserted here by JS -->
-                </div>
-
-                <button type="button" id="addSubtaskBtn" onclick="addSubtaskField()" class="btn btn-ghost" style="width:100%;border-style:dashed;color:var(--primary);border-color:var(--primary-100);">
-                    <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                    Tambah Subtask
-                </button>
-            </div>
-
-            <div style="display:flex;gap:10px;padding-top:8px;">
-                <button type="submit" class="btn btn-primary">
-                    <i data-lucide="save" style="width:16px;height:16px;"></i> Simpan Tugas
-                </button>
-                <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost">Batal</a>
-            </div>
-        </form>
+        
+        <!-- Productivity Tips -->
+        <div class="card" style="padding: 24px; background: linear-gradient(135deg, var(--card) 0%, var(--bg-secondary) 100%);">
+            <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="lightbulb" style="width: 18px; height: 18px; color: #F59E0B;"></i> Tips Produktivitas
+            </h4>
+            <ul style="padding-left: 18px; margin: 0; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 10px; line-height: 1.4;">
+                <li><strong>Metode 1-3-5:</strong> Rencanakan 1 tugas besar, 3 tugas sedang, dan 5 tugas kecil dalam satu hari untuk fokus yang seimbang.</li>
+                <li><strong>Gunakan Subtask:</strong> Pecah tugas kompleks menjadi subtask kecil agar progres terasa lebih nyata dan tidak kewalahan.</li>
+                <li><strong>Set Batas Waktu Realistis:</strong> Berikan tenggat waktu yang wajar agar Anda memiliki cukup waktu tanpa tekanan berlebih.</li>
+            </ul>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -146,16 +204,140 @@
     function updateSubtaskCount() {
         const count = document.querySelectorAll('#subtaskContainer input[name="subtasks[]"]').length;
         const badge = document.getElementById('subtaskCount');
+        
         if (count > 0) {
             badge.style.display = 'inline-flex';
             badge.textContent = `${count} subtask`;
         } else {
             badge.style.display = 'none';
         }
+
+        // Update preview card badge
+        const previewSubtaskWrapper = document.getElementById('previewSubtaskWrapper');
+        const previewSubtaskText = document.getElementById('previewSubtaskText');
+        if (previewSubtaskWrapper && previewSubtaskText) {
+            if (count > 0) {
+                previewSubtaskWrapper.style.display = 'flex';
+                previewSubtaskText.textContent = `${count} Subtask ditambahkan`;
+            } else {
+                previewSubtaskWrapper.style.display = 'none';
+            }
+        }
     }
+
+    // ── Live Preview Logic ──
+    document.addEventListener('DOMContentLoaded', function() {
+        const idJudul = document.getElementById('id_judul');
+        const idDeskripsi = document.getElementById('id_deskripsi');
+        const idDeadline = document.getElementById('id_deadline');
+        const idPrioritas = document.getElementById('id_prioritas');
+        const idKategori = document.getElementById('id_kategori');
+
+        const previewTitle = document.getElementById('previewTitle');
+        const previewDesc = document.getElementById('previewDesc');
+        const previewDeadline = document.getElementById('previewDeadline');
+        const previewPriorityBadge = document.getElementById('previewPriorityBadge');
+        const previewCategoryBadge = document.getElementById('previewCategoryBadge');
+
+        function updatePreview() {
+            // Judul
+            if (idJudul && idJudul.value.trim() !== '') {
+                previewTitle.textContent = idJudul.value;
+                previewTitle.style.fontStyle = 'normal';
+                previewTitle.style.color = 'var(--text-primary)';
+            } else {
+                previewTitle.textContent = 'Judul Tugas Anda';
+                previewTitle.style.fontStyle = 'italic';
+                previewTitle.style.color = 'var(--text-muted)';
+            }
+
+            // Deskripsi
+            if (idDeskripsi && idDeskripsi.value.trim() !== '') {
+                previewDesc.textContent = idDeskripsi.value;
+                previewDesc.style.fontStyle = 'normal';
+                previewDesc.style.color = 'var(--text-muted)';
+            } else {
+                previewDesc.textContent = 'Deskripsi tugas akan muncul di sini...';
+                previewDesc.style.fontStyle = 'italic';
+                previewDesc.style.color = 'var(--text-muted)';
+            }
+
+            // Kategori
+            if (idKategori) {
+                const selectedText = idKategori.options[idKategori.selectedIndex].text;
+                previewCategoryBadge.textContent = selectedText;
+            }
+
+            // Prioritas
+            if (idPrioritas) {
+                const priorityValue = idPrioritas.value;
+                const priorityText = idPrioritas.options[idPrioritas.selectedIndex].text;
+                previewPriorityBadge.textContent = priorityText;
+                
+                // Clear classes
+                previewPriorityBadge.className = 'badge';
+                if (priorityValue === 'tinggi') {
+                    previewPriorityBadge.classList.add('badge-danger');
+                } else if (priorityValue === 'sedang') {
+                    previewPriorityBadge.classList.add('badge-warning');
+                } else {
+                    previewPriorityBadge.classList.add('badge-success');
+                }
+            }
+
+            // Deadline
+            if (idDeadline && idDeadline.value !== '') {
+                try {
+                    const dateObj = new Date(idDeadline.value);
+                    if (!isNaN(dateObj.getTime())) {
+                        const options = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+                        previewDeadline.textContent = dateObj.toLocaleDateString('id-ID', options);
+                    } else {
+                        previewDeadline.textContent = idDeadline.value;
+                    }
+                } catch(e) {
+                    previewDeadline.textContent = idDeadline.value;
+                }
+            } else {
+                previewDeadline.textContent = 'Belum ditentukan';
+            }
+        }
+
+        // Add event listeners
+        if (idJudul) idJudul.addEventListener('input', updatePreview);
+        if (idDeskripsi) idDeskripsi.addEventListener('input', updatePreview);
+        if (idDeadline) idDeadline.addEventListener('input', updatePreview);
+        if (idPrioritas) idPrioritas.addEventListener('change', updatePreview);
+        if (idKategori) idKategori.addEventListener('change', updatePreview);
+
+        // Run once initially
+        updatePreview();
+    });
 </script>
 
 <style>
+    .form-card {
+        padding: 28px;
+    }
+    @media (max-width: 991px) {
+        .tambah-tugas-sidebar {
+            display: none !important;
+        }
+    }
+    @media (max-width: 768px) {
+        .form-card {
+            padding: 16px !important;
+        }
+        .tambah-tugas-grid {
+            gap: 16px !important;
+            padding: 0 4px !important;
+        }
+    }
+    @media (min-width: 992px) {
+        .tambah-tugas-grid {
+            grid-template-columns: 1.4fr 1fr !important;
+        }
+    }
     @keyframes fadeOut {
         from { opacity: 1; transform: translateX(0); }
         to { opacity: 0; transform: translateX(10px); }
