@@ -1865,7 +1865,6 @@ input[type="time"] {
     box-shadow: 0 0 0 3px rgba(226, 232, 240, 0.5) !important;
 }
 
-/* ── Hide Scrollbar Helper Class ─────────────────────────── */
 .hide-scrollbar {
     overflow-x: auto;
     white-space: nowrap;
@@ -1874,4 +1873,44 @@ input[type="time"] {
 }
 .hide-scrollbar::-webkit-scrollbar {
     display: none !important;
+}
+
+/* ── Modern Form Checkbox Styling ─────────────────────────── */
+.form-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--text-secondary);
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--card);
+}
+.form-checkbox:hover {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+.form-checkbox:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+.form-checkbox:checked::after {
+    content: '';
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+.form-checkbox:focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
 }

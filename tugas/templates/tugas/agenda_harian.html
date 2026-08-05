@@ -305,11 +305,6 @@
 {% endblock %}
 
 {% block scripts %}
-<div id="django-messages" style="display: none;">
-    {% for message in messages %}
-    <span class="django-message" data-tags="{{ message.tags }}" data-text="{{ message }}"></span>
-    {% endfor %}
-</div>
 <div id="agenda-config" style="display:none;"
     data-is-today="{{ is_today|yesno:'true,false' }}"
     data-api-today-url="{% url 'tugas:api_jadwal_today' %}"

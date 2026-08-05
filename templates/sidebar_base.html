@@ -286,20 +286,7 @@
         </div>
     </header>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div style="padding: 16px 32px 0;">
-        {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">
-            {% if message.tags == 'success' %}<i data-lucide="check-circle" style="width:18px;height:18px;"></i>
-            {% elif message.tags == 'warning' %}<i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
-            {% elif message.tags == 'danger' %}<i data-lucide="alert-circle" style="width:18px;height:18px;"></i>
-            {% else %}<i data-lucide="info" style="width:18px;height:18px;"></i>{% endif %}
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+
 
     <!-- Page Body -->
     <div class="page-body">

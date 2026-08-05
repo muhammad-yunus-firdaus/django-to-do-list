@@ -34,26 +34,72 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <style>
+        .swal-custom-modal {
+            max-width: 500px !important;
+            width: 92% !important;
+            border-radius: 1rem !important;
+            padding: 2rem !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            background: #ffffff !important;
+            border: 1px solid #E2E8F0 !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+        }
+    </style>
     {% block head %}{% endblock %}
 </head>
 
 <body>
 
-    {% block layout %}
-    <!-- Default layout: full page without sidebar (used by login/register) -->
+    <!-- Hidden container for Django messages (parsed by global JS using SweetAlert2) -->
     {% if messages %}
-    <div style="position:fixed;top:16px;right:16px;z-index:100;max-width:400px;">
+    <div id="django-messages" style="display: none;">
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        <span class="django-message" data-tags="{{ message.tags }}" data-text="{{ message }}"></span>
         {% endfor %}
     </div>
     {% endif %}
+
+    {% block layout %}
+    <!-- Default layout: full page without sidebar (used by login/register) -->
     {% block content %}{% endblock %}
     {% endblock layout %}
 
-    <!-- Lucide Icons Init -->
+    <!-- Lucide Icons Init & Global Django Messages parser -->
     <script>
-        document.addEventListener("DOMContentLoaded", () => lucide.createIcons());
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.lucide) lucide.createIcons();
+            
+            // Global Django messages parser using SweetAlert2
+            const messageElements = document.querySelectorAll('#django-messages .django-message');
+            messageElements.forEach(msg => {
+                const tags = msg.getAttribute('data-tags');
+                const text = msg.getAttribute('data-text');
+                let icon = 'info';
+                let title = 'Info';
+                if (tags.includes('success')) {
+                    icon = 'success';
+                    title = 'Berhasil!';
+                } else if (tags.includes('danger') || tags.includes('error')) {
+                    icon = 'error';
+                    title = 'Gagal!';
+                } else if (tags.includes('warning')) {
+                    icon = 'warning';
+                    title = 'Peringatan!';
+                }
+                Swal.fire({
+                    icon: icon,
+                    title: title,
+                    text: text,
+                    confirmButtonColor: '#4F46E5',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    customClass: {
+                        popup: 'swal-custom-modal'
+                    }
+                });
+            });
+        });
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');

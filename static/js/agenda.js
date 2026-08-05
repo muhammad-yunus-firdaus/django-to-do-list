@@ -804,32 +804,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Django messages parser
-    const messageElements = document.querySelectorAll('#django-messages .django-message');
-    messageElements.forEach(msg => {
-        const tags = msg.getAttribute('data-tags');
-        const text = msg.getAttribute('data-text');
-        let icon = 'info';
-        let title = 'Info';
-        if (tags === 'success') {
-            icon = 'success';
-            title = 'Berhasil!';
-        } else if (tags === 'danger' || tags === 'error') {
-            icon = 'error';
-            title = 'Gagal!';
-        } else if (tags === 'warning') {
-            icon = 'warning';
-            title = 'Peringatan!';
-        }
-        Swal.fire({
-            icon: icon,
-            title: title,
-            text: text,
-            confirmButtonColor: '#4F46E5',
-            timer: 3000,
-            timerProgressBar: true,
-        });
-    });
+
 
     // ── Start Reminder Check Interval (every 30 seconds) ──
     checkScheduleReminders(); // Check immediately on load

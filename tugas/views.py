@@ -1038,6 +1038,11 @@ def edit_aktivitas_view(request, aktivitas_id):
     """Edit data aktivitas harian."""
     aktivitas = get_object_or_404(AktivitasHarian, id=aktivitas_id, user=request.user)
     if request.method == "POST":
+        # Keep track of original values for habit matching
+        orig_judul = aktivitas.judul
+        orig_jam_mulai = aktivitas.jam_mulai
+        orig_is_habit = aktivitas.is_habit
+        
         form = AktivitasHarianForm(request.POST, instance=aktivitas)
         
         # Set user dan tanggal sebelum validasi
@@ -1046,8 +1051,24 @@ def edit_aktivitas_view(request, aktivitas_id):
 
         if form.is_valid():
             try:
-                form.save()
-                messages.success(request, f"Aktivitas '{form.instance.judul}' berhasil diperbarui!")
+                saved_instance = form.save()
+                
+                # If this is or was a habit, synchronize all other habit instances of this user
+                if orig_is_habit or saved_instance.is_habit:
+                    other_habits = AktivitasHarian.objects.filter(
+                        user=request.user,
+                        judul=orig_judul,
+                        is_habit=True
+                    )
+                    other_habits.update(
+                        judul=saved_instance.judul,
+                        jam_mulai=saved_instance.jam_mulai,
+                        durasi_menit=saved_instance.durasi_menit,
+                        jam_selesai=saved_instance.jam_selesai,
+                        is_habit=saved_instance.is_habit
+                    )
+                
+                messages.success(request, f"Aktivitas '{saved_instance.judul}' berhasil diperbarui!")
             except ValidationError as e:
                 error_msg = "; ".join(e.messages) if hasattr(e, 'messages') else str(e)
                 messages.error(request, error_msg)
