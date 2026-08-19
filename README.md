@@ -65,4 +65,4 @@ Website aplikasi manajemen tugas yang membantu kamu mengorganisir pekerjaan deng
 - Bisa diinstall sebagai aplikasi standalone
 - Service Worker untuk offline support
 - Add to Home Screen di mobile
-
+. 
