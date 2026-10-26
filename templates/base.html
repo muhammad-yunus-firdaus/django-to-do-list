@@ -5,28 +5,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}Manajemen Tugas{% endblock %}</title>
-    <meta name="description" content="Kelola tugas dengan mudah dan efisien">
+    <meta name="description" content="Aplikasi produktivitas dan manajemen tugas harian yang cepat, aman, dan responsif">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Favicon -->
+    <!-- Favicon & PWA -->
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
     <link rel="manifest" href="{% static 'site.webmanifest' %}">
-    <meta name="theme-color" content="#000000">
-    
-    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#F8FAFC">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Tugas App">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Manajemen Tugas">
     <meta name="mobile-web-app-capable" content="yes">
 
-    <!-- Design System CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <!-- Design System CSS (Shadcn/ui Vanilla Modular) -->
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=12">
 
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -34,24 +33,12 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <style>
-        .swal-custom-modal {
-            max-width: 500px !important;
-            width: 92% !important;
-            border-radius: 1rem !important;
-            padding: 2rem !important;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-            background: #ffffff !important;
-            border: 1px solid #E2E8F0 !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
-        }
-    </style>
     {% block head %}{% endblock %}
 </head>
 
 <body>
 
-    <!-- Hidden container for Django messages (parsed by global JS using SweetAlert2) -->
+    <!-- Django Messages (Rendered as Sonner-style Toasts via toast.js) -->
     {% if messages %}
     <div id="django-messages" style="display: none;">
         {% for message in messages %}
@@ -61,49 +48,37 @@
     {% endif %}
 
     {% block layout %}
-    <!-- Default layout: full page without sidebar (used by login/register) -->
+    <!-- Layout tanpa sidebar (Login/Register/Auth) -->
     {% block content %}{% endblock %}
     {% endblock layout %}
 
-    <!-- Lucide Icons Init & Global Django Messages parser -->
+    <!-- Core Toast System -->
+    <script src="{% static 'js/core/toast.js' %}"></script>
+
+    <!-- Core App Scripts -->
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             if (window.lucide) lucide.createIcons();
-            
-            // Global Django messages parser using SweetAlert2
-            const messageElements = document.querySelectorAll('#django-messages .django-message');
-            messageElements.forEach(msg => {
-                const tags = msg.getAttribute('data-tags');
-                const text = msg.getAttribute('data-text');
-                let icon = 'info';
-                let title = 'Info';
-                if (tags.includes('success')) {
-                    icon = 'success';
-                    title = 'Berhasil!';
-                } else if (tags.includes('danger') || tags.includes('error')) {
-                    icon = 'error';
-                    title = 'Gagal!';
-                } else if (tags.includes('warning')) {
-                    icon = 'warning';
-                    title = 'Peringatan!';
-                }
-                Swal.fire({
-                    icon: icon,
-                    title: title,
-                    text: text,
-                    confirmButtonColor: '#4F46E5',
-                    timer: 3000,
-                    timerProgressBar: true,
-                    customClass: {
-                        popup: 'swal-custom-modal'
-                    }
-                });
-            });
         });
 
+        // Global Time & Date Picker Trigger (Full Box Clickable UX)
+        document.addEventListener('click', function(e) {
+            const timeOrDateInput = e.target.closest('input[type="time"], input[type="date"], input[type="datetime-local"]');
+            if (timeOrDateInput && !timeOrDateInput.disabled && typeof timeOrDateInput.showPicker === 'function') {
+                try {
+                    timeOrDateInput.showPicker();
+                } catch (err) {
+                    // Ignore if picker already open or interrupted
+                }
+            }
+        });
+
+        // Global Sidebar Toggle for Mobile
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebarOverlay').classList.toggle('open');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (sidebar) sidebar.classList.toggle('open');
+            if (overlay) overlay.classList.toggle('open');
         }
 
         // Global Password Visibility Toggle
@@ -113,84 +88,72 @@
             const icon = button.querySelector('[data-lucide]');
             if (input.type === 'password') {
                 input.type = 'text';
-                if (icon) {
-                    icon.setAttribute('data-lucide', 'eye-off');
-                    if (window.lucide) lucide.createIcons();
-                }
+                if (icon) icon.setAttribute('data-lucide', 'eye-off');
             } else {
                 input.type = 'password';
-                if (icon) {
-                    icon.setAttribute('data-lucide', 'eye');
-                    if (window.lucide) lucide.createIcons();
-                }
+                if (icon) icon.setAttribute('data-lucide', 'eye');
             }
+            if (window.lucide) lucide.createIcons();
         }
 
-        // Global Export Dialog Modal
-        // Global Export Dialog Modal
+        // Global Export Dialog Modal (Clean Shadcn Modal)
         function openExportModal(targetDate) {
             const dateParam = targetDate ? '?tanggal=' + targetDate : '';
             
             Swal.fire({
-                title: 'Ekspor Data Aplikasi',
+                title: 'Ekspor Data Dokumen',
                 html: `
-                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:18px;text-align:center;">
-                        Pilih kategori data dan format dokumen yang ingin Anda unduh:
+                    <p style="font-size:0.875rem;color:var(--foreground-muted);margin-bottom:1.25rem;text-align:center;">
+                        Pilih jenis data dan format berkas yang ingin Anda unduh:
                     </p>
-                    <div style="display:flex;flex-direction:column;gap:12px;text-align:left;">
+                    <div style="display:flex;flex-direction:column;gap:0.75rem;text-align:left;">
                         <!-- Opsi 1: Jadwal Hari Ini -->
-                        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg-secondary);">
-                            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        <div class="card" style="padding:1rem;">
+                            <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);display:flex;align-items:center;gap:0.5rem;">
+                                <i data-lucide="calendar" style="width:16px;height:16px;color:var(--foreground);"></i>
                                 Jadwal Hari Ini
                             </div>
-                            <p class="text-xs" style="color:var(--text-muted);margin:4px 0 10px 0;">Mengunduh agenda harian & habit tracker hari ini.</p>
-                            <div style="display:flex;gap:8px;">
-                                <a href="/tugas/agenda/export-pdf/${dateParam}" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#EF4444;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                    Unduh PDF
+                            <p style="color:var(--foreground-muted);font-size:0.75rem;margin:0.25rem 0 0.75rem 0;">Agenda kegiatan harian dan target kebiasaan (habit).</p>
+                            <div style="display:flex;gap:0.5rem;">
+                                <a href="/tugas/agenda/export-pdf/${dateParam}" class="btn btn-sm btn-destructive" onclick="Swal.close()">
+                                    <i data-lucide="file-text" style="width:14px;height:14px;"></i> Unduh PDF
                                 </a>
-                                <a href="/tugas/agenda/export-excel/${dateParam}" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10B981;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
-                                    Unduh Excel
+                                <a href="/tugas/agenda/export-excel/${dateParam}" class="btn btn-sm btn-secondary" onclick="Swal.close()">
+                                    <i data-lucide="sheet" style="width:14px;height:14px;"></i> Unduh Excel
                                 </a>
                             </div>
                         </div>
                         
                         <!-- Opsi 2: Daftar Tugas -->
-                        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg-secondary);">
-                            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="m3 17 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/><rect x="3" y="11" width="6" height="6" rx="1"/></svg>
+                        <div class="card" style="padding:1rem;">
+                            <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);display:flex;align-items:center;gap:0.5rem;">
+                                <i data-lucide="check-square" style="width:16px;height:16px;color:var(--foreground);"></i>
                                 Seluruh Daftar Tugas
                             </div>
-                            <p class="text-xs" style="color:var(--text-muted);margin:4px 0 10px 0;">Mengunduh berkas lengkap daftar tugas dan statusnya.</p>
-                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                                <a href="/tugas/export/pdf/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#EF4444;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                    Unduh PDF
+                            <p style="color:var(--foreground-muted);font-size:0.75rem;margin:0.25rem 0 0.75rem 0;">Daftar tugas terstruktur beserta batas waktu dan prioritas.</p>
+                            <div style="display:flex;gap:0.5rem;">
+                                <a href="/tugas/export/pdf/" class="btn btn-sm btn-destructive" onclick="Swal.close()">
+                                    <i data-lucide="file-text" style="width:14px;height:14px;"></i> Unduh PDF
                                 </a>
-                                <a href="/tugas/export/excel/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10B981;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
-                                    Unduh Excel
+                                <a href="/tugas/export/excel/" class="btn btn-sm btn-secondary" onclick="Swal.close()">
+                                    <i data-lucide="sheet" style="width:14px;height:14px;"></i> Unduh Excel
                                 </a>
                             </div>
                         </div>
 
                         <!-- Opsi 3: Kegiatan & Acara -->
-                        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--bg-secondary);">
-                            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+                        <div class="card" style="padding:1rem;">
+                            <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);display:flex;align-items:center;gap:0.5rem;">
+                                <i data-lucide="calendar-days" style="width:16px;height:16px;color:var(--foreground);"></i>
                                 Seluruh Kegiatan & Acara
                             </div>
-                            <p class="text-xs" style="color:var(--text-muted);margin:4px 0 10px 0;">Mengunduh berkas lengkap agenda kegiatan & acara terjadwal.</p>
-                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                                <a href="/tugas/export/kegiatan/pdf/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#EF4444;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                                    Unduh PDF
+                            <p style="color:var(--foreground-muted);font-size:0.75rem;margin:0.25rem 0 0.75rem 0;">Jadwal acara jangka panjang dan agenda kegiatan mendatang.</p>
+                            <div style="display:flex;gap:0.5rem;">
+                                <a href="/tugas/export/kegiatan/pdf/" class="btn btn-sm btn-destructive" onclick="Swal.close()">
+                                    <i data-lucide="file-text" style="width:14px;height:14px;"></i> Unduh PDF
                                 </a>
-                                <a href="/tugas/export/kegiatan/excel/" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#10B981;border:none;color:white;padding:8px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;transition:all 0.2s;" onmouseover="this.style.opacity=0.9" onmouseout="this.style.opacity=1" onclick="Swal.close()">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 18h12"/><path d="M12 9v9"/><path d="M16 12h-8"/></svg>
-                                    Unduh Excel
+                                <a href="/tugas/export/kegiatan/excel/" class="btn btn-sm btn-secondary" onclick="Swal.close()">
+                                    <i data-lucide="sheet" style="width:14px;height:14px;"></i> Unduh Excel
                                 </a>
                             </div>
                         </div>
@@ -198,34 +161,35 @@
                 `,
                 showConfirmButton: false,
                 showCancelButton: true,
-                cancelButtonText: 'Batal',
-                cancelButtonColor: 'var(--border)',
+                cancelButtonText: 'Tutup',
                 customClass: {
-                    popup: 'swal-export-custom'
+                    popup: 'swal-custom-modal'
+                },
+                didOpen: () => {
+                    if (window.lucide) lucide.createIcons();
                 }
             });
         }
 
-        // Register Service Worker for PWA
+        // Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/static/sw.js')
-                    .then((registration) => {
-                        console.log('ServiceWorker registered:', registration.scope);
-                    })
-                    .catch((error) => {
-                        console.log('ServiceWorker registration failed:', error);
-                    });
+                    .then(reg => console.debug('SW registered:', reg.scope))
+                    .catch(err => console.debug('SW failed:', err));
             });
         }
     </script>
 
     <!-- Notification System -->
     <script>
-        // Set CSRF token from Django template for AJAX requests
         window.CSRF_TOKEN = '{{ csrf_token }}';
     </script>
     <script src="{% static 'js/notifications.js' %}"></script>
+
+    <!-- Productivity Modules: Focus Timer & Command Palette -->
+    <script src="{% static 'js/core/pomodoro.js' %}?v=3"></script>
+    <script src="{% static 'js/core/command-palette.js' %}"></script>
 
     {% block scripts %}{% endblock %}
 

@@ -1,0 +1,102 @@
+/**
+ * badges.css — Solid & Soft Badges (Zero Gradients)
+ */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.25;
+    border-radius: var(--radius-full);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    user-select: none;
+    transition: all var(--transition-fast);
+}
+
+/* Primary Badge (Dark Zinc) */
+.badge-primary {
+    background-color: var(--primary);
+    color: var(--primary-fg);
+}
+
+/* Secondary Badge (Light Zinc) */
+.badge-secondary {
+    background-color: var(--secondary);
+    color: var(--secondary-fg);
+}
+
+/* Outline Badge */
+.badge-outline {
+    background-color: transparent;
+    border-color: var(--border);
+    color: var(--foreground);
+}
+
+/* Success (Soft Green) */
+.badge-success {
+    background-color: var(--success-soft);
+    color: var(--success-fg);
+    border-color: rgba(22, 163, 74, 0.2);
+}
+
+/* Warning (Soft Amber) */
+.badge-warning {
+    background-color: var(--warning-soft);
+    color: var(--warning-fg);
+    border-color: rgba(217, 119, 6, 0.2);
+}
+
+/* Destructive (Soft Red) */
+.badge-destructive {
+    background-color: var(--destructive-soft);
+    color: var(--destructive-fg);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+/* Blue Accent / Habit (Soft Blue) */
+.badge-blue {
+    background-color: var(--accent-blue-soft);
+    color: var(--accent-blue-fg);
+    border-color: rgba(37, 99, 235, 0.2);
+}
+
+/* Status-specific mapping helpers */
+.badge-status-selesai {
+    background-color: var(--success-soft);
+    color: var(--success-fg);
+    border-color: rgba(22, 163, 74, 0.2);
+}
+
+.badge-status-belum {
+    background-color: var(--surface-muted);
+    color: var(--foreground-muted);
+    border-color: var(--border);
+}
+
+.badge-status-terlewat {
+    background-color: var(--destructive-soft);
+    color: var(--destructive-fg);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.badge-prioritas-tinggi {
+    background-color: var(--destructive-soft);
+    color: var(--destructive-fg);
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.badge-prioritas-sedang {
+    background-color: var(--warning-soft);
+    color: var(--warning-fg);
+    border-color: rgba(217, 119, 6, 0.2);
+}
+
+.badge-prioritas-rendah {
+    background-color: var(--surface-muted);
+    color: var(--foreground-muted);
+    border-color: var(--border);
+}

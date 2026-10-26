@@ -2,7 +2,8 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from datetime import date, time, timedelta
+from datetime import date, time, timedelta, datetime
+from django.utils import timezone
 
 from .models import Tugas, Subtask, AktivitasHarian, EvaluasiMingguan, Kegiatan
 from .views import _get_week_range, _get_weekly_stats, _get_next_free_slot, _generate_24h_timeline
@@ -356,13 +357,13 @@ class EvaluasiMingguanTests(TestCase):
         t1 = Tugas.objects.create(
             user=self.user, judul='Tugas 1', prioritas='sedang', kategori='kerja', status='selesai'
         )
-        t1.created_at = start + timedelta(hours=12)
+        t1.created_at = timezone.make_aware(datetime.combine(start, time(12, 0)))
         t1.save()
 
         t2 = Tugas.objects.create(
             user=self.user, judul='Tugas 2', prioritas='sedang', kategori='kerja', status='belum'
         )
-        t2.created_at = start + timedelta(days=1)
+        t2.created_at = timezone.make_aware(datetime.combine(start + timedelta(days=1), time(0, 0)))
         t2.save()
 
         # 2. Create 3 activities this week (2 complete, 1 incomplete)
@@ -702,3 +703,213 @@ class Timeline24hTests(TestCase):
         self.assertEqual(response.context['belum_items'], 1)
         # progres = round(3/4 * 100) = 75
         self.assertEqual(response.context['progres_persen'], 75)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# BUG-01: Edit Aktivitas Hanya Boleh Berbasis PK (Bukan Judul)
+# ══════════════════════════════════════════════════════════════════════
+
+class BugEditAktivitasDuplikatTest(TestCase):
+    """
+    Memastikan edit_aktivitas_view HANYA mengubah satu objek berdasarkan pk.
+    Tidak boleh menimpa aktivitas lain yang berjudul sama.
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(username='buguser', password='testpass123')
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_edit_aktivitas_tidak_menimpa_aktivitas_judul_sama(self):
+        """Edit aktivitas jam 05:01 tidak boleh menghapus/menimpa aktivitas jam 17:00 (judul sama)."""
+        today = date.today()
+        akt_pagi = AktivitasHarian.objects.create(
+            user=self.user, judul="Membantu orang tua",
+            jam_mulai=time(5, 1), durasi_menit=30, tanggal=today,
+        )
+        akt_sore = AktivitasHarian.objects.create(
+            user=self.user, judul="Membantu orang tua",
+            jam_mulai=time(17, 0), durasi_menit=60, tanggal=today,
+            is_habit=True,
+        )
+
+        # Edit akt_pagi: ubah is_habit menjadi True
+        url = reverse('tugas:edit_aktivitas', kwargs={'aktivitas_id': akt_pagi.pk})
+        response = self.client.post(url, {
+            'judul': 'Membantu orang tua',
+            'jam_mulai': '05:01',
+            'durasi_menit': 30,
+            'is_habit': True,
+            'tanggal': today.isoformat(),
+        })
+
+        # akt_sore harus masih ada dan tidak berubah
+        akt_sore.refresh_from_db()
+        self.assertEqual(akt_sore.jam_mulai, time(17, 0))
+        self.assertEqual(akt_sore.durasi_menit, 60)
+
+        # Jumlah total aktivitas hari ini harus tetap 2
+        count = AktivitasHarian.objects.filter(user=self.user, tanggal=today).count()
+        self.assertEqual(count, 2)
+
+    def test_edit_aktivitas_hanya_ubah_target_pk(self):
+        """Setelah edit, hanya objek dengan pk yang ditarget yang berubah."""
+        today = date.today()
+        akt_a = AktivitasHarian.objects.create(
+            user=self.user, judul="Olahraga",
+            jam_mulai=time(6, 0), durasi_menit=30, tanggal=today,
+        )
+        akt_b = AktivitasHarian.objects.create(
+            user=self.user, judul="Olahraga",
+            jam_mulai=time(18, 0), durasi_menit=30, tanggal=today,
+        )
+
+        url = reverse('tugas:edit_aktivitas', kwargs={'aktivitas_id': akt_a.pk})
+        self.client.post(url, {
+            'judul': 'Olahraga Pagi',
+            'jam_mulai': '06:00',
+            'durasi_menit': 45,
+            'tanggal': today.isoformat(),
+        })
+
+        akt_a.refresh_from_db()
+        akt_b.refresh_from_db()
+
+        self.assertEqual(akt_a.judul, 'Olahraga Pagi')
+        self.assertEqual(akt_a.durasi_menit, 45)
+        # akt_b tidak boleh berubah
+        self.assertEqual(akt_b.judul, 'Olahraga')
+        self.assertEqual(akt_b.durasi_menit, 30)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# BUG-02: Overdue Task Lockout — Edit Tugas Lewat Deadline
+# ══════════════════════════════════════════════════════════════════════
+
+class BugOverdueTaskLockoutTest(TestCase):
+    """
+    Memastikan tugas yang sudah overdue masih bisa diedit
+    (judul, deskripsi, prioritas) tanpa harus mengganti deadline.
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(username='overdueuser', password='testpass123')
+
+    def _create_overdue_task(self):
+        """Buat tugas overdue langsung via QuerySet (bypass validasi clean)."""
+        from django.utils.timezone import now as tz_now
+        tugas = Tugas(
+            user=self.user,
+            judul='Tugas Lama',
+            deadline=tz_now() - timedelta(days=3),
+            status='belum',
+            prioritas='sedang',
+            kategori='kerja',
+        )
+        # Simpan langsung tanpa full_clean untuk bypass validasi (simulasi data lama)
+        Tugas.objects.bulk_create([tugas])
+        return Tugas.objects.filter(user=self.user, judul='Tugas Lama').first()
+
+    def test_tugas_baru_dengan_deadline_lampau_ditolak(self):
+        """Tugas baru dengan deadline di masa lampau harus ditolak."""
+        from django.utils.timezone import now as tz_now
+        tugas = Tugas(
+            user=self.user,
+            judul='Tugas Baru Invalid',
+            deadline=tz_now() - timedelta(hours=1),
+            status='belum',
+            prioritas='sedang',
+            kategori='kerja',
+        )
+        with self.assertRaises(ValidationError):
+            tugas.full_clean()
+
+    def test_edit_tugas_overdue_deadline_tidak_berubah_harus_lolos(self):
+        """Saat edit tugas overdue, jika deadline tidak diubah, tidak boleh ada ValidationError."""
+        tugas = self._create_overdue_task()
+        if tugas is None:
+            self.skipTest("Tugas overdue tidak berhasil dibuat.")
+
+        # Ubah hanya judul (deadline tetap sama)
+        tugas.judul = 'Tugas Lama (Diperbarui)'
+        try:
+            tugas.full_clean()
+        except ValidationError as e:
+            self.fail(f"ValidationError tidak seharusnya terjadi saat edit judul tugas overdue: {e}")
+
+    def test_pesan_validasi_tidak_mengandung_emoji(self):
+        """Pesan error validasi tidak boleh mengandung karakter emoji."""
+        from django.utils.timezone import now as tz_now
+        tugas = Tugas(
+            user=self.user,
+            judul='Tugas Test',
+            deadline=tz_now() - timedelta(hours=2),
+            status='belum',
+            prioritas='rendah',
+            kategori='pribadi',
+        )
+        try:
+            tugas.full_clean()
+            self.fail("Seharusnya ada ValidationError untuk tugas baru dengan deadline lampau")
+        except ValidationError as e:
+            for msg in e.messages:
+                # Pastikan tidak ada karakter emoji (cek karakter non-ASCII tinggi)
+                self.assertNotIn('\u26d4', msg, "Emoji ⛔ ditemukan dalam pesan validasi!")
+                self.assertNotIn('\U0001f525', msg, "Emoji ditemukan dalam pesan validasi!")
+
+
+# ══════════════════════════════════════════════════════════════════════
+# BUG-03: Midnight-Crossing Overlap Detection
+# ══════════════════════════════════════════════════════════════════════
+
+class BugMidnightCrossingOverlapTest(TestCase):
+    """
+    Memastikan deteksi bentrok jadwal bekerja dengan benar
+    untuk aktivitas yang melewati tengah malam (23:30 + 60 menit = 00:30).
+    """
+    def setUp(self):
+        self.user = User.objects.create_user(username='midnightuser', password='testpass123')
+
+    def test_aktivitas_melewati_tengah_malam_terdeteksi_overlap(self):
+        """Aktivitas 23:30 (60 menit) harus overlap dengan aktivitas 00:00 (30 menit)."""
+        today = date.today()
+        # Buat aktivitas 23:30 - 00:30 (midnight-crossing)
+        akt_late = AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Kerja Malam',
+            jam_mulai=time(23, 30),
+            durasi_menit=60,  # selesai 00:30 hari berikutnya
+            tanggal=today,
+        )
+
+        # Coba buat aktivitas 00:00 - 00:30 di hari yang sama
+        akt_early = AktivitasHarian(
+            user=self.user,
+            judul='Aktivitas Dini Hari',
+            jam_mulai=time(0, 0),
+            durasi_menit=29,  # selesai 00:29 — seharusnya overlap dengan akt_late
+            tanggal=today,
+        )
+        with self.assertRaises(ValidationError):
+            akt_early.full_clean()
+
+    def test_aktivitas_tidak_overlap_jika_tidak_bertabrakan(self):
+        """Aktivitas 22:00 (60 menit) dan 23:30 (30 menit) tidak boleh overlap."""
+        today = date.today()
+        AktivitasHarian.objects.create(
+            user=self.user,
+            judul='Makan Malam',
+            jam_mulai=time(22, 0),
+            durasi_menit=60,  # selesai 23:00
+            tanggal=today,
+        )
+        akt_no_overlap = AktivitasHarian(
+            user=self.user,
+            judul='Belajar Malam',
+            jam_mulai=time(23, 30),
+            durasi_menit=30,  # selesai 00:00
+            tanggal=today,
+        )
+        # Tidak boleh raise ValidationError
+        try:
+            akt_no_overlap.full_clean()
+        except ValidationError as e:
+            self.fail(f"ValidationError tidak seharusnya terjadi: {e}")

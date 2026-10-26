@@ -5,162 +5,145 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<!-- Stat Cards & General Dashboard (Desktop Version) -->
-<div class="desktop-only-layout">
-    <!-- Stat Cards -->
-    <div class="grid-stats mb-6">
-        <div class="stat-card animate-fade-up stagger-1">
-            <div class="stat-icon" style="background:var(--primary-light);">
-                <i data-lucide="layers" style="width:24px;height:24px;color:var(--primary);"></i>
-            </div>
+<!-- PWA Install Banner -->
+<div id="pwaInstallBanner" class="card" style="margin-bottom:1.25rem;display:none;background-color:var(--surface-muted);border-color:var(--primary);">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <i data-lucide="smartphone" style="width:22px;height:22px;color:var(--primary);"></i>
             <div>
-                <div class="stat-value">{{ total_items }}</div>
-                <div class="stat-label">Total Items</div>
+                <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);">Install Aplikasi Tugas</div>
+                <div style="font-size:0.75rem;color:var(--foreground-muted);">Akses aplikasi lebih cepat langsung dari layar utama perangkat Anda.</div>
             </div>
         </div>
-
-        <div class="stat-card animate-fade-up stagger-2">
-            <div class="stat-icon" style="background:var(--accent-success-light);">
-                <i data-lucide="check-circle-2" style="width:24px;height:24px;color:var(--accent-success);"></i>
-            </div>
-            <div>
-                <div class="stat-value" style="color:var(--accent-success);">{{ completed_items }}</div>
-                <div class="stat-label">Selesai</div>
-            </div>
-        </div>
-
-        <div class="stat-card animate-fade-up stagger-3">
-            <div class="stat-icon" style="background:var(--accent-warning-light);">
-                <i data-lucide="clock" style="width:24px;height:24px;color:var(--accent-warning);"></i>
-            </div>
-            <div>
-                <div class="stat-value" style="color:var(--accent-warning);">{{ belum_items }}</div>
-                <div class="stat-label">Belum Selesai</div>
-            </div>
-        </div>
-
-        <div class="stat-card animate-fade-up stagger-4">
-            <div class="stat-icon" style="background:var(--primary-light);">
-                <i data-lucide="trending-up" style="width:24px;height:24px;color:var(--primary);"></i>
-            </div>
-            <div>
-                <div class="stat-value">{{ progres_persen }}%</div>
-                <div class="stat-label">Progres</div>
-            </div>
+        <div style="display:flex;gap:0.5rem;">
+            <button onclick="installPWA()" class="btn btn-primary btn-sm" type="button">
+                <i data-lucide="download" style="width:14px;height:14px;"></i> Install Sekarang
+            </button>
+            <button onclick="dismissInstallBanner()" class="btn btn-ghost btn-sm" type="button">Nanti</button>
         </div>
     </div>
+</div>
 
-    <!-- Progress Bar -->
-    <div class="card animate-fade-up" style="padding:20px;margin-bottom:24px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-            <span class="text-sm font-bold">Progres Keseluruhan</span>
-            <span class="badge badge-info">{{ progres_persen }}%</span>
+<!-- 1. KPI Summary Cards Grid -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:1rem;margin-bottom:1.25rem;">
+    <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-size:0.8125rem;font-weight:600;color:var(--foreground-muted);">Total Items</span>
+            <i data-lucide="layers" style="width:18px;height:18px;color:var(--primary);"></i>
         </div>
-        <div class="progress-bar">
-            <div class="progress-fill" style="width: {{ progres_persen }}%;"></div>
-        </div>
+        <div style="font-size:1.75rem;font-weight:700;letter-spacing:-0.03em;color:var(--foreground);">{{ total_items }}</div>
+        <div style="font-size:0.75rem;color:var(--foreground-muted);margin-top:0.25rem;">Tugas & agenda tersimpan</div>
     </div>
 
-    <!-- PWA Install Prompt -->
-    <div id="pwaInstallBanner" class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;background:linear-gradient(135deg, var(--primary-light) 0%, var(--accent-info-light) 100%);border-color:var(--primary);display:none;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
-            <div style="display:flex;align-items:center;gap:12px;">
-                <i data-lucide="smartphone" style="width:24px;height:24px;color:var(--primary);"></i>
-                <div>
-                    <div style="font-weight:600;font-size:0.95rem;color:var(--text-primary);">Install Aplikasi</div>
-                    <div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Akses lebih cepat & bisa offline</div>
-                </div>
-            </div>
-            <div style="display:flex;gap:8px;">
-                <button onclick="installPWA()" class="btn btn-primary btn-sm">
-                    <i data-lucide="download" style="width:14px;height:14px;"></i> Install
-                </button>
-                <button onclick="dismissInstallBanner()" class="btn btn-ghost btn-sm">Nanti</button>
-            </div>
+    <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-size:0.8125rem;font-weight:600;color:var(--foreground-muted);">Selesai</span>
+            <i data-lucide="check-circle-2" style="width:18px;height:18px;color:var(--success);"></i>
         </div>
+        <div style="font-size:1.75rem;font-weight:700;letter-spacing:-0.03em;color:var(--success);">{{ completed_items }}</div>
+        <div style="font-size:0.75rem;color:var(--foreground-muted);margin-top:0.25rem;">Aktivitas tuntas</div>
     </div>
 
-    <!-- Ringkasan Jadwal Hari Ini -->
-    <div class="card animate-fade-up" style="padding:20px;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <i data-lucide="calendar-clock" style="width:20px;height:20px;color:var(--primary);"></i>
-                <h3 style="margin:0;">Ringkasan Jadwal Hari Ini</h3>
-            </div>
+    <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-size:0.8125rem;font-weight:600;color:var(--foreground-muted);">Belum Selesai</span>
+            <i data-lucide="clock" style="width:18px;height:18px;color:var(--warning);"></i>
+        </div>
+        <div style="font-size:1.75rem;font-weight:700;letter-spacing:-0.03em;color:var(--warning);">{{ belum_items }}</div>
+        <div style="font-size:0.75rem;color:var(--foreground-muted);margin-top:0.25rem;">Perlu dituntaskan</div>
+    </div>
+
+    <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="font-size:0.8125rem;font-weight:600;color:var(--foreground-muted);">Progres</span>
+            <i data-lucide="trending-up" style="width:18px;height:18px;color:var(--accent-blue);"></i>
+        </div>
+        <div style="font-size:1.75rem;font-weight:700;letter-spacing:-0.03em;color:var(--foreground);">{{ progres_persen }}%</div>
+        <div style="font-size:0.75rem;color:var(--foreground-muted);margin-top:0.25rem;">Pencapaian keseluruhan</div>
+    </div>
+</div>
+
+<!-- 2. Progress Bar Keseluruhan -->
+<div class="card" style="padding:1rem 1.25rem;margin-bottom:1.25rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <span style="font-size:0.875rem;font-weight:600;color:var(--foreground);">Tingkat Penyelesaian Keseluruhan</span>
+        <span class="badge badge-primary">{{ progres_persen }}%</span>
+    </div>
+    <div style="background-color:var(--surface-muted);border-radius:var(--radius-full);height:6px;overflow:hidden;">
+        <div style="height:100%;background-color:var(--primary);width:{{ progres_persen }}%;transition:width 0.3s ease;"></div>
+    </div>
+</div>
+
+<!-- 3. Ringkasan Jadwal Hari Ini -->
+<div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+            <i data-lucide="calendar-clock" style="width:18px;height:18px;color:var(--primary);"></i>
+            <h2 class="card-title" style="margin:0;">Jadwal Aktivitas Hari Ini</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
             {% if agenda_total > 0 %}
-            <div style="display:flex;align-items:center;gap:10px;">
-                <span class="badge badge-info" id="dashAgendaStats">{{ agenda_selesai }}/{{ agenda_total }} Selesai ({{ agenda_persen|floatformat:0 }}%)</span>
-                <button type="button" onclick="openExportModal()" class="btn btn-ghost btn-sm export-btn" title="Export PDF">
-                    <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i> Export PDF
-                </button>
-                <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm">
-                    <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Lihat Semua
-                </a>
-            </div>
+            <span class="badge badge-secondary" id="dashAgendaStats">{{ agenda_selesai }}/{{ agenda_total }} Selesai ({{ agenda_persen|floatformat:0 }}%)</span>
+            <button type="button" onclick="openExportModal()" class="btn btn-outline btn-sm">
+                <i data-lucide="file-text" style="width:14px;height:14px;color:var(--destructive);"></i> PDF
+            </button>
             {% endif %}
+            <a href="{% url 'tugas:agenda' %}" class="btn btn-ghost btn-sm">
+                <span>Lihat Agenda</span> <i data-lucide="arrow-right" style="width:14px;height:14px;"></i>
+            </a>
         </div>
+    </div>
 
+    <div class="card-content" style="padding:0;">
         {% if agenda_hari_ini %}
-        <div class="table-responsive" style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;">
+        <div class="table-responsive" style="border:none;box-shadow:none;border-radius:0;">
+            <table class="table">
                 <thead>
-                    <tr style="text-align:left;">
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Jam</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Aktivitas</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);text-align:center;">Durasi</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);text-align:center;">Status</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);text-align:center;">Aksi</th>
+                    <tr>
+                        <th style="width:140px;">Waktu</th>
+                        <th>Aktivitas</th>
+                        <th class="text-center" style="width:100px;">Durasi</th>
+                        <th class="text-center" style="width:110px;">Status</th>
+                        <th class="text-center" style="width:110px;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for akt in agenda_hari_ini %}
-                    <tr id="dashRow{{ akt.id }}" style="transition:all 0.2s;{% if akt.status == 'selesai' %}opacity:0.6;{% endif %}">
-                        <td style="padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap;">
-                            <span style="font-weight:600;color:var(--primary);">{{ akt.jam_mulai|time:"H:i" }}</span>
-                            <span style="color:var(--text-muted);"> — {{ akt.jam_selesai|time:"H:i" }}</span>
+                    <tr id="dashRow{{ akt.id }}" style="{% if akt.status == 'selesai' %}opacity:0.6;{% endif %}">
+                        <td style="white-space:nowrap;font-weight:600;font-variant-numeric:tabular-nums;color:var(--foreground);">
+                            {{ akt.jam_mulai|time:"H:i" }} — {{ akt.jam_selesai|time:"H:i" }}
                         </td>
-                        <td style="padding:10px 12px;border-bottom:1px solid var(--border);">
-                            <span style="font-weight:500;{% if akt.status == 'selesai' %}text-decoration:line-through;color:var(--text-muted);{% endif %}">{{ akt.judul }}</span>
+                        <td>
+                            <span class="dash-item-title" style="font-weight:500;{% if akt.status == 'selesai' %}text-decoration:line-through;color:var(--foreground-muted);{% endif %}">{{ akt.judul }}</span>
                             {% if akt.is_habit %}
-                            <span class="badge badge-info" style="font-size:.6rem;padding:1px 5px;margin-left:4px;">Habit</span>
+                            <span class="badge badge-outline" style="margin-left:6px;font-size:0.6875rem;">Habit</span>
                             {% endif %}
                         </td>
-                        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;color:var(--text-muted);">
-                            {{ akt.durasi_menit }} mnt
-                        </td>
-                        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;" id="dashBadge{{ akt.id }}">
+                        <td class="text-center" style="color:var(--foreground-muted);font-variant-numeric:tabular-nums;">{{ akt.durasi_menit }} mnt</td>
+                        <td class="text-center" id="dashBadge{{ akt.id }}">
                             {% if akt.status == 'selesai' %}
                             <span class="badge badge-success">Selesai</span>
                             {% elif akt.status == 'terlewat' %}
-                            <span class="badge badge-danger">Terlewat</span>
+                            <span class="badge badge-destructive">Terlewat</span>
                             {% else %}
-                            <span class="badge badge-muted">Belum</span>
+                            <span class="badge badge-secondary">Belum</span>
                             {% endif %}
                         </td>
-                        <td style="padding:10px 12px;border-bottom:1px solid var(--border);text-align:center;">
-                            <div style="display:flex;gap:4px;justify-content:center;" id="dashActions{{ akt.id }}">
+                        <td class="text-center">
+                            <div class="table-actions" id="dashActions{{ akt.id }}">
                                 {% if akt.status != 'selesai' %}
-                                <button onclick="dashToggle({{ akt.id }}, 'selesai')" title="Selesai"
-                                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                                    onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)'"
-                                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
-                                    <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
+                                <button onclick="dashToggle({{ akt.id }}, 'selesai')" class="btn btn-outline btn-icon" title="Tandai Selesai" type="button" aria-label="Selesai">
+                                    <i data-lucide="check" style="width:14px;height:14px;color:var(--success);"></i>
                                 </button>
                                 {% endif %}
                                 {% if akt.status == 'belum' %}
-                                <button onclick="dashToggle({{ akt.id }}, 'terlewat')" title="Terlewat"
-                                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                                    onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'"
-                                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
-                                    <i data-lucide="x" style="width:14px;height:14px;color:var(--accent-warning);"></i>
+                                <button onclick="dashToggle({{ akt.id }}, 'terlewat')" class="btn btn-outline btn-icon" title="Tandai Terlewat" type="button" aria-label="Terlewat">
+                                    <i data-lucide="x" style="width:14px;height:14px;color:var(--warning);"></i>
                                 </button>
                                 {% endif %}
                                 {% if akt.status == 'selesai' or akt.status == 'terlewat' %}
-                                <button onclick="dashToggle({{ akt.id }}, 'belum')" title="Kembalikan"
-                                    style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                                    onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)'"
-                                    onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
-                                    <i data-lucide="rotate-ccw" style="width:12px;height:12px;color:var(--text-secondary);"></i>
+                                <button onclick="dashToggle({{ akt.id }}, 'belum')" class="btn btn-outline btn-icon" title="Kembalikan" type="button" aria-label="Kembalikan">
+                                    <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
                                 </button>
                                 {% endif %}
                             </div>
@@ -171,508 +154,112 @@
             </table>
         </div>
         {% else %}
-        <div class="empty-state" style="padding:24px;">
-            <i data-lucide="calendar-off" style="width:36px;height:36px;"></i>
-            <p>Belum ada jadwal untuk hari ini</p>
-            <a href="{% url 'tugas:agenda' %}" class="btn btn-primary btn-sm" style="margin-top:8px;">
-                <i data-lucide="plus" style="width:14px;height:14px;"></i> Buat Jadwal
+        <div style="padding:2rem;text-align:center;color:var(--foreground-muted);">
+            <i data-lucide="calendar-off" style="width:32px;height:32px;margin:0 auto 0.5rem;"></i>
+            <div style="font-size:0.875rem;font-weight:600;color:var(--foreground);">Belum ada jadwal untuk hari ini</div>
+            <a href="{% url 'tugas:agenda' %}" class="btn btn-primary btn-sm" style="margin-top:0.75rem;">
+                <i data-lucide="plus" style="width:14px;height:14px;"></i> Susun Jadwal
             </a>
         </div>
         {% endif %}
     </div>
+</div>
 
-    <!-- Janjian & Acara Mendatang -->
-    <div class="card animate-fade-up" style="padding:20px;margin-bottom:24px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-            <div style="display:flex;align-items:center;gap:10px;">
-                <i data-lucide="calendar-range" style="width:20px;height:20px;color:var(--primary);"></i>
-                <h3 style="margin:0;">Janjian & Acara Mendatang</h3>
-            </div>
-            <a href="{% url 'tugas:kegiatan_list' %}" class="btn btn-ghost btn-sm">
-                <i data-lucide="arrow-right" style="width:14px;height:14px;"></i> Kelola Semua
-            </a>
+<!-- 4. Two Column Grid: Deadline Terdekat & Prioritas Tinggi -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr));gap:1.25rem;margin-bottom:1.25rem;">
+    <!-- Deadline Terdekat -->
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;gap:0.5rem;">
+            <i data-lucide="alarm-clock" style="width:18px;height:18px;color:var(--warning);"></i>
+            <h2 class="card-title" style="margin:0;">Deadline Terdekat</h2>
         </div>
-
-        {% if kegiatan_mendatang %}
-        <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;">
-                <thead>
-                    <tr style="text-align:left;">
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Waktu</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Acara / Pertemuan</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);">Lokasi / Link</th>
-                        <th style="padding:10px 12px;font-weight:600;color:var(--text-muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:2px solid var(--border);text-align:center;">Kategori</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for keg in kegiatan_mendatang %}
-                    <tr style="transition:all 0.2s;">
-                        <td style="padding:12px;border-bottom:1px solid var(--border);white-space:nowrap;">
-                            <div style="font-weight:600;color:var(--text-primary);">{{ keg.tanggal|date:"d M Y" }}</div>
-                            <div class="text-xs" style="color:var(--primary);margin-top:2px;">{{ keg.jam_mulai|time:"H:i" }} - {{ keg.jam_selesai|time:"H:i" }}</div>
-                        </td>
-                        <td style="padding:12px;border-bottom:1px solid var(--border);">
-                            <div style="font-weight:600;color:var(--text-primary);">{{ keg.judul }}</div>
-                            {% if keg.catatan %}
-                            <div class="text-xs" style="color:var(--text-muted);margin-top:2px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ keg.catatan }}</div>
-                            {% endif %}
-                        </td>
-                        <td style="padding:12px;border-bottom:1px solid var(--border);">
-                            {% if keg.lokasi %}
-                                {% if "http" in keg.lokasi %}
-                                <a href="{{ keg.lokasi }}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;color:var(--primary);text-decoration:none;font-weight:500;">
-                                    <i data-lucide="video" style="width:14px;height:14px;"></i> Gabung Pertemuan
-                                </a>
-                                {% else %}
-                                <div style="display:inline-flex;align-items:center;gap:6px;color:var(--text-secondary);">
-                                    <i data-lucide="map-pin" style="width:14px;height:14px;color:var(--text-muted);"></i> {{ keg.lokasi }}
-                                </div>
-                                {% endif %}
-                            {% else %}
-                            <span class="text-xs" style="color:var(--text-muted);">Tidak ada lokasi</span>
-                            {% endif %}
-                        </td>
-                        <td style="padding:12px;border-bottom:1px solid var(--border);text-align:center;">
-                            {% if keg.kategori == 'akademik' %}
-                            <span class="badge badge-info" style="font-size: 0.75rem;">Akademik</span>
-                            {% elif keg.kategori == 'pekerjaan' %}
-                            <span class="badge badge-warning" style="font-size: 0.75rem;">Pekerjaan</span>
-                            {% elif keg.kategori == 'keluarga' %}
-                            <span class="badge badge-danger" style="font-size: 0.75rem;background-color: #EF4444;color: white;">Keluarga</span>
-                            {% elif keg.kategori == 'pribadi_sosial' %}
-                            <span class="badge badge-success" style="font-size: 0.75rem;">Pribadi & Sosial</span>
-                            {% elif keg.kategori == 'acara' %}
-                            <span class="badge badge-primary" style="font-size: 0.75rem;background-color: #6366F1;color: white;">Acara</span>
-                            {% else %}
-                            <span class="badge badge-muted" style="font-size: 0.75rem;">Lainnya</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding:24px;">
-            <i data-lucide="calendar" style="width:36px;height:36px;color:var(--text-muted);"></i>
-            <p>Tidak ada janjian atau acara mendatang</p>
-            <a href="{% url 'tugas:kegiatan_list' %}" class="btn btn-primary btn-sm" style="margin-top:8px;">
-                <i data-lucide="plus" style="width:14px;height:14px;"></i> Buat Acara
-            </a>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Two Column Grid -->
-    <div class="grid-2">
-        <!-- Deadline Terdekat -->
-        <div class="card animate-fade-up" style="padding:20px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-                <i data-lucide="calendar-clock" style="width:20px;height:20px;color:var(--accent-danger);"></i>
-                <h3 style="margin:0;">Deadline Terdekat</h3>
-            </div>
-
+        <div class="card-content">
             {% if tugas_deadline_terdekat %}
-            <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
                 {% for tugas in tugas_deadline_terdekat %}
-                <a href="{% url 'tugas:detail' tugas.id %}"
-                    style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border);text-decoration:none;transition:var(--transition);"
-                    onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-                    <div>
-                        <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);" class="truncate">{{ tugas.judul }}</div>
-                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">{{ tugas.deadline|date:"d M Y H:i" }}</div>
+                <a href="{% url 'tugas:detail' tugas.id %}" class="dashboard-task-item">
+                    <div style="min-width:0;flex:1;padding-right:0.75rem;text-align:left;">
+                        <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);" class="truncate">{{ tugas.judul }}</div>
+                        <div style="font-size:0.75rem;color:var(--foreground-muted);margin-top:2px;display:flex;align-items:center;gap:4px;">
+                            <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                            <span>{{ tugas.deadline|date:"d M Y H:i" }}</span>
+                        </div>
                     </div>
-                    {% if tugas.prioritas  ==  "tinggi" %}
-                    <span class="badge badge-danger">Tinggi</span>
-                    {% elif tugas.prioritas  ==  "sedang" %}
+                    {% if tugas.prioritas == "tinggi" %}
+                    <span class="badge badge-destructive">Tinggi</span>
+                    {% elif tugas.prioritas == "sedang" %}
                     <span class="badge badge-warning">Sedang</span>
                     {% else %}
-                    <span class="badge badge-success">Rendah</span>
+                    <span class="badge badge-secondary">Rendah</span>
                     {% endif %}
                 </a>
                 {% endfor %}
             </div>
             {% else %}
-            <div class="empty-state" style="padding:24px;">
-                <i data-lucide="calendar-check" style="width:36px;height:36px;"></i>
-                <p>Tidak ada tugas mendekati deadline</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Prioritas Tinggi -->
-        <div class="card animate-fade-up" style="padding:20px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-                <i data-lucide="alert-triangle" style="width:20px;height:20px;color:var(--accent-warning);"></i>
-                <h3 style="margin:0;">Prioritas Tinggi</h3>
-            </div>
-
-            {% if prioritas_tinggi %}
-            <div style="display:flex;flex-direction:column;gap:10px;">
-                {% for tugas in prioritas_tinggi %}
-                <a href="{% url 'tugas:detail' tugas.id %}"
-                    style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border);text-decoration:none;transition:var(--transition);"
-                    onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
-                    <div>
-                        <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);" class="truncate">{{ tugas.judul }}</div>
-                        <div class="text-xs" style="color:var(--text-muted);margin-top:2px;">{{ tugas.deadline|date:"d M Y H:i" }}</div>
-                    </div>
-                    <span class="badge badge-danger">Tinggi</span>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="empty-state" style="padding:24px;">
-                <i data-lucide="check-circle" style="width:36px;height:36px;"></i>
-                <p>Tidak ada tugas prioritas tinggi</p>
+            <div style="padding:1.5rem;text-align:center;color:var(--foreground-muted);">
+                <i data-lucide="calendar-check" style="width:28px;height:28px;margin:0 auto 0.5rem;"></i>
+                <p style="font-size:0.8125rem;margin:0;">Tidak ada tugas mendekati batas waktu.</p>
             </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Overdue Section -->
-    {% if tugas_overdue %}
-    <div class="card animate-fade-up mt-6" style="padding:20px;border-color:var(--accent-danger);">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <i data-lucide="alert-octagon" style="width:20px;height:20px;color:var(--accent-danger);"></i>
-            <h3 style="margin:0;color:var(--accent-danger);">Tugas Melewati Deadline</h3>
+    <!-- Prioritas Tinggi -->
+    <div class="card">
+        <div class="card-header" style="display:flex;align-items:center;gap:0.5rem;">
+            <i data-lucide="alert-circle" style="width:18px;height:18px;color:var(--destructive);"></i>
+            <h2 class="card-title" style="margin:0;">Prioritas Tinggi</h2>
         </div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-            {% for tugas in tugas_overdue %}
-            <a href="{% url 'tugas:detail' tugas.id %}"
-                style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-md);background:var(--accent-danger-light);text-decoration:none;">
-                <div>
-                    <div style="font-weight:600;font-size:.9rem;color:var(--text-primary);">{{ tugas.judul }}</div>
-                    <div class="text-xs" style="color:var(--accent-danger);">Deadline: {{ tugas.deadline|date:"d M Y H:i" }}
+        <div class="card-content">
+            {% if prioritas_tinggi %}
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                {% for tugas in prioritas_tinggi %}
+                <a href="{% url 'tugas:detail' tugas.id %}" class="dashboard-task-item">
+                    <div style="min-width:0;flex:1;padding-right:0.75rem;text-align:left;">
+                        <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);" class="truncate">{{ tugas.judul }}</div>
+                        <div style="font-size:0.75rem;color:var(--foreground-muted);margin-top:2px;display:flex;align-items:center;gap:4px;">
+                            <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+                            <span>{{ tugas.deadline|date:"d M Y H:i" }}</span>
+                        </div>
                     </div>
+                    <span class="badge badge-destructive">Tinggi</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="padding:1.5rem;text-align:center;color:var(--foreground-muted);">
+                <i data-lucide="check-circle" style="width:28px;height:28px;margin:0 auto 0.5rem;"></i>
+                <p style="font-size:0.8125rem;margin:0;">Tidak ada tugas berprioritas tinggi.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 5. Overdue Tasks Alert Section -->
+{% if tugas_overdue %}
+<div class="card" style="border-color:var(--destructive);margin-bottom:1.25rem;">
+    <div class="card-header" style="display:flex;align-items:center;gap:0.5rem;">
+        <i data-lucide="alert-triangle" style="width:18px;height:18px;color:var(--destructive);"></i>
+        <h2 class="card-title" style="margin:0;color:var(--destructive);">Tugas Melewati Batas Waktu (Overdue)</h2>
+    </div>
+    <div class="card-content">
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+            {% for tugas in tugas_overdue %}
+            <a href="{% url 'tugas:detail' tugas.id %}" class="card" style="padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;text-decoration:none;border-color:var(--destructive-soft);">
+                <div>
+                    <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);">{{ tugas.judul }}</div>
+                    <div style="font-size:0.75rem;color:var(--destructive);">Batas Waktu: {{ tugas.deadline|date:"d M Y H:i" }}</div>
                 </div>
-                <span class="badge badge-danger">Overdue</span>
+                <span class="badge badge-destructive">Terlewat</span>
             </a>
             {% endfor %}
         </div>
     </div>
-    {% endif %}
 </div>
-
-<!-- Stacked Cards & Mobile Version Dashboard Layout -->
-<div class="mobile-only-layout">
-    <!-- Stat Cards Mobile -->
-    <div class="grid-stats" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
-        <div class="stat-card" style="padding:12px; gap:10px; border-radius:12px;">
-            <div class="stat-icon" style="background:var(--primary-light); width:32px; height:32px;">
-                <i data-lucide="layers" style="width:16px;height:16px;color:var(--primary);"></i>
-            </div>
-            <div>
-                <div class="stat-value" style="font-size:1.1rem;">{{ total_items }}</div>
-                <div class="stat-label" style="font-size:0.7rem;">Total Items</div>
-            </div>
-        </div>
-        <div class="stat-card" style="padding:12px; gap:10px; border-radius:12px;">
-            <div class="stat-icon" style="background:var(--accent-success-light); width:32px; height:32px;">
-                <i data-lucide="check-circle-2" style="width:16px;height:16px;color:var(--accent-success);"></i>
-            </div>
-            <div>
-                <div class="stat-value" style="font-size:1.1rem; color:var(--accent-success);">{{ completed_items }}</div>
-                <div class="stat-label" style="font-size:0.7rem;">Selesai</div>
-            </div>
-        </div>
-        <div class="stat-card" style="padding:12px; gap:10px; border-radius:12px;">
-            <div class="stat-icon" style="background:var(--accent-warning-light); width:32px; height:32px;">
-                <i data-lucide="clock" style="width:16px;height:16px;color:var(--accent-warning);"></i>
-            </div>
-            <div>
-                <div class="stat-value" style="font-size:1.1rem; color:var(--accent-warning);">{{ belum_items }}</div>
-                <div class="stat-label" style="font-size:0.7rem;">Belum Selesai</div>
-            </div>
-        </div>
-        <div class="stat-card" style="padding:12px; gap:10px; border-radius:12px;">
-            <div class="stat-icon" style="background:var(--primary-light); width:32px; height:32px;">
-                <i data-lucide="trending-up" style="width:16px;height:16px;color:var(--primary);"></i>
-            </div>
-            <div>
-                <div class="stat-value" style="font-size:1.1rem;">{{ progres_persen }}%</div>
-                <div class="stat-label" style="font-size:0.7rem;">Progres</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Progress Bar Mobile -->
-    <div class="card" style="padding:14px; margin-bottom:16px; border-radius:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-size:0.8rem; font-weight:700; color:var(--text-primary);">Progres Keseluruhan</span>
-            <span class="badge badge-info" style="font-size:0.7rem; padding:2px 6px;">{{ progres_persen }}%</span>
-        </div>
-        <div class="progress-bar" style="height:6px;">
-            <div class="progress-fill" style="width: {{ progres_persen }}%;"></div>
-        </div>
-    </div>
-
-    <!-- Kartu Bagian Atas: Widget Tugas/Aktivitas Utama -->
-    <div class="card" style="padding:16px; margin-bottom:16px; border-radius:12px;">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
-            <i data-lucide="check-square" style="width:18px; height:18px; color:var(--primary);"></i>
-            <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:var(--text-primary);">Tugas Hari Ini</h3>
-        </div>
-
-        {% if tugas_deadline_terdekat %}
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            {% for tugas in tugas_deadline_terdekat %}
-            <div id="mobileTaskRow-{{ tugas.id }}" style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary); transition:all 0.2s;">
-                <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
-                    <input type="checkbox" onclick="toggleTaskMobile({{ tugas.id }}, this)" {% if tugas.status == 'selesai' %}checked{% endif %} style="width:18px; height:18px; cursor:pointer; accent-color:var(--primary); flex-shrink:0;">
-                    <a href="{% url 'tugas:detail' tugas.id %}" style="text-decoration:none; min-width:0; flex:1; display:block;">
-                        <span class="task-title-text" style="font-size:0.85rem; font-weight:600; color:var(--text-primary); {% if tugas.status == 'selesai' %}text-decoration:line-through; color:var(--text-muted);{% endif %}">{{ tugas.judul }}</span>
-                        {% if tugas.deskripsi %}
-                        <div style="font-size:0.725rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; margin-top:2px;">{{ tugas.deskripsi }}</div>
-                        {% endif %}
-                    </a>
-                </div>
-                <div style="margin-left:8px; flex-shrink:0;">
-                    {% if tugas.prioritas == 'tinggi' %}
-                    <span class="badge badge-danger" style="font-size:0.65rem; padding:2px 6px;">Tinggi</span>
-                    {% elif tugas.prioritas == 'sedang' %}
-                    <span class="badge badge-warning" style="font-size:0.65rem; padding:2px 6px;">Sedang</span>
-                    {% else %}
-                    <span class="badge badge-success" style="font-size:0.65rem; padding:2px 6px;">Rendah</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding:16px; text-align:center;">
-            <i data-lucide="check-circle" style="width:32px; height:32px; color:var(--text-muted); margin-bottom:6px;"></i>
-            <p style="font-size:0.8rem; margin:0; color:var(--text-muted);">Tidak ada tugas tersisa hari ini.</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Kartu Bagian Bawah: Widget Ringkasan / Aktivitas Terakhir -->
-    <div class="card" style="padding:16px 0 0 0; margin-bottom:16px; border-radius:12px; overflow:hidden;">
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; padding:0 16px;">
-            <i data-lucide="calendar" style="width:18px; height:18px; color:var(--primary);"></i>
-            <h3 style="margin:0; font-size:0.95rem; font-weight:700; color:var(--text-primary);">Aktivitas Harian</h3>
-        </div>
-
-        {% if agenda_hari_ini %}
-        <div style="display:flex; flex-direction:column; gap:8px; padding:0 16px; margin-bottom:16px;">
-            {% for akt in agenda_hari_ini %}
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--bg-secondary);">
-                <div style="min-width:0; flex:1;">
-                    <span style="font-size:0.8rem; font-weight:600; color:var(--text-primary); {% if akt.status == 'selesai' %}text-decoration:line-through; color:var(--text-muted);{% endif %}">{{ akt.judul }}</span>
-                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:2px;">{{ akt.jam_mulai|time:"H:i" }} - {{ akt.jam_selesai|time:"H:i" }} ({{ akt.durasi_menit }} mnt)</div>
-                </div>
-                <div style="margin-left:8px; flex-shrink:0;">
-                    {% if akt.status == 'selesai' %}
-                    <span class="badge badge-success" style="font-size:0.65rem;">Selesai</span>
-                    {% elif akt.status == 'terlewat' %}
-                    <span class="badge badge-danger" style="font-size:0.65rem;">Terlewat</span>
-                    {% else %}
-                    <span class="badge badge-muted" style="font-size:0.65rem;">Belum</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding:16px; text-align:center; margin-bottom:16px;">
-            <i data-lucide="calendar-off" style="width:32px; height:32px; color:var(--text-muted); margin-bottom:6px;"></i>
-            <p style="font-size:0.8rem; margin:0; color:var(--text-muted);">Belum ada agenda jadwal hari ini.</p>
-        </div>
-        {% endif %}
-
-        <a href="{% url 'tugas:agenda' %}" style="display:flex; align-items:center; justify-content:center; gap:6px; border-top:1px solid var(--border); background:var(--bg-secondary); color:var(--primary); font-size:0.8rem; font-weight:700; text-decoration:none; padding:12px; width:100%; transition:background 0.2s;" onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='var(--bg-secondary)'">
-            <span>Kelola Jadwal Harian</span>
-            <i data-lucide="chevron-right" style="width:14px; height:14px;"></i>
-        </a>
-    </div>
-</div>
-
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // PWA Install Prompt
-    let deferredPrompt;
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        // Prevent default prompt
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        // Show custom install banner
-        const banner = document.getElementById('pwaInstallBanner');
-        if (banner && !localStorage.getItem('pwaInstallDismissed')) {
-            banner.style.display = 'block';
-            // Re-init Lucide icons for dynamically shown content
-            setTimeout(() => lucide.createIcons(), 100);
-        }
-    });
-
-    function installPWA() {
-        if (!deferredPrompt) return;
-        
-        // Show install prompt
-        deferredPrompt.prompt();
-        
-        // Wait for user choice
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === 'accepted') {
-                console.log('User accepted PWA install');
-            }
-            deferredPrompt = null;
-            document.getElementById('pwaInstallBanner').style.display = 'none';
-        });
-    }
-
-    function dismissInstallBanner() {
-        document.getElementById('pwaInstallBanner').style.display = 'none';
-        localStorage.setItem('pwaInstallDismissed', 'true');
-    }
-
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('App is running in standalone mode (installed)');
-    }
-
-    // ── Dashboard Agenda Quick Action (AJAX) ──
-    function dashToggle(id, targetStatus) {
-        fetch(`/tugas/agenda/toggle/${id}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': window.CSRF_TOKEN,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status: targetStatus })
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                // Update badge
-                const badgeCell = document.getElementById(`dashBadge${id}`);
-                if (badgeCell) {
-                    const badgeMap = {
-                        'selesai': '<span class="badge badge-success">Selesai</span>',
-                        'terlewat': '<span class="badge badge-danger">Terlewat</span>',
-                        'belum': '<span class="badge badge-muted">Belum</span>',
-                    };
-                    badgeCell.innerHTML = badgeMap[data.status] || badgeMap['belum'];
-                }
-
-                // Update row opacity
-                const row = document.getElementById(`dashRow${id}`);
-                if (row) {
-                    row.style.opacity = data.status === 'selesai' ? '0.6' : '1';
-                    // Update title text decoration
-                    const titleSpan = row.querySelector('td:nth-child(2) span:first-child');
-                    if (titleSpan) {
-                        titleSpan.style.textDecoration = data.status === 'selesai' ? 'line-through' : 'none';
-                        titleSpan.style.color = data.status === 'selesai' ? 'var(--text-muted)' : '';
-                    }
-                }
-
-                // Update actions
-                const actionsCell = document.getElementById(`dashActions${id}`);
-                if (actionsCell) {
-                    let btns = '';
-                    if (data.status !== 'selesai') {
-                        btns += `<button onclick="dashToggle(${id}, 'selesai')" title="Selesai" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i></button>`;
-                    }
-                    if (data.status === 'belum') {
-                        btns += `<button onclick="dashToggle(${id}, 'terlewat')" title="Terlewat" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--accent-warning)';this.style.background='var(--accent-warning-light)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="x" style="width:14px;height:14px;color:var(--accent-warning);"></i></button>`;
-                    }
-                    if (data.status === 'selesai' || data.status === 'terlewat') {
-                        btns += `<button onclick="dashToggle(${id}, 'belum')" title="Kembalikan" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;" onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)'" onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"><i data-lucide="rotate-ccw" style="width:12px;height:12px;color:var(--text-secondary);"></i></button>`;
-                    }
-                    actionsCell.innerHTML = btns;
-                    lucide.createIcons();
-                }
-
-                // Update stats badge
-                const statsBadge = document.getElementById('dashAgendaStats');
-                if (statsBadge) {
-                    statsBadge.textContent = `${data.selesai}/${data.total} Selesai (${Math.round(data.persen)}%)`;
-                }
-            }
-        })
-        .catch(err => console.error('Dashboard toggle error:', err));
-    }
-
-    function toggleTaskMobile(id, checkbox) {
-        const getCookie = (name) => {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        };
-
-        const csrftoken = getCookie('csrftoken');
-        const taskRow = document.getElementById(`mobileTaskRow-${id}`);
-        if (taskRow) {
-            taskRow.style.opacity = '0.5';
-        }
-
-        fetch(`/tugas/toggle-tugas/${id}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (taskRow) {
-                    taskRow.style.opacity = '1';
-                    const textSpan = taskRow.querySelector('.task-title-text');
-                    if (data.status === 'selesai') {
-                        textSpan.style.textDecoration = 'line-through';
-                        textSpan.style.color = 'var(--text-muted)';
-                    } else {
-                        textSpan.style.textDecoration = 'none';
-                        textSpan.style.color = 'var(--text-primary)';
-                    }
-                }
-                const Toast = Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 1000,
-                    timerProgressBar: false
-                });
-                Toast.fire({
-                    icon: 'success',
-                    title: `Tugas "${data.judul}" ditandai ${data.status}`
-                }).then(() => {
-                    window.location.reload();
-                });
-            } else {
-                if (taskRow) taskRow.style.opacity = '1';
-                checkbox.checked = !checkbox.checked;
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal!',
-                    text: data.message || 'Terjadi kesalahan.'
-                });
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            if (taskRow) taskRow.style.opacity = '1';
-            checkbox.checked = !checkbox.checked;
-            Swal.fire({
-                icon: 'error',
-                title: 'Error!',
-                text: 'Koneksi terputus.'
-            });
-        });
-    }
-</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

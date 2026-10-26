@@ -1,30 +1,40 @@
 {% extends "sidebar_base.html" %}
 
 {% block title %}Hapus Tugas - Manajemen Tugas{% endblock %}
-{% block page_title %}Hapus Tugas{% endblock %}
+{% block page_title %}Konfirmasi Hapus Tugas{% endblock %}
 
 {% block content %}
-<div style="max-width:480px;" class="animate-fade-up">
-    <div class="card" style="padding:28px;text-align:center;">
-        <div
-            style="width:56px;height:56px;background:var(--accent-danger-light);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
-            <i data-lucide="alert-triangle" style="width:28px;height:28px;color:var(--accent-danger);"></i>
+<div class="flex items-center justify-center pt-8">
+    <div class="card p-6 max-w-md w-full text-center">
+        <div class="w-12 h-12 rounded-full bg-destructive-subtle text-destructive mx-auto flex items-center justify-center mb-4">
+            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
         </div>
 
-        <h2 style="margin-bottom:8px;">Hapus Tugas?</h2>
-        <p style="margin-bottom:24px;">
-            Tugas <strong>"{{ tugas.judul }}"</strong> akan dihapus secara permanen.
+        <h2 class="text-lg font-semibold mb-2">Hapus Tugas Ini?</h2>
+        <p class="text-sm text-muted mb-6">
+            Tugas <strong class="text-foreground">"{{ tugas.judul }}"</strong> akan dihapus permanen beserta seluruh subtask dan lampirannya. Tindakan ini tidak dapat dibatalkan.
         </p>
 
-        <div style="display:flex;gap:10px;justify-content:center;">
-            <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost">Batal</a>
-            <form method="POST" style="display:inline;">
+        <div class="flex items-center justify-center gap-3">
+            <a href="{% url 'tugas:daftar' %}" class="btn btn-outline">
+                <span>Batal</span>
+            </a>
+            <form method="POST" class="inline">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">
-                    <i data-lucide="trash-2" style="width:16px;height:16px;"></i> Ya, Hapus
+                <button type="submit" class="btn btn-destructive">
+                    <i data-lucide="trash-2"></i>
+                    <span>Ya, Hapus Permanen</span>
                 </button>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
 {% endblock %}

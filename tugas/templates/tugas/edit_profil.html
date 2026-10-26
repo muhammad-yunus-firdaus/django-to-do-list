@@ -2,28 +2,29 @@
 {% load widget_tweaks %}
 
 {% block title %}Edit Profil - Manajemen Tugas{% endblock %}
-{% block page_title %}Edit Profil{% endblock %}
+{% block page_title %}Pengaturan Akun & Profil{% endblock %}
 
 {% block content %}
-<div style="max-width:1000px;" class="animate-fade-up">
+<div class="flex flex-col gap-6 max-w-4xl">
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start;">
-        <!-- Left Column: Informasi Akun & Bantuan -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <div class="card" style="padding:28px;">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-                    <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
-                        <i data-lucide="user" style="width:20px;height:20px;color:var(--primary);"></i>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        <!-- Kolom Kiri: Informasi Akun & Dukungan -->
+        <div class="flex flex-col gap-6">
+            <!-- Kartu 1: Informasi Akun -->
+            <div class="card p-6">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="p-2 rounded-md bg-muted text-foreground">
+                        <i data-lucide="user" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 style="margin:0;font-size:1.1rem;">Informasi Akun</h3>
-                        <p class="text-xs" style="margin:0;color:var(--text-muted);">Ubah username dan email kamu</p>
+                        <h3 class="text-base font-semibold">Informasi Akun</h3>
+                        <p class="text-xs text-muted">Perbarui username dan alamat email akunmu</p>
                     </div>
                 </div>
 
                 {% if profil_form.errors %}
-                <div class="alert alert-danger" style="margin-bottom:16px;">
-                    <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+                <div class="alert alert-destructive mb-4">
+                    <i data-lucide="alert-circle"></i>
                     <div>
                         {% for field, errors in profil_form.errors.items %}
                         {% for error in errors %}<div>{{ error }}</div>{% endfor %}
@@ -32,136 +33,129 @@
                 </div>
                 {% endif %}
 
-                <form method="POST" style="display:flex;flex-direction:column;gap:16px;">
+                <form method="POST" class="flex flex-col gap-4">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="update_profil">
 
-                    <div>
-                        <label class="form-label">Username</label>
+                    <div class="form-group mb-0">
+                        <label class="form-label" for="{{ profil_form.username.id_for_label }}">Username</label>
                         {{ profil_form.username|add_class:"form-input" }}
                     </div>
 
-                    <div>
-                        <label class="form-label">Email</label>
+                    <div class="form-group mb-0">
+                        <label class="form-label" for="{{ profil_form.email.id_for_label }}">Email</label>
                         {{ profil_form.email|add_class:"form-input" }}
                     </div>
 
-                    <div style="padding-top:4px;">
+                    <div class="pt-2">
                         <button type="submit" class="btn btn-primary">
-                            <i data-lucide="save" style="width:16px;height:16px;"></i> Simpan Perubahan
+                            <i data-lucide="save"></i>
+                            <span>Simpan Perubahan</span>
                         </button>
                     </div>
                 </form>
             </div>
 
-            <!-- Kartu Bantuan & Dukungan Pengembang -->
-            <div class="card animate-fade-up stagger-3" style="padding:24px;">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-                    <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
-                        <i data-lucide="help-circle" style="width:20px;height:20px;color:var(--primary);"></i>
+            <!-- Kartu 2: Bantuan & Dukungan -->
+            <div class="card p-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 rounded-md bg-muted text-foreground">
+                        <i data-lucide="help-circle" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 style="margin:0;font-size:1.1rem;color:var(--text-primary);">Bantuan & Dukungan</h3>
-                        <p class="text-xs" style="margin:0;color:var(--text-muted);">Laporkan bug, kendala sistem, atau saran fitur.</p>
+                        <h3 class="text-base font-semibold">Bantuan & Masukan</h3>
+                        <p class="text-xs text-muted">Laporkan kendala sistem atau usulkan fitur baru</p>
                     </div>
                 </div>
 
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;background:var(--bg-secondary);padding:16px;border-radius:12px;border:1px solid var(--border);">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <i data-lucide="mail" style="width:18px;height:18px;color:var(--text-secondary);"></i>
-                        <span style="font-weight:600;font-size:0.95rem;color:var(--text-primary);">yunusfirdauss123@gmail.com</span>
+                <div class="flex items-center justify-between p-3 rounded-md bg-muted border border-border">
+                    <div class="flex items-center gap-2 text-sm">
+                        <i data-lucide="mail" class="w-4 h-4 text-muted"></i>
+                        <span class="font-medium">yunusfirdauss123@gmail.com</span>
                     </div>
-                    <a href="mailto:yunusfirdauss123@gmail.com" class="btn btn-primary btn-sm" style="text-decoration:none;">
-                        <i data-lucide="send" style="width:14px;height:14px;"></i> Kirim
+                    <a href="mailto:yunusfirdauss123@gmail.com" class="btn btn-sm btn-outline">
+                        <i data-lucide="send"></i>
+                        <span>Kirim</span>
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Ganti Password -->
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            <!-- Card 2: Ganti Password -->
-            <div class="card" style="padding:28px;">
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-                    <div style="width:40px;height:40px;border-radius:var(--radius-lg);background:var(--accent-warning-light);display:flex;align-items:center;justify-content:center;">
-                        <i data-lucide="key-round" style="width:20px;height:20px;color:var(--accent-warning);"></i>
-                    </div>
-                    <div>
-                        <h3 style="margin:0;font-size:1.1rem;">Ganti Password</h3>
-                        <p class="text-xs" style="margin:0;color:var(--text-muted);">Pastikan password lama kamu benar</p>
-                    </div>
+        <!-- Kolom Kanan: Ganti Password -->
+        <div class="card p-6">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="p-2 rounded-md bg-muted text-foreground">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
                 </div>
-
-                {% if password_form.errors %}
-                <div class="alert alert-danger" style="margin-bottom:16px;">
-                    <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
-                    <div>
-                        {% for field, errors in password_form.errors.items %}
-                        {% for error in errors %}<div>{{ error }}</div>{% endfor %}
-                        {% endfor %}
-                        {% if password_form.non_field_errors %}
-                        {% for error in password_form.non_field_errors %}
-                        <div>{{ error }}</div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
+                <div>
+                    <h3 class="text-base font-semibold">Keamanan & Password</h3>
+                    <p class="text-xs text-muted">Ubah kata sandi secara berkala untuk menjaga akun</p>
                 </div>
-                {% endif %}
+            </div>
 
-                <form method="POST" style="display:flex;flex-direction:column;gap:16px;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="update_password">
+            {% if password_form.errors %}
+            <div class="alert alert-destructive mb-4">
+                <i data-lucide="alert-circle"></i>
+                <div>
+                    {% for field, errors in password_form.errors.items %}
+                    {% for error in errors %}<div>{{ error }}</div>{% endfor %}
+                    {% endfor %}
+                    {% if password_form.non_field_errors %}
+                    {% for error in password_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
-                    <div>
-                        <label class="form-label">Password Lama</label>
-                        <div style="position:relative;">
-                            {{ password_form.password_lama|add_class:"form-input"|attr:"style:padding-right:40px;" }}
-                            <button type="button" onclick="togglePasswordVisibility(this)"
-                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;z-index:10;"
-                                title="Tampilkan/Sembunyikan Password">
-                                <i data-lucide="eye" style="width:18px;height:18px;color:var(--text-muted);"></i>
-                            </button>
-                        </div>
-                    </div>
+            <form method="POST" class="flex flex-col gap-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_password">
 
-                    <div>
-                        <label class="form-label">Password Baru</label>
-                        <div style="position:relative;">
-                            {{ password_form.password_baru|add_class:"form-input"|attr:"style:padding-right:40px;" }}
-                            <button type="button" onclick="togglePasswordVisibility(this)"
-                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;z-index:10;"
-                                title="Tampilkan/Sembunyikan Password">
-                                <i data-lucide="eye" style="width:18px;height:18px;color:var(--text-muted);"></i>
-                            </button>
-                        </div>
-                        <p class="text-xs" style="color:var(--text-muted);margin-top:4px;">Minimal 8 karakter</p>
-                    </div>
-
-                    <div>
-                        <label class="form-label">Konfirmasi Password Baru</label>
-                        <div style="position:relative;">
-                            {{ password_form.password_konfirmasi|add_class:"form-input"|attr:"style:padding-right:40px;" }}
-                            <button type="button" onclick="togglePasswordVisibility(this)"
-                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;z-index:10;"
-                                title="Tampilkan/Sembunyikan Password">
-                                <i data-lucide="eye" style="width:18px;height:18px;color:var(--text-muted);"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style="padding-top:4px;">
-                        <button type="submit" class="btn btn-warning">
-                            <i data-lucide="shield-check" style="width:16px;height:16px;"></i> Ubah Password
+                <div class="form-group mb-0">
+                    <label class="form-label">Password Lama</label>
+                    <div class="relative">
+                        {{ password_form.password_lama|add_class:"form-input has-suffix" }}
+                        <button type="button" class="input-icon-suffix btn-ghost-icon" onclick="togglePasswordVisibility(this)" title="Lihat/Sembunyikan Password" tabindex="-1">
+                            <i data-lucide="eye"></i>
                         </button>
                     </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="form-group mb-0">
+                    <label class="form-label">Password Baru</label>
+                    <div class="relative">
+                        {{ password_form.password_baru|add_class:"form-input has-suffix" }}
+                        <button type="button" class="input-icon-suffix btn-ghost-icon" onclick="togglePasswordVisibility(this)" title="Lihat/Sembunyikan Password" tabindex="-1">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-muted mt-1">Minimal 8 karakter unik</p>
+                </div>
+
+                <div class="form-group mb-0">
+                    <label class="form-label">Konfirmasi Password Baru</label>
+                    <div class="relative">
+                        {{ password_form.password_konfirmasi|add_class:"form-input has-suffix" }}
+                        <button type="button" class="input-icon-suffix btn-ghost-icon" onclick="togglePasswordVisibility(this)" title="Lihat/Sembunyikan Password" tabindex="-1">
+                            <i data-lucide="eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="btn btn-secondary w-full">
+                        <i data-lucide="key-round"></i>
+                        <span>Perbarui Password</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <div style="margin-top:20px;">
+    <div>
         <a href="{% url 'tugas:dashboard' %}" class="btn btn-ghost">
-            <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Kembali ke Dashboard
+            <i data-lucide="arrow-left"></i>
+            <span>Kembali ke Dashboard</span>
         </a>
     </div>
 </div>
@@ -169,18 +163,8 @@
 
 {% block scripts %}
 <script>
-    // SweetAlert2 auto-trigger dari Django messages
-    document.addEventListener('DOMContentLoaded', function() {
-        {% for message in messages %}
-        Swal.fire({
-            icon: '{% if message.tags == "success" %}success{% elif message.tags == "danger" or message.tags == "error" %}error{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
-            title: '{% if message.tags == "success" %}Berhasil!{% elif message.tags == "danger" or message.tags == "error" %}Gagal!{% else %}Info{% endif %}',
-            text: '{{ message|escapejs }}',
-            confirmButtonColor: '#4F46E5',
-            timer: 3000,
-            timerProgressBar: true,
-        });
-        {% endfor %}
+    document.addEventListener("DOMContentLoaded", () => {
+        if (window.lucide) lucide.createIcons();
     });
 </script>
 {% endblock %}

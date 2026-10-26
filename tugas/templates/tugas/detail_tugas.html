@@ -1,555 +1,466 @@
 {% extends "sidebar_base.html" %}
 {% load l10n %}
+{% load static %}
 
 {% block title %}{{ tugas.judul }} - Manajemen Tugas{% endblock %}
 {% block page_title %}Detail Tugas{% endblock %}
 
 {% block content %}
-<div class="detail-tugas-grid" style="display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; width: 100%;">
-    <!-- Left Column: Title, Description, and Subtasks -->
-    <div class="animate-fade-up">
-        <div class="card form-card" style="padding:28px; display:flex; flex-direction:column; gap:20px;">
-            <!-- Header -->
-            <div>
-                <h2 style="font-size:1.375rem;font-weight:700;margin-bottom:8px;line-height:1.4;">{{ tugas.judul }}</h2>
-                {% if tugas.deskripsi %}
-                <p style="color:var(--text-secondary);font-size:.9rem;line-height:1.6;white-space:pre-wrap;margin:0;">{{ tugas.deskripsi }}</p>
+<div class="task-form-grid">
+    <!-- Kolom Kiri: Informasi Utama & Subtask Checklist -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        <!-- Header & Deskripsi Card -->
+        <div class="card" style="padding:1.5rem;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.75rem;">
+                <h2 style="font-size:1.25rem;font-weight:700;line-height:1.4;margin:0;color:var(--foreground);">{{ tugas.judul }}</h2>
+                {% if tugas.selesai %}
+                <span class="badge badge-success">Selesai</span>
+                {% elif tugas.is_overdue %}
+                <span class="badge badge-destructive">Overdue</span>
                 {% else %}
-                <p style="color:var(--text-muted);font-size:.9rem;font-style:italic;margin:0;">Tidak ada deskripsi</p>
+                <span class="badge badge-secondary">Belum Selesai</span>
                 {% endif %}
             </div>
 
-            <!-- Subtask Section -->
-            {% if tugas.has_subtasks or not tugas.selesai %}
-            <div style="border-top:1px solid var(--border);padding-top:20px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                    <h3 style="font-size:1rem;font-weight:600;color:var(--text-primary);margin:0;">Subtask</h3>
-                    {% if tugas.has_subtasks %}
-                    <span id="progressPercentText" style="font-size:.85rem;color:var(--text-muted);font-weight:600;">{{ tugas.subtask_progress }}%</span>
-                    {% endif %}
-                </div>
+            {% if tugas.deskripsi %}
+            <p style="color:var(--foreground-muted);font-size:0.875rem;line-height:1.5;white-space:pre-line;word-break:break-word;margin:0;">{{ tugas.deskripsi }}</p>
+            {% else %}
+            <p style="color:var(--foreground-muted);font-size:0.875rem;font-style:italic;margin:0;">Tidak ada deskripsi tambahan.</p>
+            {% endif %}
+        </div>
 
-                <!-- Progress Bar -->
-                {% if tugas.has_subtasks %}
-                <div style="background:var(--bg-secondary);border-radius:8px;height:8px;margin-bottom:16px;overflow:hidden;position:relative;">
-                    <div id="progressBarInner" style="background:linear-gradient(90deg, var(--primary) 0%, #10B981 100%);height:100%;width:{{ tugas.subtask_progress|unlocalize }}%;transition:width 0.6s cubic-bezier(0.4, 0, 0.2, 1);box-shadow:0 2px 4px rgba(16, 185, 129, 0.2);">
+        <!-- Subtask Checklist Card -->
+        <div class="card" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <i data-lucide="check-square" style="width:18px;height:18px;color:var(--primary);"></i>
+                    <h3 style="font-size:1rem;font-weight:600;margin:0;color:var(--foreground);">Daftar Subtask</h3>
+                </div>
+                <span id="subtaskProgressText" style="font-size:0.8125rem;font-weight:700;color:var(--foreground);">{{ tugas.subtask_progress|floatformat:0 }}%</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div style="background-color:var(--surface-muted);border-radius:var(--radius-full);height:6px;overflow:hidden;margin-bottom:1.25rem;">
+                <div id="subtaskProgressBar" style="height:100%;background-color:var(--primary);width:{{ tugas.subtask_progress|floatformat:0 }}%;transition:width 0.3s ease;"></div>
+            </div>
+
+            <!-- Form Tambah Subtask Baru (Optimistic AJAX) -->
+            {% if not tugas.selesai %}
+            <form id="formTambahSubtask" method="POST" action="{% url 'tugas:tambah_subtask' tugas.id %}" style="display:flex;gap:0.5rem;margin-bottom:1.25rem;">
+                {% csrf_token %}
+                <input type="text" id="subtaskJudulInput" name="judul" placeholder="Tulis rincian subtask baru..." required class="form-input" style="flex:1;">
+                <button type="submit" id="btnSubmitSubtask" class="btn btn-primary btn-sm">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> <span>Tambah</span>
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Subtask Items Container -->
+            <div id="subtaskListContainer" style="display:flex;flex-direction:column;gap:0.5rem;">
+                {% for subtask in tugas.subtasks.all %}
+                <div class="subtask-row" id="subtaskItem-{{ subtask.id }}" data-id="{{ subtask.id }}" style="{% if subtask.selesai %}opacity:0.65;{% endif %}">
+                    <div style="display:flex;align-items:center;gap:0.75rem;min-width:0;flex:1;text-align:left;">
+                        <input type="checkbox" onchange="toggleSubtaskInstant({{ subtask.id }}, this)" {% if subtask.selesai %}checked{% endif %} class="form-checkbox" style="cursor:pointer;flex-shrink:0;" aria-label="Centang Subtask">
+                        <span class="subtask-text" style="font-size:0.875rem;color:var(--foreground);font-weight:500;word-break:break-word;{% if subtask.selesai %}text-decoration:line-through;color:var(--foreground-muted);{% endif %}">
+                            {{ subtask.judul }}
+                        </span>
                     </div>
-                </div>
-                {% endif %}
-
-                <!-- Add Subtask Form -->
-                {% if not tugas.selesai %}
-                <form method="POST" action="{% url 'tugas:tambah_subtask' tugas.id %}" style="margin-bottom:16px;">
-                    {% csrf_token %}
-                    <div style="display:flex;gap:8px;">
-                        <input type="text" name="judul" placeholder="Tambah subtask baru..." required autofocus
-                            style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;transition:all 0.2s;"
-                            onfocus="this.style.borderColor='var(--primary)';this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'"
-                            onblur="this.style.borderColor='var(--border)';this.style.boxShadow='none'">
-                        <button type="submit" class="btn btn-primary" style="padding:10px 20px;">
-                            <i data-lucide="plus" style="width:16px;height:16px;"></i>
+                    {% if not tugas.selesai %}
+                    <div style="display:flex;gap:4px;flex-shrink:0;">
+                        <button onclick="editSubtaskInstant({{ subtask.id }}, '{{ subtask.judul|escapejs }}')" class="btn btn-outline btn-icon" title="Edit Subtask" type="button" aria-label="Edit">
+                            <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                        </button>
+                        <button onclick="hapusSubtaskInstant({{ subtask.id }}, '{{ subtask.judul|escapejs }}')" class="btn btn-outline btn-icon" title="Hapus Subtask" type="button" aria-label="Hapus">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--destructive);"></i>
                         </button>
                     </div>
-                </form>
-                {% endif %}
-
-                <!-- Subtask List -->
-                {% if tugas.has_subtasks %}
-                <div style="display:flex;flex-direction:column;gap:8px;">
-                    {% for subtask in tugas.subtasks.all %}
-                    <div class="subtask-item {% if subtask.selesai %}is-completed{% endif %}" data-id="{{ subtask.id }}">
-                        <!-- Checkbox -->
-                        <input type="checkbox" {% if subtask.selesai %}checked{% endif %}
-                            onchange="toggleSubtask({{ subtask.id }})"
-                            class="subtask-checkbox">
-
-                        <!-- Judul -->
-                        <div class="subtask-judul">
-                            {{ subtask.judul|linebreaksbr }}
-                        </div>
-
-                        <!-- Action Buttons -->
-                        {% if not tugas.selesai %}
-                        <div style="display:flex;gap:4px;opacity:0;transition:opacity 0.2s;" class="subtask-actions">
-                            <button onclick="editSubtask({{ subtask.id }}, '{{ subtask.judul|escapejs }}')" class="btn-icon"
-                                title="Edit"
-                                style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:transparent;border:none;cursor:pointer;transition:all 0.2s;"
-                                onmouseenter="this.style.background='var(--bg-hover)'"
-                                onmouseleave="this.style.background='transparent'">
-                                <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
-                            </button>
-                            <button onclick="hapusSubtask({{ subtask.id }}, '{{ subtask.judul|escapejs }}')"
-                                class="btn-icon" title="Hapus"
-                                style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:transparent;border:none;cursor:pointer;transition:all 0.2s;"
-                                onmouseenter="this.style.background='var(--bg-hover)'"
-                                onmouseleave="this.style.background='transparent'">
-                                <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--danger);"></i>
-                            </button>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
-                {% elif tugas.selesai %}
-                <p style="text-align:center;color:var(--text-muted);font-size:.9rem;padding:20px;font-style:italic;">Tidak ada subtask</p>
-                {% endif %}
+                {% empty %}
+                <div id="subtaskEmptyState" style="padding:1.5rem;text-align:center;color:var(--foreground-muted);font-size:0.8125rem;">
+                    Belum ada subtask untuk tugas ini.
+                </div>
+                {% endfor %}
             </div>
-            {% endif %}
         </div>
     </div>
 
-    <!-- Right Column: Metadata & Actions Sidebar -->
-    <div class="detail-tugas-sidebar animate-fade-up" style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; height: fit-content;">
-        <!-- Details Card -->
-        <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
-            <h4 style="font-weight: 700; color: var(--text-primary); margin: 0; font-size: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                Detail Informasi
-            </h4>
-            
-            <div style="display: flex; flex-direction: column; gap: 14px;">
-                <!-- Kategori -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
-                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="folder" style="width: 16px; height: 16px; color: var(--primary);"></i> Kategori
-                    </span>
-                    <span class="badge badge-info">{{ tugas.get_kategori_display }}</span>
-                </div>
-                
-                <!-- Prioritas -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
-                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--primary);"></i> Prioritas
-                    </span>
-                    {% if tugas.prioritas == "tinggi" %}
-                    <span class="badge badge-danger">Tinggi</span>
-                    {% elif tugas.prioritas == "sedang" %}
-                    <span class="badge badge-warning">Sedang</span>
-                    {% else %}
-                    <span class="badge badge-success">Rendah</span>
-                    {% endif %}
-                </div>
-                
-                <!-- Deadline -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
-                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="calendar" style="width: 16px; height: 16px; color: var(--primary);"></i> Batas Waktu
-                    </span>
-                    <span style="font-weight: 500; color: var(--text-primary);">
-                        {% if tugas.deadline %}
-                        {{ tugas.deadline|date:"d F Y H:i" }}
-                        {% else %}
-                        <span style="color: var(--text-muted);">Tidak ada</span>
-                        {% endif %}
-                    </span>
-                </div>
-                
-                <!-- Status -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
-                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="check-circle" style="width: 16px; height: 16px; color: var(--primary);"></i> Status
-                    </span>
-                    {% if tugas.selesai %}
-                    <span class="badge badge-muted">Selesai</span>
-                    {% else %}
-                    <span class="badge badge-info">Belum Selesai</span>
-                    {% endif %}
-                </div>
-                
-                <!-- Dibuat Pada -->
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
-                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                        <i data-lucide="clock" style="width: 16px; height: 16px; color: var(--primary);"></i> Dibuat Pada
-                    </span>
-                    <span style="font-weight: 500; color: var(--text-primary); font-size: 0.8rem;">
-                        {{ tugas.created_at|date:"d F Y H:i" }}
-                    </span>
-                </div>
+    <!-- Kolom Kanan: Detail Informasi & Aksi Navigasi -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        <!-- Metadata Informasi Card -->
+        <div class="card" style="padding:1.25rem;display:flex;flex-direction:column;gap:1rem;">
+            <h3 style="font-size:0.9375rem;font-weight:700;color:var(--foreground);margin:0;border-bottom:1px solid var(--border);padding-bottom:0.75rem;">
+                Informasi Tugas
+            </h3>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;">
+                <span style="color:var(--foreground-muted);display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="folder" style="width:14px;height:14px;"></i> Kategori
+                </span>
+                <span class="badge badge-secondary">{{ tugas.get_kategori_display }}</span>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;">
+                <span style="color:var(--foreground-muted);display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="alert-triangle" style="width:14px;height:14px;"></i> Prioritas
+                </span>
+                {% if tugas.prioritas == "tinggi" %}
+                <span class="badge badge-destructive">Tinggi</span>
+                {% elif tugas.prioritas == "sedang" %}
+                <span class="badge badge-warning">Sedang</span>
+                {% else %}
+                <span class="badge badge-secondary">Rendah</span>
+                {% endif %}
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;">
+                <span style="color:var(--foreground-muted);display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="calendar" style="width:14px;height:14px;"></i> Batas Waktu
+                </span>
+                <span style="font-weight:600;color:var(--foreground);">
+                    {% if tugas.deadline %}{{ tugas.deadline|date:"d M Y H:i" }}{% else %}-{% endif %}
+                </span>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.8125rem;">
+                <span style="color:var(--foreground-muted);display:flex;align-items:center;gap:6px;">
+                    <i data-lucide="clock" style="width:14px;height:14px;"></i> Dibuat Pada
+                </span>
+                <span style="color:var(--foreground-muted);">{{ tugas.created_at|date:"d M Y H:i" }}</span>
             </div>
         </div>
-        
-        <!-- Actions Card -->
-        <div class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 10px;">
-            <a href="{% url 'tugas:edit' tugas.id %}" class="btn-action-modern btn-action-edit">
-                <i data-lucide="pencil" style="width: 16px; height: 16px;"></i> Edit Tugas
+
+        <!-- Focus Timer (Pomodoro) Widget Card -->
+        <div class="card" id="pomodoroWidget" style="padding:1.25rem;">
+            <!-- 1. Header: Icon & Badge -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <i data-lucide="timer" style="width:16px;height:16px;color:var(--primary);"></i>
+                    <h3 style="margin:0;font-size:0.875rem;font-weight:700;color:var(--foreground);">Focus Timer</h3>
+                </div>
+                <span id="pomodoroLabel" class="badge badge-secondary" style="font-size:0.6875rem;">Fokus (25m)</span>
+            </div>
+
+            <!-- 2. Konten Utama: Circular Ring SVG Timer -->
+            <div class="focus-timer-circular-container">
+                <svg class="focus-ring-svg" viewBox="0 0 120 120">
+                    <circle class="focus-ring-track" cx="60" cy="60" r="52"></circle>
+                    <circle class="focus-ring-progress" cx="60" cy="60" r="52"></circle>
+                </svg>
+                <div class="focus-timer-inner">
+                    <div class="pomodoro-display">25:00</div>
+                    <div style="font-size:0.6875rem;color:var(--foreground-muted);max-width:96px;margin-top:4px;" class="truncate" title="{{ tugas.judul }}">
+                        {{ tugas.judul }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Preset Segmented Tabs -->
+            <div class="focus-presets-segmented" style="margin-bottom:0.75rem;">
+                <button type="button" class="focus-preset-btn" onclick="window.setPomodoroDuration(10, this)">10m</button>
+                <button type="button" class="focus-preset-btn active" onclick="window.setPomodoroDuration(25, this)">25m</button>
+                <button type="button" class="focus-preset-btn" onclick="window.setPomodoroDuration(45, this)">45m</button>
+                <button type="button" class="focus-preset-btn" onclick="window.toggleCustomPomodoroInput(this)">Custom</button>
+            </div>
+
+            <!-- 4. Custom Input Inline Row -->
+            <div id="focusCustomInputRow" class="focus-custom-row" style="display:none;margin-bottom:0.75rem;">
+                <input type="number" id="focusCustomMinutes" min="1" max="120" placeholder="Menit (1-120)" class="form-input focus-custom-minutes" style="padding:0.375rem 0.625rem;font-size:0.8125rem;height:32px;flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();window.applyCustomPomodoro();}">
+                <button type="button" class="btn btn-sm btn-outline" onclick="window.applyCustomPomodoro()" style="height:32px;padding:0 0.75rem;font-size:0.75rem;">
+                    Set
+                </button>
+            </div>
+
+            <!-- 5. Action Buttons -->
+            <div style="display:flex;gap:0.5rem;">
+                <button type="button" class="btn btn-primary btn-sm pomodoro-toggle-btn" onclick="window.togglePomodoro()" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+                    <i data-lucide="play" style="width:14px;height:14px;"></i>
+                    <span class="pomodoro-toggle-label">Mulai</span>
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="window.resetPomodoro()" title="Reset Timer" style="display:inline-flex;align-items:center;justify-content:center;padding:0 0.75rem;">
+                    <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
+                    <span>Reset</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Aksi Tugas Card -->
+        <div class="card" style="padding:1.25rem;display:flex;flex-direction:column;gap:0.5rem;">
+            <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-outline" style="justify-content:center;">
+                <i data-lucide="pencil" style="width:14px;height:14px;"></i> <span>Edit Tugas</span>
             </a>
-            
+
             {% if tugas.selesai %}
-            <button onclick="konfirmasiBelum()" class="btn-action-modern btn-action-secondary">
-                <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i> Kembalikan ke Belum
-            </button>
+            <form method="POST" action="{% url 'tugas:belum' tugas.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary" style="width:100%;justify-content:center;">
+                    <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> <span>Kembalikan ke Belum</span>
+                </button>
+            </form>
             {% else %}
-            <button onclick="konfirmasiSelesai()" class="btn-action-modern btn-action-success">
-                <i data-lucide="check" style="width: 16px; height: 16px;"></i> Tandai Selesai
-            </button>
+            <form method="POST" action="{% url 'tugas:selesai' tugas.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                    <i data-lucide="check" style="width:14px;height:14px;"></i> <span>Tandai Selesai</span>
+                </button>
+            </form>
             {% endif %}
-            
-            <button onclick="konfirmasiHapus()" class="btn-action-modern btn-action-danger">
-                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Hapus Tugas
+
+            <button onclick="konfirmasiHapusTugas()" class="btn btn-destructive" style="width:100%;justify-content:center;" type="button">
+                <i data-lucide="trash-2" style="width:14px;height:14px;"></i> <span>Hapus Tugas</span>
             </button>
-            
-            <a href="{% url 'tugas:daftar' %}" class="btn-action-modern btn-action-secondary">
-                <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> Kembali ke Daftar
+
+            <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost" style="justify-content:center;margin-top:0.25rem;">
+                <i data-lucide="arrow-left" style="width:14px;height:14px;"></i> <span>Kembali ke Daftar</span>
             </a>
         </div>
     </div>
 </div>
 
-<!-- Hidden POST forms -->
-<form id="hapusForm" method="POST" action="{% url 'tugas:hapus' tugas.id %}" style="display:none;">{% csrf_token %}</form>
-<form id="selesaiForm" method="POST" action="{% url 'tugas:selesai' tugas.id %}" style="display:none;">{% csrf_token %}</form>
-<form id="belumForm" method="POST" action="{% url 'tugas:belum' tugas.id %}" style="display:none;">{% csrf_token %}</form>
+<form id="hapusTugasForm" method="POST" action="{% url 'tugas:hapus' tugas.id %}" style="display:none;">{% csrf_token %}</form>
+
+<script>
+    function getCsrfToken() {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.content) return metaTag.content;
+        if (window.CSRF_TOKEN) return window.CSRF_TOKEN;
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function updateProgress(progress) {
+        if (progress === null || progress === undefined) return;
+        const text = document.getElementById('subtaskProgressText');
+        const bar = document.getElementById('subtaskProgressBar');
+        if (text) text.textContent = Math.round(progress) + '%';
+        if (bar) bar.style.width = Math.round(progress) + '%';
+    }
+
+    // Toggle Subtask (Optimistic UI)
+    async function toggleSubtaskInstant(subtaskId, checkbox) {
+        const item = document.getElementById(`subtaskItem-${subtaskId}`);
+        try {
+            const res = await fetch(`/tugas/subtask/toggle/${subtaskId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (item) {
+                    item.style.opacity = data.selesai ? '0.65' : '1';
+                    const span = item.querySelector('.subtask-text');
+                    if (span) {
+                        span.style.textDecoration = data.selesai ? 'line-through' : 'none';
+                        span.style.color = data.selesai ? 'var(--foreground-muted)' : 'var(--foreground)';
+                    }
+                }
+                updateProgress(data.progress);
+                if (window.showToast) window.showToast('Status subtask diperbarui', 'success');
+            } else {
+                checkbox.checked = !checkbox.checked;
+            }
+        } catch (err) {
+            checkbox.checked = !checkbox.checked;
+            console.error('Toggle subtask error:', err);
+        }
+    }
+
+    // Form Tambah Subtask via AJAX
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('formTambahSubtask');
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const input = document.getElementById('subtaskJudulInput');
+                const btn = document.getElementById('btnSubmitSubtask');
+                const judul = input.value.trim();
+                if (!judul) return;
+
+                btn.disabled = true;
+                const formData = new FormData(form);
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        input.value = '';
+                        btn.disabled = false;
+                        updateProgress(data.progress);
+
+                        const emptyState = document.getElementById('subtaskEmptyState');
+                        if (emptyState) emptyState.remove();
+
+                        const container = document.getElementById('subtaskListContainer');
+                        const newEl = document.createElement('div');
+                        newEl.className = 'subtask-row';
+                        newEl.id = `subtaskItem-${data.id}`;
+                        newEl.dataset.id = data.id;
+                        newEl.innerHTML = `
+                            <div style="display:flex;align-items:center;gap:0.75rem;min-width:0;flex:1;text-align:left;">
+                                <input type="checkbox" onchange="toggleSubtaskInstant(${data.id}, this)" class="form-checkbox" style="cursor:pointer;flex-shrink:0;" aria-label="Centang Subtask">
+                                <span class="subtask-text" style="font-size:0.875rem;color:var(--foreground);font-weight:500;word-break:break-word;">${escapeHtml(data.judul)}</span>
+                            </div>
+                            <div style="display:flex;gap:4px;flex-shrink:0;">
+                                <button onclick="editSubtaskInstant(${data.id}, '${data.judul.replace(/'/g, "\\'")}')" class="btn btn-outline btn-icon" title="Edit Subtask" type="button" aria-label="Edit">
+                                    <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                                </button>
+                                <button onclick="hapusSubtaskInstant(${data.id}, '${data.judul.replace(/'/g, "\\'")}')" class="btn btn-outline btn-icon" title="Hapus Subtask" type="button" aria-label="Hapus">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--destructive);"></i>
+                                </button>
+                            </div>
+                        `;
+                        container.appendChild(newEl);
+                        if (window.lucide) lucide.createIcons();
+                        if (window.showToast) window.showToast('Subtask berhasil ditambahkan', 'success');
+                    } else {
+                        btn.disabled = false;
+                        if (window.showToast) window.showToast(data.message || 'Gagal menambah subtask', 'error');
+                    }
+                } catch (err) {
+                    btn.disabled = false;
+                    console.error('Tambah subtask error:', err);
+                }
+            });
+        }
+    });
+
+    // Edit Subtask Instant Modal
+    function editSubtaskInstant(id, judul) {
+        Swal.fire({
+            title: 'Edit Subtask',
+            input: 'text',
+            inputValue: judul,
+            showCancelButton: true,
+            confirmButtonText: 'Simpan',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal-custom-modal',
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-outline',
+                actions: 'swal2-actions'
+            },
+            buttonsStyling: false,
+            preConfirm: (val) => {
+                if (!val || !val.trim()) {
+                    Swal.showValidationMessage('Judul subtask tidak boleh kosong');
+                    return false;
+                }
+                return val.trim();
+            }
+        }).then(async (result) => {
+            if (!result.isConfirmed) return;
+            const params = new URLSearchParams();
+            params.append('judul', result.value);
+
+            try {
+                const res = await fetch(`/tugas/subtask/edit/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: params.toString()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const item = document.getElementById(`subtaskItem-${id}`);
+                    if (item) {
+                        const span = item.querySelector('.subtask-text');
+                        if (span) span.textContent = data.judul;
+                    }
+                    if (window.showToast) window.showToast('Subtask berhasil diperbarui', 'success');
+                }
+            } catch (err) {
+                console.error('Edit subtask error:', err);
+            }
+        });
+    }
+
+    // Hapus Subtask Instant Modal
+    function hapusSubtaskInstant(id, judul) {
+        Swal.fire({
+            title: 'Hapus Subtask?',
+            text: `Subtask "${judul}" akan dihapus.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal-custom-modal',
+                confirmButton: 'btn btn-destructive',
+                cancelButton: 'btn btn-outline',
+                actions: 'swal2-actions'
+            },
+            buttonsStyling: false
+        }).then(async (result) => {
+            if (!result.isConfirmed) return;
+            try {
+                const res = await fetch(`/tugas/subtask/hapus/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const item = document.getElementById(`subtaskItem-${id}`);
+                    if (item) {
+                        item.style.transition = 'all 0.2s ease';
+                        item.style.opacity = '0';
+                        setTimeout(() => item.remove(), 200);
+                    }
+                    updateProgress(data.progress);
+                    if (window.showToast) window.showToast('Subtask berhasil dihapus', 'success');
+                }
+            } catch (err) {
+                console.error('Delete subtask error:', err);
+            }
+        });
+    }
+
+    function konfirmasiHapusTugas() {
+        Swal.fire({
+            title: 'Hapus Tugas?',
+            text: 'Tugas ini beserta seluruh subtask-nya akan dihapus permanen.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal-custom-modal',
+                confirmButton: 'btn btn-destructive',
+                cancelButton: 'btn btn-outline',
+                actions: 'swal2-actions'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('hapusTugasForm').submit();
+            }
+        });
+    }
+</script>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    function konfirmasiHapus() {
-        Swal.fire({
-            title: "Hapus Tugas?",
-            text: "Tugas \"{{ tugas.judul|escapejs }}\" akan dihapus permanen.",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#F43F5E",
-            cancelButtonColor: "#64748B",
-            confirmButtonText: "Ya, Hapus",
-            cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) document.getElementById("hapusForm").submit();
-        });
-    }
-
-    function konfirmasiSelesai() {
-        Swal.fire({
-            title: "Tandai Selesai?",
-            text: "Tandai \"{{ tugas.judul|escapejs }}\" sebagai selesai?",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#10B981",
-            cancelButtonColor: "#64748B",
-            confirmButtonText: "Ya, Selesai",
-            cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) document.getElementById("selesaiForm").submit();
-        });
-    }
-
-    function konfirmasiBelum() {
-        Swal.fire({
-            title: "Kembalikan ke Belum Selesai?",
-            text: "Tandai \"{{ tugas.judul|escapejs }}\" sebagai belum selesai?",
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#4F46E5",
-            cancelButtonColor: "#64748B",
-            confirmButtonText: "Ya, Kembalikan",
-            cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) document.getElementById("belumForm").submit();
-        });
-    }
-
-    // Subtask Functions
-    function animatePercentText(element, targetValue) {
-        const startValue = parseFloat(element.textContent.replace(',', '.')) || 0;
-        const duration = 600; // Match CSS transition duration
-        const startTime = performance.now();
-        
-        function update(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            // Ease out quad
-            const ease = progress * (2 - progress);
-            const currentValue = startValue + (targetValue - startValue) * ease;
-            
-            element.textContent = currentValue.toFixed(1).replace('.', ',') + '%';
-            
-            if (progress < 1) {
-                requestAnimationFrame(update);
-            } else {
-                element.textContent = targetValue.toFixed(1).replace('.', ',') + '%';
-            }
-        }
-        
-        requestAnimationFrame(update);
-    }
-
-    function toggleSubtask(subtaskId) {
-        fetch(`/tugas/subtask/toggle/${subtaskId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update specific subtask item class dynamically without reloading
-                    const subtaskItem = document.querySelector(`.subtask-item[data-id="${subtaskId}"]`);
-                    if (subtaskItem) {
-                        const checkbox = subtaskItem.querySelector('.subtask-checkbox');
-                        if (data.selesai) {
-                            subtaskItem.classList.add('is-completed');
-                            if (checkbox) checkbox.checked = true;
-                        } else {
-                            subtaskItem.classList.remove('is-completed');
-                            if (checkbox) checkbox.checked = false;
-                        }
-                    }
-                    
-                    // Update progress bar & percentage text
-                    if (data.progress !== null) {
-                        const progressText = document.getElementById('progressPercentText');
-                        const progressBar = document.getElementById('progressBarInner');
-                        
-                        if (progressText) {
-                            const targetVal = parseFloat(data.progress);
-                            animatePercentText(progressText, targetVal);
-                        }
-                        if (progressBar) {
-                            progressBar.style.width = data.progress + '%';
-                        }
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-    function editSubtask(subtaskId, currentJudul) {
-        Swal.fire({
-            title: 'Edit Subtask',
-            input: 'textarea',
-            inputValue: currentJudul,
-            inputPlaceholder: 'Tulis subtask Anda...',
-            inputAttributes: {
-                maxlength: '500',
-                autocapitalize: 'off',
-                autocomplete: 'off',
-                spellcheck: 'false'
-            },
-            width: 'min(560px, 92vw)',
-            customClass: {
-                popup: 'subtask-edit-popup',
-                input: 'subtask-edit-input'
-            },
-            showCancelButton: true,
-            confirmButtonColor: 'var(--primary)',
-            cancelButtonColor: 'var(--secondary)',
-            confirmButtonText: 'Simpan',
-            cancelButtonText: 'Batal',
-            allowEnterKey: false, // Prevent Enter from submitting
-            inputValidator: (value) => {
-                if (!value || !value.trim()) return 'Judul tidak boleh kosong!';
-            },
-            didOpen: () => {
-                const input = Swal.getInput();
-                if (input) {
-                    input.style.height = 'auto';
-                    input.style.height = input.scrollHeight + 'px';
-                    input.focus();
-                }
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/tugas/subtask/edit/${subtaskId}/`;
-
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = 'csrfmiddlewaretoken';
-                csrfInput.value = '{{ csrf_token }}';
-
-                const judulInput = document.createElement('input');
-                judulInput.type = 'hidden';
-                judulInput.name = 'judul';
-                judulInput.value = result.value.trim();
-
-                form.appendChild(csrfInput);
-                form.appendChild(judulInput);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    }
-
-    function hapusSubtask(subtaskId, judul) {
-        Swal.fire({
-            title: 'Hapus Subtask?',
-            text: `Subtask "${judul}" akan dihapus permanen.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#F43F5E',
-            cancelButtonColor: '#64748B',
-            confirmButtonText: 'Ya, Hapus',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = `/tugas/subtask/hapus/${subtaskId}/`;
-                form.innerHTML = `<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">`;
-                document.body.appendChild(form);
-                form.submit();
-            }
-        });
-    }
-
-    // Show action buttons on hover
-    document.addEventListener('DOMContentLoaded', () => {
-        const subtaskItems = document.querySelectorAll('.subtask-item');
-        subtaskItems.forEach(item => {
-            const actions = item.querySelector('.subtask-actions');
-            if (actions) {
-                item.addEventListener('mouseenter', () => actions.style.opacity = '1');
-                item.addEventListener('mouseleave', () => actions.style.opacity = '0');
-            }
-        });
-    });
-</script>
-
-<style>
-    .form-card {
-        padding: 28px;
-    }
-    .btn-action-modern {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 12px;
-        border-radius: 10px;
-        border: 1.5px solid var(--border);
-        background: var(--card);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-        font-size: 0.9rem;
-    }
-    
-    .btn-action-edit {
-        color: var(--primary);
-    }
-    .btn-action-edit:hover {
-        border-color: var(--primary);
-        background: var(--primary-light);
-    }
-    
-    .btn-action-success {
-        color: var(--accent-success);
-    }
-    .btn-action-success:hover {
-        border-color: var(--accent-success);
-        background: var(--accent-success-light);
-    }
-    
-    .btn-action-danger {
-        color: var(--accent-danger);
-    }
-    .btn-action-danger:hover {
-        border-color: var(--accent-danger);
-        background: var(--accent-danger-light);
-    }
-    
-    .btn-action-secondary {
-        color: var(--text-secondary);
-    }
-    .btn-action-secondary:hover {
-        border-color: var(--text-secondary);
-        background: var(--bg-secondary);
-        color: var(--text-primary);
-    }
-    
-    /* Modern Subtask styling */
-    .subtask-item {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 14px 16px;
-        background: var(--card);
-        border: 1.5px solid var(--border);
-        border-radius: 12px;
-        transition: all 0.2s ease;
-    }
-    .subtask-item:hover {
-        border-color: var(--primary);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    /* Modern Checkbox styling */
-    .subtask-checkbox {
-        appearance: none;
-        -webkit-appearance: none;
-        width: 20px;
-        height: 20px;
-        border: 2px solid var(--text-secondary);
-        border-radius: 6px;
-        outline: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        background: var(--card);
-    }
-    .subtask-checkbox:checked {
-        background: var(--success);
-        border-color: var(--success);
-    }
-    .subtask-checkbox:checked::after {
-        content: '';
-        width: 5px;
-        height: 9px;
-        border: solid white;
-        border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
-        margin-bottom: 2px;
-    }
-    
-    .subtask-judul {
-        flex: 1;
-        font-size: 0.9rem;
-        color: var(--text-primary);
-        transition: all 0.2s ease;
-        line-height: 1.5;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
-    
-    .subtask-item.is-completed {
-        background: var(--bg-secondary) !important;
-        border-color: transparent !important;
-    }
-    
-    .subtask-item.is-completed .subtask-judul {
-        text-decoration: line-through;
-        opacity: 0.5;
-        color: var(--text-secondary);
-    }
-    
-    @media (max-width: 991px) {
-        .detail-tugas-sidebar {
-            position: static !important;
-        }
-    }
-    @media (max-width: 768px) {
-        .form-card {
-            padding: 16px !important;
-        }
-        .detail-tugas-grid {
-            gap: 16px !important;
-            padding: 0 4px !important;
-        }
-    }
-    @media (min-width: 992px) {
-        .detail-tugas-grid {
-            grid-template-columns: 1.4fr 1fr !important;
-        }
-    }
-</style>
+<script src="{% static 'js/core/pomodoro.js' %}?v=3"></script>
 {% endblock %}

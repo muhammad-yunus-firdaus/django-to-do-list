@@ -5,437 +5,319 @@
 {% block page_title %}Daftar Tugas{% endblock %}
 
 {% block content %}
-<!-- Search & Actions Bar -->
-<div class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;">
-    <div class="search-actions-wrapper">
-        <!-- Search -->
-        <form method="GET" class="search-form">
-            {% if prioritas_filter %}<input type="hidden" name="prioritas" value="{{ prioritas_filter }}">{% endif %}
-            {% if kategori_filter %}<input type="hidden" name="kategori" value="{{ kategori_filter }}">{% endif %}
-            {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
-            <div style="position:relative;flex:1;">
-                <i data-lucide="search"
-                    style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted);"></i>
-                <input type="text" name="q" placeholder="Cari tugas..." value="{{ search_query }}"
-                    style="padding-left:38px;font-size:.875rem;">
+<!-- Search & Filter Card -->
+<div class="card" style="margin-bottom:1.25rem;">
+    <form method="GET" style="display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <div style="position:relative;flex:1 1 200px;min-width:0;">
+                <i data-lucide="search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--foreground-muted);"></i>
+                <input type="text" name="q" placeholder="Cari judul atau deskripsi tugas..." value="{{ search_query }}" class="form-input" style="padding-left:36px;">
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Cari</button>
-        </form>
-
-        <!-- Actions -->
-        <div class="action-buttons-group">
-            <a href="{% url 'tugas:tambah' %}" class="btn btn-primary btn-sm">
-                <i data-lucide="plus" style="width:16px;height:16px;"></i>
-                <span class="hide-mobile">Tambah</span>
-                <span class="show-mobile">Tambah</span>
-            </a>
-            <button type="button" onclick="openExportModal()" class="btn btn-ghost btn-sm export-btn" title="Export Data">
-                <i data-lucide="file-text" style="width:16px;height:16px;color:var(--accent-danger);"></i>
-                <span class="hide-mobile">Export Data</span>
-                <span class="show-mobile">Export</span>
-            </button>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i data-lucide="search" style="width:14px;height:14px;"></i> <span>Cari</span>
+                </button>
+                <a href="{% url 'tugas:tambah' %}" class="btn btn-primary btn-sm">
+                    <i data-lucide="plus" style="width:14px;height:14px;"></i> <span>Tambah Tugas</span>
+                </a>
+                <button type="button" onclick="openExportModal()" class="btn btn-outline btn-sm" title="Ekspor Data">
+                    <i data-lucide="file-text" style="width:14px;height:14px;color:var(--destructive);"></i> <span>Ekspor</span>
+                </button>
+            </div>
         </div>
-    </div>
+
+        <!-- Filter Dropdowns Row -->
+        <div class="task-filter-grid">
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Kategori</label>
+                <select name="kategori" class="form-select" style="height:36px;font-size:0.8125rem;">
+                    <option value="">Semua Kategori</option>
+                    {% for kat in kategori_list %}
+                    <option value="{{ kat }}" {% if kat == kategori_filter %}selected{% endif %}>{{ kat|title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Prioritas</label>
+                <select name="prioritas" class="form-select" style="height:36px;font-size:0.8125rem;">
+                    <option value="">Semua Prioritas</option>
+                    <option value="tinggi" {% if prioritas_filter == "tinggi" %}selected{% endif %}>Tinggi</option>
+                    <option value="sedang" {% if prioritas_filter == "sedang" %}selected{% endif %}>Sedang</option>
+                    <option value="rendah" {% if prioritas_filter == "rendah" %}selected{% endif %}>Rendah</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" style="font-size:0.75rem;margin-bottom:0.25rem;">Status</label>
+                <select name="status" class="form-select" style="height:36px;font-size:0.8125rem;">
+                    <option value="">Semua Status</option>
+                    <option value="belum" {% if status_filter == "belum" %}selected{% endif %}>Belum Selesai</option>
+                    <option value="selesai" {% if status_filter == "selesai" %}selected{% endif %}>Selesai</option>
+                </select>
+            </div>
+            <div class="task-filter-actions">
+                <button type="submit" class="btn btn-primary" style="height:36px;padding:0 0.875rem;font-size:0.8125rem;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;">
+                    <i data-lucide="filter" style="width:14px;height:14px;"></i> <span>Terapkan</span>
+                </button>
+                <a href="{% url 'tugas:daftar' %}" class="btn btn-outline" style="height:36px;padding:0 0.75rem;font-size:0.8125rem;display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;" title="Reset Filter">
+                    <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> <span>Reset</span>
+                </a>
+            </div>
+        </div>
+    </form>
 </div>
 
-<!-- Filters -->
-<form method="GET" class="card animate-fade-up" style="padding:16px 20px;margin-bottom:20px;">
-    {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;align-items:end;">
-        <div>
-            <label class="form-label text-xs">Kategori</label>
-            <select name="kategori" style="font-size:.85rem;">
-                <option value="">Semua</option>
-                {% for kat in kategori_list %}
-                <option value="{{ kat }}" {% if kat == kategori_filter %}selected{% endif %}>{{ kat|title }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label class="form-label text-xs">Prioritas</label>
-            <select name="prioritas" style="font-size:.85rem;">
-                <option value="">Semua</option>
-                <option value="tinggi" {% if prioritas_filter == "tinggi" %}selected{% endif %}>Tinggi</option>
-                <option value="sedang" {% if prioritas_filter == "sedang" %}selected{% endif %}>Sedang</option>
-                <option value="rendah" {% if prioritas_filter == "rendah" %}selected{% endif %}>Rendah</option>
-            </select>
-        </div>
-        <div>
-            <label class="form-label text-xs">Status</label>
-            <select name="status" style="font-size:.85rem;">
-                <option value="">Semua</option>
-                <option value="belum" {% if status_filter == "belum" %}selected{% endif %}>Belum Selesai</option>
-                <option value="selesai" {% if status_filter == "selesai" %}selected{% endif %}>Selesai</option>
-            </select>
-        </div>
-        <div style="display:flex;gap:8px;">
-            <button type="submit" class="btn btn-primary btn-sm" style="flex:1;">Filter</button>
-            <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost btn-sm">Reset</a>
-        </div>
-    </div>
-</form>
+<!-- Task Table Card -->
+<div class="card task-table-card" style="padding:0;overflow:hidden;margin-bottom:1.25rem;">
+    {% if tugas_list %}
+    <div class="table-responsive" style="border:none;box-shadow:none;border-radius:0;">
+        <table class="table task-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th style="width:40px;text-align:center;"></th>
+                    <th>Judul Tugas</th>
+                    <th style="width:120px;">Kategori</th>
+                    <th style="width:110px;">Prioritas</th>
+                    <th style="width:150px;">Batas Waktu</th>
+                    <th style="width:100px;text-align:center;">Status</th>
+                    <th style="width:110px;text-align:right;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tugas in tugas_list %}
+                <tr id="taskRow-{{ tugas.id }}" class="task-table-row" style="{% if tugas.selesai %}opacity:0.65;{% endif %}">
+                    <td class="task-col-check desktop-only" style="text-align:center;">
+                        <input type="checkbox" onchange="toggleTaskRow({{ tugas.id }}, this)" {% if tugas.selesai %}checked{% endif %} class="form-checkbox" style="cursor:pointer;" aria-label="Centang Tugas">
+                    </td>
+                    <td class="task-col-main">
+                        <!-- Mobile Header: Checkbox + Judul + Status Badge -->
+                        <div class="task-mobile-header mobile-only">
+                            <div style="display:flex;align-items:flex-start;gap:0.625rem;flex:1;min-width:0;">
+                                <input type="checkbox" onchange="toggleTaskRow({{ tugas.id }}, this)" {% if tugas.selesai %}checked{% endif %} class="form-checkbox mobile-checkbox" style="cursor:pointer;margin-top:2px;flex-shrink:0;" aria-label="Centang Tugas">
+                                <a href="{% url 'tugas:detail' tugas.id %}" class="task-title-link" style="font-weight:600;font-size:0.9375rem;color:var(--foreground);text-decoration:none;line-height:1.35;word-break:break-word;{% if tugas.selesai %}text-decoration:line-through;color:var(--foreground-muted);{% endif %}">
+                                    {{ tugas.judul }}
+                                </a>
+                            </div>
+                            <div class="task-status-badge" style="flex-shrink:0;">
+                                {% if tugas.selesai %}
+                                <span class="badge badge-success">Selesai</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Belum</span>
+                                {% endif %}
+                            </div>
+                        </div>
 
-<!-- Task Table (Desktop) -->
-{% if tugas_list %}
-<div class="table-wrap animate-fade-up desktop-only">
-    <table>
-        <thead>
-            <tr>
-                <th>Tugas</th>
-                <th>Kategori</th>
-                <th>Prioritas</th>
-                <th>Deadline</th>
-                <th>Status</th>
-                <th style="text-align:right;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tugas in tugas_list %}
-            <tr>
-                <td>
-                    <a href="{% url 'tugas:detail' tugas.id %}"
-                        style="font-weight:600;color:var(--text-primary);text-decoration:none;">
-                        {{ tugas.judul }}
-                    </a>
-                    {% if tugas.deskripsi %}
-                    <div class="text-xs" style="color:var(--text-muted);max-width:300px;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-                        {{ tugas.deskripsi }}
-                    </div>
-                    <a href="{% url 'tugas:detail' tugas.id %}" 
-                        style="font-size:0.75rem;color:var(--accent-primary);text-decoration:none;margin-top:4px;display:inline-block;">
-                        Lihat detail →
-                    </a>
-                    {% endif %}
-                </td>
-                <td><span class="badge badge-info">{{ tugas.get_kategori_display }}</span></td>
-                <td>
-                    {% if tugas.prioritas == "tinggi" %}
-                    <span class="badge badge-danger">Tinggi</span>
-                    {% elif tugas.prioritas == "sedang" %}
-                    <span class="badge badge-warning">Sedang</span>
-                    {% else %}
-                    <span class="badge badge-success">Rendah</span>
-                    {% endif %}
-                </td>
-                <td style="white-space:nowrap;font-size:.85rem;">
-                    {{ tugas.deadline|date:"d M Y H:i" }}
-                    {% if tugas.is_overdue %}
-                    <span class="badge badge-danger" style="margin-left:6px;font-size:0.7rem;">OVERDUE</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if tugas.selesai %}
-                    <span class="badge badge-muted">Selesai</span>
-                    {% else %}
-                    <span class="badge badge-info">Belum</span>
-                    {% endif %}
-                </td>
-                <td style="text-align:right;">
-                    <div style="display:flex;gap:6px;justify-content:flex-end;">
-                        <a href="{% url 'tugas:edit' tugas.id %}" title="Edit"
-                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
-                            onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
-                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                            <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
-                        </a>
-                        {% if tugas.selesai %}
-                        <button onclick="konfirmasiBelum('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Kembalikan ke Belum"
-                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                            onmouseenter="this.style.borderColor='var(--text-secondary)';this.style.background='var(--bg-secondary)';"
-                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                            <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
-                        </button>
-                        {% else %}
-                        <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Selesai"
-                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                            onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)';"
-                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                            <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
-                        </button>
+                        <!-- Desktop Title -->
+                        <div class="desktop-only">
+                            <a href="{% url 'tugas:detail' tugas.id %}" class="task-title-link" style="font-weight:600;color:var(--foreground);text-decoration:none;display:inline-block;{% if tugas.selesai %}text-decoration:line-through;color:var(--foreground-muted);{% endif %}">
+                                {{ tugas.judul }}
+                            </a>
+                        </div>
+
+                        {% if tugas.deskripsi %}
+                        <div class="task-desc">
+                            {{ tugas.deskripsi }}
+                        </div>
                         {% endif %}
-                        <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Hapus"
-                            style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                            onmouseenter="this.style.borderColor='var(--accent-danger)';this.style.background='var(--accent-danger-light)';"
-                            onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                            <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--accent-danger);"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 
-<!-- Task Cards (Mobile) -->
-<div class="task-cards-container mobile-only">
-    {% for tugas in tugas_list %}
-    <div class="task-card animate-fade-up">
-        <div class="task-card-header">
-            <a href="{% url 'tugas:detail' tugas.id %}" class="task-card-title">
-                {{ tugas.judul }}
-            </a>
-            <div class="task-card-badges">
-                <span class="badge badge-info">{{ tugas.get_kategori_display }}</span>
-                {% if tugas.prioritas == "tinggi" %}
-                <span class="badge badge-danger">Tinggi</span>
-                {% elif tugas.prioritas == "sedang" %}
-                <span class="badge badge-warning">Sedang</span>
-                {% else %}
-                <span class="badge badge-success">Rendah</span>
-                {% endif %}
-            </div>
-        </div>
-        
-        {% if tugas.deskripsi %}
-        <div class="task-card-desc">
-            {{ tugas.deskripsi|truncatewords:15 }}
-        </div>
-        {% endif %}
-        
-        <div class="task-card-info">
-            <div class="task-card-deadline">
-                <i data-lucide="clock" style="width:14px;height:14px;"></i>
-                <span>{{ tugas.deadline|date:"d M Y H:i" }}</span>
-                {% if tugas.is_overdue %}
-                <span class="badge badge-danger" style="font-size:0.65rem;margin-left:4px;">OVERDUE</span>
-                {% endif %}
-            </div>
-            <div class="task-card-status">
-                {% if tugas.status == "selesai" %}
-                <span class="badge badge-success"><i data-lucide="check-circle" style="width:12px;height:12px;margin-right:4px;display:inline-block;vertical-align:middle;"></i>Selesai</span>
-                {% else %}
-                <span class="badge badge-info">Belum Selesai</span>
-                {% endif %}
-            </div>
-        </div>
-        
-        <div class="task-card-actions" style="display:flex;gap:6px;justify-content:flex-end;margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
-            <a href="{% url 'tugas:detail' tugas.id %}" title="Detail"
-                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
-                onmouseenter="this.style.borderColor='var(--secondary)';this.style.background='var(--bg-secondary)';"
-                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                <i data-lucide="eye" style="width:14px;height:14px;color:var(--text-secondary);"></i>
-            </a>
-            <a href="{% url 'tugas:edit' tugas.id %}" title="Edit"
-                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;text-decoration:none;"
-                onmouseenter="this.style.borderColor='var(--primary)';this.style.background='var(--primary-light)';"
-                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                <i data-lucide="pencil" style="width:14px;height:14px;color:var(--primary);"></i>
-            </a>
-            {% if tugas.status == "selesai" %}
-            <button onclick="konfirmasiBelum('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Kembalikan ke Belum"
-                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                onmouseenter="this.style.borderColor='var(--text-secondary)';this.style.background='var(--bg-secondary)';"
-                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                <i data-lucide="rotate-ccw" style="width:14px;height:14px;color:var(--text-secondary);"></i>
-            </button>
-            {% else %}
-            <button onclick="konfirmasiSelesai('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Selesai"
-                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                onmouseenter="this.style.borderColor='var(--accent-success)';this.style.background='var(--accent-success-light)';"
-                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                <i data-lucide="check" style="width:14px;height:14px;color:var(--accent-success);"></i>
-            </button>
-            {% endif %}
-            <button onclick="konfirmasiHapus('{{ tugas.id }}','{{ tugas.judul|escapejs }}')" title="Hapus"
-                style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;"
-                onmouseenter="this.style.borderColor='var(--accent-danger)';this.style.background='var(--accent-danger-light)';"
-                onmouseleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
-                <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--accent-danger);"></i>
-            </button>
-        </div>
+                        <!-- Mobile Footer: Badges & Action Buttons -->
+                        <div class="task-mobile-footer mobile-only">
+                            <div class="task-mobile-badges">
+                                <span class="badge badge-secondary">{{ tugas.get_kategori_display }}</span>
+                                {% if tugas.prioritas == "tinggi" %}
+                                <span class="badge badge-destructive">Tinggi</span>
+                                {% elif tugas.prioritas == "sedang" %}
+                                <span class="badge badge-warning">Sedang</span>
+                                {% else %}
+                                <span class="badge badge-secondary">Rendah</span>
+                                {% endif %}
+                                {% if tugas.deadline %}
+                                <span class="task-mobile-deadline {% if tugas.is_overdue %}overdue{% endif %}">
+                                    <i data-lucide="clock" style="width:12px;height:12px;"></i>
+                                    <span>{{ tugas.deadline|date:"d M Y H:i" }}</span>
+                                    {% if tugas.is_overdue %}<span class="badge badge-destructive" style="padding:1px 4px;font-size:0.625rem;">OVERDUE</span>{% endif %}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div class="task-mobile-actions">
+                                <a href="{% url 'tugas:detail' tugas.id %}" class="btn btn-outline btn-icon" title="Detail Tugas" aria-label="Detail">
+                                    <i data-lucide="eye" style="width:14px;height:14px;"></i>
+                                </a>
+                                <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-outline btn-icon" title="Edit Tugas" aria-label="Edit">
+                                    <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                                </a>
+                                <button onclick="hapusTugasInstant({{ tugas.id }}, '{{ tugas.judul|escapejs }}')" class="btn btn-outline btn-icon" title="Hapus Tugas" type="button" aria-label="Hapus">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--destructive);"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="desktop-only"><span class="badge badge-secondary">{{ tugas.get_kategori_display }}</span></td>
+                    <td class="desktop-only">
+                        {% if tugas.prioritas == "tinggi" %}
+                        <span class="badge badge-destructive">Tinggi</span>
+                        {% elif tugas.prioritas == "sedang" %}
+                        <span class="badge badge-warning">Sedang</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Rendah</span>
+                        {% endif %}
+                    </td>
+                    <td class="desktop-only" style="white-space:nowrap;font-size:0.8125rem;">
+                        <span>{{ tugas.deadline|date:"d M Y H:i" }}</span>
+                        {% if tugas.is_overdue %}
+                        <span class="badge badge-destructive" style="margin-left:4px;font-size:0.6875rem;">OVERDUE</span>
+                        {% endif %}
+                    </td>
+                    <td class="desktop-only task-status-badge" style="text-align:center;" id="taskBadge-{{ tugas.id }}">
+                        {% if tugas.selesai %}
+                        <span class="badge badge-success">Selesai</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Belum</span>
+                        {% endif %}
+                    </td>
+                    <td class="desktop-only" style="text-align:right;">
+                        <div style="display:flex;gap:4px;justify-content:flex-end;">
+                            <a href="{% url 'tugas:detail' tugas.id %}" class="btn btn-outline btn-icon" title="Detail Tugas" aria-label="Detail">
+                                <i data-lucide="eye" style="width:14px;height:14px;"></i>
+                            </a>
+                            <a href="{% url 'tugas:edit' tugas.id %}" class="btn btn-outline btn-icon" title="Edit Tugas" aria-label="Edit">
+                                <i data-lucide="pencil" style="width:14px;height:14px;"></i>
+                            </a>
+                            <button onclick="hapusTugasInstant({{ tugas.id }}, '{{ tugas.judul|escapejs }}')" class="btn btn-outline btn-icon" title="Hapus Tugas" type="button" aria-label="Hapus">
+                                <i data-lucide="trash-2" style="width:14px;height:14px;color:var(--destructive);"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    {% endfor %}
+    {% else %}
+    <div style="padding:3rem 1rem;text-align:center;color:var(--foreground-muted);">
+        <i data-lucide="clipboard-list" style="width:36px;height:36px;margin:0 auto 0.75rem;"></i>
+        <div style="font-size:0.9375rem;font-weight:600;color:var(--foreground);">Tidak ada tugas ditemukan</div>
+        <p style="font-size:0.8125rem;margin:0.25rem 0 1rem 0;">Coba ubah kata kunci pencarian atau filter yang Anda terapkan.</p>
+        <a href="{% url 'tugas:tambah' %}" class="btn btn-primary btn-sm">
+            <i data-lucide="plus" style="width:14px;height:14px;"></i> Tambah Tugas Baru
+        </a>
+    </div>
+    {% endif %}
 </div>
 
-<!-- Pagination -->
+<!-- Pagination Card -->
 {% if tugas_list.has_other_pages %}
-<div class="card animate-fade-up" style="padding:16px 20px;margin-top:20px;">
-    <div style="display:flex;justify-content:center;align-items:center;gap:8px;">
-        {% if tugas_list.has_previous %}
-        <a href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
-            class="btn btn-ghost btn-sm" title="Halaman Pertama">
-            <i data-lucide="chevrons-left" style="width:16px;height:16px;"></i>
-        </a>
-        <a href="?page={{ tugas_list.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
-            class="btn btn-ghost btn-sm" title="Sebelumnya">
-            <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
-        </a>
-        {% else %}
-        <button class="btn btn-ghost btn-sm" disabled>
-            <i data-lucide="chevrons-left" style="width:16px;height:16px;"></i>
-        </button>
-        <button class="btn btn-ghost btn-sm" disabled>
-            <i data-lucide="chevron-left" style="width:16px;height:16px;"></i>
-        </button>
-        {% endif %}
-
-        <span style="padding:0 12px;font-size:0.9rem;font-weight:500;">
-            Halaman {{ tugas_list.number }} dari {{ tugas_list.paginator.num_pages }}
-        </span>
-
-        {% if tugas_list.has_next %}
-        <a href="?page={{ tugas_list.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
-            class="btn btn-ghost btn-sm" title="Selanjutnya">
-            <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
-        </a>
-        <a href="?page={{ tugas_list.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
-            class="btn btn-ghost btn-sm" title="Halaman Terakhir">
-            <i data-lucide="chevrons-right" style="width:16px;height:16px;"></i>
-        </a>
-        {% else %}
-        <button class="btn btn-ghost btn-sm" disabled>
-            <i data-lucide="chevron-right" style="width:16px;height:16px;"></i>
-        </button>
-        <button class="btn btn-ghost btn-sm" disabled>
-            <i data-lucide="chevrons-right" style="width:16px;height:16px;"></i>
-        </button>
-        {% endif %}
-    </div>
-    <div style="text-align:center;margin-top:8px;font-size:0.8rem;color:var(--text-muted);">
+<div class="card" style="padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+    <div style="font-size:0.8125rem;color:var(--foreground-muted);">
         Menampilkan {{ tugas_list.start_index }} - {{ tugas_list.end_index }} dari {{ tugas_list.paginator.count }} tugas
     </div>
-</div>
-{% endif %}
-
-{% else %}
-<div class="card animate-fade-up">
-    <div class="empty-state">
-        <i data-lucide="inbox" style="width:48px;height:48px;"></i>
-        <p style="margin-top:12px;font-weight:500;">Belum ada tugas</p>
-        <p class="text-xs" style="margin-top:4px;">Klik "Tambah" untuk membuat tugas pertamamu</p>
-        <a href="{% url 'tugas:tambah' %}" class="btn btn-primary btn-sm" style="margin-top:16px;">
-            <i data-lucide="plus" style="width:16px;height:16px;"></i> Tambah Tugas
+    <div style="display:flex;align-items:center;gap:4px;">
+        {% if tugas_list.has_previous %}
+        <a href="?page={{ tugas_list.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">
+            <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
         </a>
+        {% endif %}
+        <span style="font-size:0.8125rem;padding:0 8px;font-weight:600;">
+            {{ tugas_list.number }} / {{ tugas_list.paginator.num_pages }}
+        </span>
+        {% if tugas_list.has_next %}
+        <a href="?page={{ tugas_list.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if kategori_filter %}&kategori={{ kategori_filter }}{% endif %}{% if prioritas_filter %}&prioritas={{ prioritas_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-outline btn-sm">
+            <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+        </a>
+        {% endif %}
     </div>
 </div>
 {% endif %}
 
-<!-- Hidden POST forms -->
-<form id="hapusForm" method="POST" style="display:none;">{% csrf_token %}</form>
-<form id="selesaiForm" method="POST" style="display:none;">{% csrf_token %}</form>
-<form id="belumForm" method="POST" style="display:none;">{% csrf_token %}</form>
-{% endblock %}
-
-{% block scripts %}
 <script>
-    // Play completion sound using Web Audio API
-    function playCompletionSound() {
+    function getCsrfToken() {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.content) return metaTag.content;
+        if (window.CSRF_TOKEN) return window.CSRF_TOKEN;
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    // Toggle Task Row (Optimistic UI)
+    async function toggleTaskRow(id, checkbox) {
+        const row = document.getElementById(`taskRow-${id}`);
         try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Create a soft, magical "sparkle" completion sound
-            const playTone = (freq, startTime, duration, volume = 0.15) => {
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                const filter = audioContext.createBiquadFilter();
-                
-                osc.connect(filter);
-                filter.connect(gain);
-                gain.connect(audioContext.destination);
-                
-                // Soft triangle wave for gentle, warm tone
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(freq, startTime);
-                
-                // Low-pass filter for smooth, mellow sound
-                filter.type = 'lowpass';
-                filter.frequency.setValueAtTime(2000, startTime);
-                
-                // Gentle fade in/out
-                gain.gain.setValueAtTime(0, startTime);
-                gain.gain.linearRampToValueAtTime(volume, startTime + 0.03);
-                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-                
-                osc.start(startTime);
-                osc.stop(startTime + duration);
-            };
-            
-            const now = audioContext.currentTime;
-            
-            // Gentle "magical" completion melody (E-G#-B-E) - like a soft chime
-            playTone(659.25, now, 0.35, 0.12);        // E5
-            playTone(830.61, now + 0.1, 0.4, 0.1);    // G#5
-            playTone(987.77, now + 0.2, 0.45, 0.08);  // B5
-            playTone(1318.51, now + 0.3, 0.5, 0.06);  // E6 (octave higher, very soft)
-            
-        } catch (e) {
-            console.log('Audio not supported');
+            const res = await fetch(`/tugas/toggle-tugas/${id}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const isSelesai = data.status === 'selesai';
+                if (row) {
+                    row.style.opacity = isSelesai ? '0.65' : '1';
+                    row.querySelectorAll('.task-title-link').forEach(link => {
+                        link.style.textDecoration = isSelesai ? 'line-through' : 'none';
+                        link.style.color = isSelesai ? 'var(--foreground-muted)' : 'var(--foreground)';
+                    });
+                    row.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                        cb.checked = isSelesai;
+                    });
+                    const badgeHtml = isSelesai ? '<span class="badge badge-success">Selesai</span>' : '<span class="badge badge-secondary">Belum</span>';
+                    row.querySelectorAll('.task-status-badge').forEach(badge => {
+                        badge.innerHTML = badgeHtml;
+                    });
+                }
+                if (window.showToast) window.showToast(`Tugas ditandai ${data.status}`, 'success');
+            } else {
+                checkbox.checked = !checkbox.checked;
+                if (window.showToast) window.showToast('Gagal mengubah status tugas', 'error');
+            }
+        } catch (err) {
+            checkbox.checked = !checkbox.checked;
+            console.error('Toggle task error:', err);
+            if (window.showToast) window.showToast('Koneksi terganggu', 'error');
         }
     }
 
-    function toggleExportMenu(e) {
-        e.stopPropagation();
-        const menu = document.getElementById("exportMenu");
-        menu.classList.toggle("hidden");
-    }
-
-    // Close export dropdown on outside click
-    document.addEventListener("click", (e) => {
-        const menu = document.getElementById("exportMenu");
-        const toggle = document.getElementById("exportToggle");
-        if (menu && !menu.classList.contains("hidden")) {
-            if (!toggle.contains(e.target) && !menu.contains(e.target)) {
-                menu.classList.add("hidden");
-            }
-        }
-    });
-
-    function konfirmasiHapus(id, judul) {
+    // Hapus Tugas Instant (Zero-Lag Confirmation)
+    function hapusTugasInstant(id, judul) {
         Swal.fire({
-            title: "Hapus Tugas?",
-            text: 'Tugas "' + judul + '" akan dihapus permanen.',
-            icon: "warning",
+            title: 'Hapus Tugas?',
+            text: `Tugas "${judul}" akan dihapus permanen.`,
+            icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: "#F43F5E",
-            cancelButtonColor: "#64748B",
-            confirmButtonText: "Ya, Hapus",
-            cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.getElementById("hapusForm");
-                form.action = "/tugas/hapus/" + id + "/";
-                form.submit();
-            }
-        });
-    }
-
-    function konfirmasiSelesai(id, judul) {
-        Swal.fire({
-            title: "Tandai Selesai?",
-            text: 'Tandai "' + judul + '" sebagai selesai?',
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#10B981",
-            cancelButtonColor: "#64748B",
-            confirmButtonText: "Ya, Selesai",
-            cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                playCompletionSound(); // Play sound when confirmed
-                const form = document.getElementById("selesaiForm");
-                form.action = "/tugas/selesai/" + id + "/";
-                form.submit();
-            }
-        });
-    }
-
-    function konfirmasiBelum(id, judul) {
-        Swal.fire({
-            title: "Kembalikan ke Belum Selesai?",
-            text: 'Tandai "' + judul + '" sebagai belum selesai?',
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonColor: "#4F46E5",
-            cancelButtonColor: "#64748B",
-            confirmButtonText: "Ya, Kembalikan",
-            cancelButtonText: "Batal"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const form = document.getElementById("belumForm");
-                form.action = "/tugas/belum/" + id + "/";
-                form.submit();
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal-custom-modal',
+                confirmButton: 'btn btn-destructive',
+                cancelButton: 'btn btn-outline',
+                actions: 'swal2-actions'
+            },
+            buttonsStyling: false
+        }).then(async (result) => {
+            if (!result.isConfirmed) return;
+            try {
+                const res = await fetch(`/tugas/hapus/${id}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const row = document.getElementById(`taskRow-${id}`);
+                    if (row) {
+                        row.style.transition = 'all 0.2s ease';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 200);
+                    }
+                    if (window.showToast) window.showToast(data.message, 'success');
+                } else {
+                    if (window.showToast) window.showToast('Gagal menghapus tugas', 'error');
+                }
+            } catch (err) {
+                console.error('Delete task error:', err);
+                if (window.showToast) window.showToast('Koneksi terganggu', 'error');
             }
         });
     }

@@ -1,23 +1,25 @@
-// Pastikan modal & tombol terformat sesuai Design System
-const swalModalConfig = {
-    customClass: {
-        popup: 'swal-custom-modal',
-        confirmButton: 'btn-indigo-primary',
-        cancelButton: 'btn-slate-secondary',
-        actions: 'swal-actions-gap'
-    },
-    buttonsStyling: false
-};
+/**
+ * KEGIATAN.JS — Zero-Lag AJAX, Instant DOM updates, and Sonner-style Toast
+ * Pure Vanilla JS, <250 lines, Zero AI-Slop
+ */
 
-// Kustom config khusus untuk form tambah/edit kegiatan yang melebar & responsif
-const swalKegiatanConfig = {
-    ...swalModalConfig,
-    customClass: {
-        ...swalModalConfig.customClass,
-        popup: 'swal-kegiatan-modal'
-    },
-    width: '720px'
-};
+function getCsrfToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag && metaTag.content) return metaTag.content;
+    if (window.CSRF_TOKEN) return window.CSRF_TOKEN;
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 function dapatkanFormData(container) {
     const root = container || Swal.getPopup() || document;
@@ -35,336 +37,286 @@ function dapatkanFormData(container) {
 
 function serializeFormData(data) {
     const formData = new FormData();
-    formData.append('judul', data.judul);
-    formData.append('kategori', data.kategori);
-    formData.append('status', data.status);
-    formData.append('tanggal', data.tanggal);
-    formData.append('jam_mulai', data.jam_mulai);
-    formData.append('jam_selesai', data.jam_selesai);
-    formData.append('lokasi', data.lokasi);
-    formData.append('catatan', data.catatan);
-    formData.append('csrfmiddlewaretoken', window.CSRF_TOKEN);
+    for (const [key, value] of Object.entries(data)) {
+        formData.append(key, value);
+    }
+    formData.append('csrfmiddlewaretoken', getCsrfToken());
     return formData;
 }
 
-function manageAlert(popup, errorMsg) {
-    const alertBox = popup.querySelector('#swal-error-alert');
-    if (!alertBox) return;
-    if (errorMsg) {
-        alertBox.querySelector('.error-text').textContent = errorMsg;
-        alertBox.style.display = 'flex';
-    } else {
-        alertBox.style.display = 'none';
-        alertBox.querySelector('.error-text').textContent = '';
-    }
-}
-
-function initModalAlertListeners(popup) {
-    const judulInput = popup.querySelector('#swal-judul');
-    const alertBox = popup.querySelector('#swal-error-alert');
-    if (judulInput && alertBox) {
-        judulInput.addEventListener('input', () => {
-            if (judulInput.value.trim()) {
-                alertBox.style.display = 'none';
-                alertBox.querySelector('.error-text').textContent = '';
-            }
-        });
-    }
-}
-
+// ── Buka Modal Tambah Kegiatan ──
 function bukaModalTambah() {
+    const template = document.getElementById('kegiatanFormTemplate');
+    if (!template) return;
+
     Swal.fire({
-        ...swalKegiatanConfig,
-        title: 'Tambah Kegiatan Baru',
-        html: document.getElementById('kegiatanFormTemplate').innerHTML,
+        title: 'Tambah Acara / Pertemuan',
+        html: template.innerHTML,
         showCancelButton: true,
-        confirmButtonText: 'Simpan',
+        confirmButtonText: 'Simpan Acara',
         cancelButtonText: 'Batal',
+        customClass: {
+            popup: 'swal-custom-modal',
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-outline',
+            actions: 'swal2-actions'
+        },
+        buttonsStyling: false,
         didOpen: () => {
             const popup = Swal.getPopup();
-            const hariIni = new Date().toISOString().split('T')[0];
-            popup.querySelector('#swal-tanggal').value = hariIni;
+            popup.querySelector('#swal-tanggal').value = new Date().toISOString().split('T')[0];
             popup.querySelector('#swal-status').value = 'akan_datang';
-            manageAlert(popup, null);
-            initModalAlertListeners(popup);
         },
         preConfirm: () => {
             const popup = Swal.getPopup();
             const data = dapatkanFormData(popup);
-            
+
             if (!data.judul) {
-                manageAlert(popup, 'Mohon lengkapi judul kegiatan Anda terlebih dahulu.');
+                Swal.showValidationMessage('Judul kegiatan wajib diisi');
                 return false;
             }
             if (!data.tanggal) {
-                manageAlert(popup, 'Tanggal kegiatan harus ditentukan!');
+                Swal.showValidationMessage('Tanggal kegiatan wajib ditentukan');
                 return false;
             }
             if (!data.jam_mulai || !data.jam_selesai) {
-                manageAlert(popup, 'Jam mulai & selesai harus ditentukan!');
+                Swal.showValidationMessage('Jam mulai dan selesai wajib ditentukan');
                 return false;
             }
             if (data.jam_selesai <= data.jam_mulai) {
-                manageAlert(popup, 'Jam selesai harus setelah jam mulai!');
+                Swal.showValidationMessage('Jam selesai harus setelah jam mulai');
                 return false;
             }
             return data;
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const payload = serializeFormData(result.value);
-            
-            const urlTambah = document.getElementById('kegiatan-urls').getAttribute('data-tambah');
-            fetch(urlTambah, {
+    }).then(async (result) => {
+        if (!result.isConfirmed) return;
+
+        const confirmBtn = Swal.getConfirmButton();
+        if (confirmBtn) confirmBtn.disabled = true;
+
+        const payload = serializeFormData(result.value);
+        const urlTambah = document.getElementById('kegiatan-urls').getAttribute('data-tambah');
+
+        try {
+            const res = await fetch(urlTambah, {
                 method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: payload
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Berhasil!',
-                        text: 'Kegiatan berhasil ditambahkan.',
-                        showConfirmButton: false,
-                        showCancelButton: false,
-                        timer: 1400,
-                        timerProgressBar: true,
-                        customClass: {
-                            popup: 'swal-success-popup-custom',
-                            title: 'swal-success-title-custom',
-                            htmlContainer: 'swal-success-text-custom'
-                        }
-                    }).then(() => {
-                        location.reload();
-                    });
-                } else {
-                    Swal.fire({
-                        ...swalModalConfig,
-                        title: 'Gagal Menyimpan!',
-                        text: data.error,
-                        icon: 'error',
-                        showCancelButton: false,
-                        confirmButtonText: 'OK'
-                    });
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (window.showToast) window.showToast('Acara baru berhasil disimpan', 'success');
+                setTimeout(() => location.reload(), 400);
+            } else {
+                if (window.showToast) window.showToast(data.error || 'Gagal menyimpan acara', 'error');
+            }
+        } catch (err) {
+            console.error('Tambah kegiatan error:', err);
+            if (window.showToast) window.showToast('Koneksi terganggu', 'error');
+        }
+    });
+}
+
+// ── Buka Modal Edit Kegiatan ──
+async function bukaModalEdit(id) {
+    try {
+        const res = await fetch(`/tugas/kegiatan/edit/${id}/`);
+        const resData = await res.json();
+        if (!resData.success) {
+            if (window.showToast) window.showToast('Gagal memuat data kegiatan', 'error');
+            return;
+        }
+
+        const d = resData.data;
+        const template = document.getElementById('kegiatanFormTemplate');
+
+        Swal.fire({
+            title: 'Edit Acara / Pertemuan',
+            html: template.innerHTML,
+            showCancelButton: true,
+            confirmButtonText: 'Perbarui Acara',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal-custom-modal',
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-outline',
+                actions: 'swal2-actions'
+            },
+            buttonsStyling: false,
+            didOpen: () => {
+                const popup = Swal.getPopup();
+                popup.querySelector('#swal-judul').value = d.judul;
+                popup.querySelector('#swal-kategori').value = d.kategori;
+                popup.querySelector('#swal-status').value = d.status;
+                popup.querySelector('#swal-tanggal').value = d.tanggal;
+                popup.querySelector('#swal-jam_mulai').value = d.jam_mulai;
+                popup.querySelector('#swal-jam_selesai').value = d.jam_selesai;
+                popup.querySelector('#swal-lokasi').value = d.lokasi || '';
+                popup.querySelector('#swal-catatan').value = d.catatan || '';
+            },
+            preConfirm: () => {
+                const popup = Swal.getPopup();
+                const data = dapatkanFormData(popup);
+
+                if (!data.judul) {
+                    Swal.showValidationMessage('Judul kegiatan wajib diisi');
+                    return false;
                 }
-            })
-            .catch(err => {
-                Swal.fire({
-                    ...swalModalConfig,
-                    title: 'Error!',
-                    text: 'Terjadi kegagalan koneksi.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
+                if (!data.tanggal) {
+                    Swal.showValidationMessage('Tanggal kegiatan wajib ditentukan');
+                    return false;
+                }
+                if (!data.jam_mulai || !data.jam_selesai) {
+                    Swal.showValidationMessage('Jam mulai dan selesai wajib ditentukan');
+                    return false;
+                }
+                if (data.jam_selesai <= data.jam_mulai) {
+                    Swal.showValidationMessage('Jam selesai harus setelah jam mulai');
+                    return false;
+                }
+                return data;
+            }
+        }).then(async (result) => {
+            if (!result.isConfirmed) return;
+
+            const payload = serializeFormData(result.value);
+            try {
+                const res = await fetch(`/tugas/kegiatan/edit/${id}/`, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: payload
                 });
-            });
-        }
-    });
+                const data = await res.json();
+                if (data.success) {
+                    if (window.showToast) window.showToast('Perubahan acara berhasil disimpan', 'success');
+                    setTimeout(() => location.reload(), 400);
+                } else {
+                    if (window.showToast) window.showToast(data.error || 'Gagal memperbarui kegiatan', 'error');
+                }
+            } catch (err) {
+                console.error('Edit kegiatan error:', err);
+                if (window.showToast) window.showToast('Koneksi terganggu', 'error');
+            }
+        });
+    } catch (err) {
+        console.error('Load edit error:', err);
+    }
 }
 
-function bukaModalEdit(id) {
-    // Fetch data kegiatan
-    fetch(`/tugas/kegiatan/edit/${id}/`)
-    .then(res => res.json())
-    .then(resData => {
-        if (resData.success) {
-            const d = resData.data;
-            Swal.fire({
-                ...swalKegiatanConfig,
-                title: 'Edit Kegiatan',
-                html: document.getElementById('kegiatanFormTemplate').innerHTML,
-                showCancelButton: true,
-                confirmButtonText: 'Perbarui',
-                cancelButtonText: 'Batal',
-                didOpen: () => {
-                    const popup = Swal.getPopup();
-                    popup.querySelector('#swal-judul').value = d.judul;
-                    popup.querySelector('#swal-kategori').value = d.kategori;
-                    popup.querySelector('#swal-status').value = d.status;
-                    popup.querySelector('#swal-tanggal').value = d.tanggal;
-                    popup.querySelector('#swal-jam_mulai').value = d.jam_mulai;
-                    popup.querySelector('#swal-jam_selesai').value = d.jam_selesai;
-                    popup.querySelector('#swal-lokasi').value = d.lokasi || '';
-                    popup.querySelector('#swal-catatan').value = d.catatan || '';
-                    manageAlert(popup, null);
-                    initModalAlertListeners(popup);
-                },
-                preConfirm: () => {
-                    const popup = Swal.getPopup();
-                    const data = dapatkanFormData(popup);
-                    
-                    if (!data.judul) {
-                        manageAlert(popup, 'Mohon lengkapi judul kegiatan Anda terlebih dahulu.');
-                        return false;
-                    }
-                    if (!data.tanggal) {
-                        manageAlert(popup, 'Tanggal kegiatan harus ditentukan!');
-                        return false;
-                    }
-                    if (!data.jam_mulai || !data.jam_selesai) {
-                        manageAlert(popup, 'Jam mulai & selesai harus ditentukan!');
-                        return false;
-                    }
-                    if (data.jam_selesai <= data.jam_mulai) {
-                        manageAlert(popup, 'Jam selesai harus setelah jam mulai!');
-                        return false;
-                    }
-                    return data;
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const payload = serializeFormData(result.value);
-                    
-                    fetch(`/tugas/kegiatan/edit/${id}/`, {
-                        method: 'POST',
-                        body: payload
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
-                                text: 'Kegiatan berhasil diperbarui.',
-                                showConfirmButton: false,
-                                showCancelButton: false,
-                                timer: 1400,
-                                timerProgressBar: true,
-                                customClass: {
-                                    popup: 'swal-success-popup-custom',
-                                    title: 'swal-success-title-custom',
-                                    htmlContainer: 'swal-success-text-custom'
-                                }
-                            }).then(() => {
-                                location.reload();
-                            });
-                        } else {
-                            Swal.fire({
-                                ...swalModalConfig,
-                                title: 'Gagal Memperbarui!',
-                                text: data.error,
-                                icon: 'error',
-                                showCancelButton: false,
-                                confirmButtonText: 'OK'
-                            });
-                        }
-                    });
-                }
-            });
-        }
-    });
-}
-
+// ── Konfirmasi Hapus Kegiatan (Optimistic DOM Removal) ──
 function konfirmasiHapusKegiatan(id, judul, event) {
     if (event) {
         event.preventDefault();
         event.stopImmediatePropagation();
     }
+
     Swal.fire({
-        ...swalModalConfig,
-        title: 'Hapus Kegiatan?',
-        text: 'Kegiatan ini akan dihapus secara permanen.',
+        title: 'Hapus Acara?',
+        text: `Acara "${judul}" akan dihapus permanen.`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Ya, Hapus',
         cancelButtonText: 'Batal',
         customClass: {
-            ...swalModalConfig.customClass,
-            confirmButton: 'btn-danger-primary'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const formData = new FormData();
-            formData.append('csrfmiddlewaretoken', window.CSRF_TOKEN);
+            popup: 'swal-custom-modal',
+            confirmButton: 'btn btn-destructive',
+            cancelButton: 'btn btn-outline',
+            actions: 'swal2-actions'
+        },
+        buttonsStyling: false
+    }).then(async (result) => {
+        if (!result.isConfirmed) return;
 
-            fetch(`/tugas/kegiatan/hapus/${id}/`, {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', getCsrfToken());
+
+        try {
+            const res = await fetch(`/tugas/kegiatan/hapus/${id}/`, {
                 method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Dihapus!',
-                        text: 'Kegiatan berhasil dihapus.',
-                        showConfirmButton: false,
-                        showCancelButton: false,
-                        timer: 1400,
-                        timerProgressBar: true,
-                        customClass: {
-                            popup: 'swal-success-popup-custom',
-                            title: 'swal-success-title-custom',
-                            htmlContainer: 'swal-success-text-custom'
-                        }
-                    }).then(() => {
-                        location.reload();
-                    });
-                }
             });
+            const data = await res.json();
+            if (data.success) {
+                const card = document.querySelector(`.keg-card[data-id="${id}"]`) || document.getElementById(`kegCard-${id}`);
+                if (card) {
+                    card.style.transition = 'all 0.25s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.95)';
+                    setTimeout(() => card.remove(), 250);
+                }
+                if (window.showToast) window.showToast('Acara berhasil dihapus', 'success');
+            }
+        } catch (err) {
+            console.error('Delete kegiatan error:', err);
+            if (window.showToast) window.showToast('Koneksi terganggu', 'error');
         }
     });
 }
 
+// ── Quick Finish & Undo (Optimistic UI) ──
 function quickFinishKegiatan(id) {
-    updateKegiatanStatus(id, 'selesai', 'Kegiatan ditandai selesai!');
+    updateKegiatanStatus(id, 'selesai', 'Kegiatan ditandai selesai');
 }
 
 function quickUndoKegiatan(id) {
-    updateKegiatanStatus(id, 'akan_datang', 'Status kegiatan dikembalikan.');
+    updateKegiatanStatus(id, 'akan_datang', 'Status kegiatan dikembalikan ke akan datang');
 }
 
-function updateKegiatanStatus(id, status, toastMsg) {
+async function updateKegiatanStatus(id, status, toastMsg) {
     const urlTemplate = document.getElementById('kegiatan-urls').getAttribute('data-toggle');
     const url = urlTemplate.replace('/0/', `/${id}/`);
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': window.CSRF_TOKEN,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: status })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: toastMsg,
-                showConfirmButton: false,
-                showCancelButton: false,
-                timer: 1400,
-                timerProgressBar: true,
-                customClass: {
-                    popup: 'swal-success-popup-custom',
-                    title: 'swal-success-title-custom',
-                    htmlContainer: 'swal-success-text-custom'
-                }
-            }).then(() => {
-                location.reload();
-            });
-        } else {
-            Swal.fire({
-                ...swalModalConfig,
-                title: 'Gagal!',
-                text: data.error || 'Gagal memperbarui status kegiatan.',
-                icon: 'error',
-                showCancelButton: false,
-                confirmButtonText: 'OK'
-            });
-        }
-    })
-    .catch(err => {
-        Swal.fire({
-            ...swalModalConfig,
-            title: 'Error!',
-            text: 'Terjadi kegagalan koneksi.',
-            icon: 'error',
-            showCancelButton: false,
-            confirmButtonText: 'OK'
-        });
-    });
-}
 
+    try {
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: status })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const card = document.querySelector(`.keg-card[data-id="${id}"]`) || document.getElementById(`kegCard-${id}`);
+            if (card) {
+                const statusBadge = card.querySelector('.keg-status-badge');
+                if (statusBadge) {
+                    if (status === 'selesai') {
+                        statusBadge.className = 'badge badge-success keg-status-badge';
+                        statusBadge.innerHTML = '<i data-lucide="check" style="width:10px;height:10px;"></i> Selesai';
+                    } else {
+                        statusBadge.className = 'badge badge-secondary keg-status-badge';
+                        statusBadge.innerHTML = '<i data-lucide="clock-3" style="width:10px;height:10px;"></i> Akan Datang';
+                    }
+                }
+
+                const actionWrapper = card.querySelector('.keg-quick-action');
+                if (actionWrapper) {
+                    if (status === 'selesai') {
+                        actionWrapper.innerHTML = `
+                            <button onclick="quickUndoKegiatan(${id})" class="btn btn-outline btn-icon" title="Kembalikan" type="button">
+                                <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i>
+                            </button>
+                        `;
+                    } else {
+                        actionWrapper.innerHTML = `
+                            <button onclick="quickFinishKegiatan(${id})" class="btn btn-outline btn-icon" title="Tandai Selesai" type="button">
+                                <i data-lucide="check" style="width:14px;height:14px;color:var(--success);"></i>
+                            </button>
+                        `;
+                    }
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+            if (window.showToast) window.showToast(toastMsg, 'success');
+        } else {
+            if (window.showToast) window.showToast(data.error || 'Gagal memperbarui status', 'error');
+        }
+    } catch (err) {
+        console.error('Update status kegiatan error:', err);
+        if (window.showToast) window.showToast('Koneksi terganggu', 'error');
+    }
+}

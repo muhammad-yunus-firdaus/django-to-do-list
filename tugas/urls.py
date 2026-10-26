@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-from . import notification_views
 
 app_name = "tugas"
 urlpatterns = [
@@ -35,10 +34,10 @@ urlpatterns = [
     path("subtask/toggle/<int:subtask_id>/", views.toggle_subtask, name="toggle_subtask"),
 
     # Notifications
-    path("notifications/", notification_views.get_notifications, name="get_notifications"),
-    path("notifications/mark-read/<int:notification_id>/", notification_views.mark_notification_read, name="mark_notification_read"),
-    path("notifications/mark-all-read/", notification_views.mark_all_notifications_read, name="mark_all_notifications_read"),
-    path("notifications/delete/<int:notification_id>/", notification_views.delete_notification, name="delete_notification"),
+    path("notifications/", views.get_notifications, name="get_notifications"),
+    path("notifications/mark-read/<int:notification_id>/", views.mark_notification_read, name="mark_notification_read"),
+    path("notifications/mark-all-read/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
+    path("notifications/delete/<int:notification_id>/", views.delete_notification, name="delete_notification"),
 
     # Edit Profil
     path("profil/edit/", views.edit_profil_view, name="edit_profil"),

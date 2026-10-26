@@ -1,19 +1,20 @@
 {% extends "sidebar_base.html" %}
 {% load widget_tweaks %}
+{% load static %}
 
 {% block title %}Edit Tugas - Manajemen Tugas{% endblock %}
 {% block page_title %}Edit Tugas{% endblock %}
 
 {% block content %}
-<div class="tambah-tugas-grid" style="display: grid; grid-template-columns: 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; width: 100%;">
-    <!-- Left Column: Form Card -->
-    <div class="animate-fade-up">
-        <div class="card form-card">
+<div class="task-form-grid">
+    <!-- Kolom Kiri: Form Card -->
+    <div>
+        <div class="card" style="padding:1.5rem;">
             {% if form.errors %}
-            <div class="alert alert-danger" style="margin-bottom:20px;">
+            <div style="background-color:var(--destructive-soft);border:1px solid var(--destructive);border-radius:var(--radius-md);padding:0.75rem 1rem;margin-bottom:1.25rem;color:var(--destructive);display:flex;gap:0.5rem;font-size:0.875rem;">
                 <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
                 <div>
-                    <strong>Perbaiki kesalahan berikut:</strong>
+                    <strong style="display:block;margin-bottom:2px;">Periksa kembali input Anda:</strong>
                     {% for field, errors in form.errors.items %}
                     {% for error in errors %}<div>{{ error }}</div>{% endfor %}
                     {% endfor %}
@@ -21,97 +22,88 @@
             </div>
             {% endif %}
 
-            <form method="POST" style="display:flex;flex-direction:column;gap:18px;">
+            <form method="POST" style="display:flex;flex-direction:column;gap:1.125rem;">
                 {% csrf_token %}
 
-                <div>
-                    <label class="form-label">Judul Tugas</label>
+                <div class="form-group">
+                    <label class="form-label" for="id_judul">Judul Tugas</label>
                     {{ form.judul|add_class:"form-input" }}
                 </div>
 
-                <div>
-                    <label class="form-label">Deskripsi</label>
-                    {{ form.deskripsi|add_class:"form-input" }}
+                <div class="form-group">
+                    <label class="form-label" for="id_deskripsi">Deskripsi</label>
+                    {{ form.deskripsi|add_class:"form-textarea"|attr:"rows:3" }}
                 </div>
 
-                <div>
-                    <label class="form-label">Deadline</label>
+                <div class="form-group">
+                    <label class="form-label" for="id_deadline">Batas Waktu</label>
                     {{ form.deadline|add_class:"form-input" }}
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-                    <div>
-                        <label class="form-label">Prioritas</label>
-                        {{ form.prioritas|add_class:"form-input" }}
+                <div class="task-form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="id_prioritas">Prioritas</label>
+                        {{ form.prioritas|add_class:"form-select" }}
                     </div>
-                    <div>
-                        <label class="form-label">Kategori</label>
-                        {{ form.kategori|add_class:"form-input" }}
+                    <div class="form-group">
+                        <label class="form-label" for="id_kategori">Kategori</label>
+                        {{ form.kategori|add_class:"form-select" }}
                     </div>
                 </div>
 
-                <div>
-                    <label class="form-label">Status</label>
-                    {{ form.status|add_class:"form-input" }}
+                <div class="form-group">
+                    <label class="form-label" for="id_status">Status</label>
+                    {{ form.status|add_class:"form-select" }}
                 </div>
 
-                <div style="display:flex;gap:10px;padding-top:8px;">
-                    <button type="submit" class="btn btn-primary">
-                        <i data-lucide="save" style="width:16px;height:16px;"></i> Simpan Perubahan
+                <div style="display:flex;gap:0.75rem;padding-top:0.5rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">
+                        <i data-lucide="save" style="width:14px;height:14px;"></i> Simpan Perubahan
                     </button>
-                    <a href="{% url 'tugas:daftar' %}" class="btn btn-ghost">Batal</a>
+                    <a href="{% url 'tugas:daftar' %}" class="btn btn-outline">Batal</a>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Right Column: Live Preview & Productivity Tips -->
-    <div class="tambah-tugas-sidebar animate-fade-up" style="display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px; height: fit-content;">
-        <!-- Live Preview Card -->
-        <div class="card" style="padding: 24px; border: 1px dashed var(--primary-100); background: var(--card);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
-                <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary);">Pratinjau Live</span>
-                <span class="badge badge-info" style="font-size: 0.7rem; display: flex; align-items: center; gap: 4px;"><i data-lucide="eye" style="width:12px;height:12px;"></i> Live Preview</span>
+    <!-- Kolom Kanan: Pratinjau Live -->
+    <div style="display:flex;flex-direction:column;gap:1.25rem;">
+        <div class="card" style="padding:1.25rem;border-style:dashed;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+                <span style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--foreground-muted);">Pratinjau Tugas</span>
+                <span class="badge badge-secondary" style="font-size:0.6875rem;"><i data-lucide="eye" style="width:10px;height:10px;"></i> Live Preview</span>
             </div>
-            
-            <div id="previewCard" class="card" style="margin: 0; padding: 20px; border: 1px solid var(--border); background: var(--bg); transition: all 0.3s ease;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
-                    <div style="flex: 1; min-width: 0;">
-                        <h4 id="previewTitle" style="font-weight: 700; color: var(--text-primary); margin: 0; word-wrap: break-word; font-size: 1.1rem; line-height: 1.4;">
-                            Judul Tugas Anda
-                        </h4>
-                    </div>
-                    <div id="previewCategoryBadge" class="badge badge-info" style="flex-shrink: 0; font-size: 0.75rem;">
-                        Kerja
-                    </div>
+
+            <div class="card" style="padding:1rem;background-color:var(--surface-muted);border-color:var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.75rem;margin-bottom:0.75rem;">
+                    <h3 id="previewTitle" style="font-weight:700;color:var(--foreground);margin:0;font-size:0.9375rem;line-height:1.4;word-break:break-word;">
+                        Judul Tugas
+                    </h3>
+                    <span id="previewCategoryBadge" class="badge badge-secondary" style="flex-shrink:0;">Kategori</span>
                 </div>
-                
-                <p id="previewDesc" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; word-wrap: break-word; line-height: 1.5; font-style: italic; white-space: pre-wrap;">
-                    Deskripsi tugas akan muncul di sini...
+
+                <p id="previewDesc" style="font-size:0.8125rem;color:var(--foreground-muted);margin:0 0 1rem 0;word-break:break-word;line-height:1.5;white-space:pre-line;">
+                    Deskripsi tugas...
                 </p>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid var(--border); padding-top: 12px; font-size: 0.8rem;">
-                    <div style="display: flex; align-items: center; gap: 6px; color: var(--text-muted);">
-                        <i data-lucide="calendar" style="width: 14px; height: 14px; color: var(--primary);"></i>
-                        <span id="previewDeadline">Belum ditentukan</span>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:0.75rem;font-size:0.75rem;">
+                    <div style="display:flex;align-items:center;gap:4px;color:var(--foreground-muted);">
+                        <i data-lucide="calendar" style="width:12px;height:12px;"></i>
+                        <span id="previewDeadline">Batas waktu</span>
                     </div>
-                    <div id="previewPriorityBadge" class="badge badge-warning" style="font-size: 0.75rem;">
-                        Sedang
-                    </div>
+                    <span id="previewPriorityBadge" class="badge badge-secondary">Sedang</span>
                 </div>
             </div>
         </div>
-        
-        <!-- Productivity Tips -->
-        <div class="card" style="padding: 24px; background: linear-gradient(135deg, var(--card) 0%, var(--bg-secondary) 100%);">
-            <h4 style="font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <i data-lucide="lightbulb" style="width: 18px; height: 18px; color: #F59E0B;"></i> Tips Produktivitas
-            </h4>
-            <ul style="padding-left: 18px; margin: 0; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 10px; line-height: 1.4;">
-                <li><strong>Metode 1-3-5:</strong> Rencanakan 1 tugas besar, 3 tugas sedang, dan 5 tugas kecil dalam satu hari untuk fokus yang seimbang.</li>
-                <li><strong>Gunakan Subtask:</strong> Pecah tugas kompleks menjadi subtask kecil agar progres terasa lebih nyata dan tidak kewalahan.</li>
-                <li><strong>Set Batas Waktu Realistis:</strong> Berikan tenggat waktu yang wajar agar Anda memiliki cukup waktu tanpa tekanan berlebih.</li>
-            </ul>
+
+        <div class="card" style="padding:1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                <i data-lucide="lightbulb" style="width:16px;height:16px;color:var(--warning);"></i>
+                <h4 style="margin:0;font-size:0.875rem;font-weight:700;color:var(--foreground);">Tips Penyesuaian</h4>
+            </div>
+            <p style="font-size:0.8125rem;color:var(--foreground-muted);line-height:1.5;margin:0;">
+                Jika prioritas tugas meningkat, pastikan batas waktu disesuaikan agar muncul di bagian atas jadwal harian dan dashboard Anda.
+            </p>
         </div>
     </div>
 </div>
@@ -119,7 +111,6 @@
 
 {% block scripts %}
 <script>
-    // ── Live Preview Logic ──
     document.addEventListener('DOMContentLoaded', function() {
         const idJudul = document.getElementById('id_judul');
         const idDeskripsi = document.getElementById('id_deskripsi');
@@ -134,103 +125,33 @@
         const previewCategoryBadge = document.getElementById('previewCategoryBadge');
 
         function updatePreview() {
-            // Judul
-            if (idJudul && idJudul.value.trim() !== '') {
-                previewTitle.textContent = idJudul.value;
-                previewTitle.style.fontStyle = 'normal';
-                previewTitle.style.color = 'var(--text-primary)';
-            } else {
-                previewTitle.textContent = 'Judul Tugas Anda';
-                previewTitle.style.fontStyle = 'italic';
-                previewTitle.style.color = 'var(--text-muted)';
+            if (idJudul && previewTitle) {
+                previewTitle.textContent = idJudul.value.trim() || 'Judul Tugas';
             }
-
-            // Deskripsi
-            if (idDeskripsi && idDeskripsi.value.trim() !== '') {
-                previewDesc.textContent = idDeskripsi.value;
-                previewDesc.style.fontStyle = 'normal';
-                previewDesc.style.color = 'var(--text-muted)';
-            } else {
-                previewDesc.textContent = 'Deskripsi tugas akan muncul di sini...';
-                previewDesc.style.fontStyle = 'italic';
-                previewDesc.style.color = 'var(--text-muted)';
+            if (idDeskripsi && previewDesc) {
+                previewDesc.textContent = idDeskripsi.value.trim() || 'Tidak ada deskripsi.';
             }
-
-            // Kategori
-            if (idKategori) {
-                const selectedText = idKategori.options[idKategori.selectedIndex].text;
-                previewCategoryBadge.textContent = selectedText;
+            if (idKategori && previewCategoryBadge && idKategori.selectedIndex >= 0) {
+                previewCategoryBadge.textContent = idKategori.options[idKategori.selectedIndex].text;
             }
-
-            // Prioritas
-            if (idPrioritas) {
-                const priorityValue = idPrioritas.value;
-                const priorityText = idPrioritas.options[idPrioritas.selectedIndex].text;
-                previewPriorityBadge.textContent = priorityText;
-                
-                // Clear classes
-                previewPriorityBadge.className = 'badge';
-                if (priorityValue === 'tinggi') {
-                    previewPriorityBadge.classList.add('badge-danger');
-                } else if (priorityValue === 'sedang') {
-                    previewPriorityBadge.classList.add('badge-warning');
-                } else {
-                    previewPriorityBadge.classList.add('badge-success');
-                }
+            if (idPrioritas && previewPriorityBadge) {
+                const val = idPrioritas.value;
+                previewPriorityBadge.textContent = idPrioritas.options[idPrioritas.selectedIndex].text;
+                previewPriorityBadge.className = 'badge ' + (val === 'tinggi' ? 'badge-destructive' : (val === 'sedang' ? 'badge-warning' : 'badge-secondary'));
             }
-
-            // Deadline
-            if (idDeadline && idDeadline.value !== '') {
-                try {
-                    const dateObj = new Date(idDeadline.value);
-                    if (!isNaN(dateObj.getTime())) {
-                        const options = { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-                        previewDeadline.textContent = dateObj.toLocaleDateString('id-ID', options);
-                    } else {
-                        previewDeadline.textContent = idDeadline.value;
-                    }
-                } catch(e) {
-                    previewDeadline.textContent = idDeadline.value;
-                }
-            } else {
-                previewDeadline.textContent = 'Belum ditentukan';
+            if (idDeadline && previewDeadline) {
+                previewDeadline.textContent = idDeadline.value ? idDeadline.value.replace('T', ' ') : 'Batas waktu belum diset';
             }
         }
 
-        // Add event listeners
         if (idJudul) idJudul.addEventListener('input', updatePreview);
         if (idDeskripsi) idDeskripsi.addEventListener('input', updatePreview);
         if (idDeadline) idDeadline.addEventListener('input', updatePreview);
         if (idPrioritas) idPrioritas.addEventListener('change', updatePreview);
         if (idKategori) idKategori.addEventListener('change', updatePreview);
 
-        // Run once initially
         updatePreview();
+        if (window.lucide) lucide.createIcons();
     });
 </script>
-
-<style>
-    .form-card {
-        padding: 28px;
-    }
-    @media (max-width: 991px) {
-        .tambah-tugas-sidebar {
-            display: none !important;
-        }
-    }
-    @media (max-width: 768px) {
-        .form-card {
-            padding: 16px !important;
-        }
-        .tambah-tugas-grid {
-            gap: 16px !important;
-            padding: 0 4px !important;
-        }
-    }
-    @media (min-width: 992px) {
-        .tambah-tugas-grid {
-            grid-template-columns: 1.4fr 1fr !important;
-        }
-    }
-</style>
 {% endblock %}

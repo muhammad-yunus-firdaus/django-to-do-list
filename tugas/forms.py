@@ -6,7 +6,6 @@ from django.contrib.auth.forms import AuthenticationForm
 
 
 class CustomAuthenticationForm(AuthenticationForm):
-    # Form login custom, cuma username sama password
     username = forms.CharField(
         widget=forms.TextInput(attrs={
             'class': 'form-control',
@@ -122,8 +121,22 @@ class TugasForm(forms.ModelForm):
         if not deadline:
             raise forms.ValidationError("Deadline tidak boleh kosong!")
 
-        if deadline < now():
+        # Saat membuat tugas baru: deadline wajib di masa depan
+        is_new = self.instance.pk is None
+        if is_new and deadline < now():
             raise forms.ValidationError("Deadline harus di masa depan!")
+
+        # Saat mengedit tugas lama: izinkan jika deadline tidak lebih lampau dari nilai DB
+        if not is_new and deadline < now():
+            try:
+                from .models import Tugas as TugasModel
+                original = TugasModel.objects.get(pk=self.instance.pk)
+                if deadline < original.deadline:
+                    raise forms.ValidationError(
+                        "Deadline baru tidak boleh lebih lampau dari deadline sebelumnya."
+                    )
+            except TugasModel.DoesNotExist:
+                pass
 
         return deadline
 

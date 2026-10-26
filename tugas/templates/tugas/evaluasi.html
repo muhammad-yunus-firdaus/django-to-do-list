@@ -1,265 +1,217 @@
 {% extends "sidebar_base.html" %}
 {% load widget_tweaks %}
+{% load static %}
 
 {% block title %}Evaluasi Mingguan - Manajemen Tugas{% endblock %}
 {% block page_title %}Evaluasi Mingguan{% endblock %}
 
 {% block content %}
-<!-- Week Period Header -->
-<div class="card animate-fade-up" style="padding:20px;margin-bottom:20px;">
-    <div style="display:flex;align-items:center;gap:12px;">
-        <div style="width:44px;height:44px;border-radius:var(--radius-lg);background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
-            <i data-lucide="calendar-range" style="width:22px;height:22px;color:var(--primary);"></i>
-        </div>
-        <div>
-            <h3 style="margin:0;font-size:1.1rem;">Minggu Ini</h3>
-            <p class="text-sm" style="margin:0;color:var(--text-muted);">
-                {{ minggu_mulai|date:"d F" }} — {{ minggu_selesai|date:"d F Y" }}
-            </p>
+<!-- Periode Minggu Header Card -->
+<div class="card" style="margin-bottom:1.25rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div style="width:40px;height:40px;border-radius:var(--radius-md);background-color:var(--surface-muted);display:flex;align-items:center;justify-content:center;color:var(--primary);">
+                <i data-lucide="calendar-range" style="width:20px;height:20px;"></i>
+            </div>
+            <div>
+                <h2 style="margin:0;font-size:1rem;font-weight:700;color:var(--foreground);">Periode Minggu Ini</h2>
+                <p style="margin:0.25rem 0 0 0;font-size:0.8125rem;color:var(--foreground-muted);">
+                    {{ minggu_mulai|date:"d F" }} — {{ minggu_selesai|date:"d F Y" }}
+                </p>
+            </div>
         </div>
         {% if evaluasi_existing %}
-        <span class="badge badge-success" style="margin-left:auto;">
-            <i data-lucide="check" style="width:12px;height:12px;"></i> Tersimpan
+        <span class="badge badge-success">
+            <i data-lucide="check" style="width:12px;height:12px;"></i> Evaluasi Tersimpan
         </span>
         {% endif %}
     </div>
 </div>
 
-<!-- Stats Grid -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
-    <!-- Tugas Stats -->
-    <div class="card animate-fade-up stagger-1" style="padding:20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-            <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--primary-light);display:flex;align-items:center;justify-content:center;">
-                <i data-lucide="list-todo" style="width:18px;height:18px;color:var(--primary);"></i>
-            </div>
-            <h3 style="margin:0;font-size:.95rem;">Tugas Utama</h3>
+<!-- Stats Grid KPI (Tugas vs Aktivitas) -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:1rem;margin-bottom:1.25rem;">
+    <!-- Tugas Utama Stats -->
+    <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+            <span style="font-size:0.8125rem;font-weight:600;color:var(--foreground-muted);">Tugas Utama</span>
+            <i data-lucide="list-todo" style="width:18px;height:18px;color:var(--primary);"></i>
         </div>
-
-        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-            <span style="font-size:2rem;font-weight:800;color:var(--primary);">{{ stats.persen_tugas|floatformat:0 }}%</span>
-            <span class="text-sm" style="color:var(--text-muted);">penyelesaian</span>
+        <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.75rem;font-weight:700;color:var(--primary);">{{ stats.persen_tugas|floatformat:0 }}%</span>
+            <span style="font-size:0.8125rem;color:var(--foreground-muted);">Tingkat Penyelesaian</span>
         </div>
-
-        <div class="progress-bar" style="margin-bottom:8px;">
-            <div class="progress-fill" style="width:{{ stats.persen_tugas|floatformat:0 }}%;"></div>
+        <div style="background-color:var(--surface-muted);border-radius:var(--radius-full);height:6px;overflow:hidden;margin-bottom:0.75rem;">
+            <div style="height:100%;background-color:var(--primary);width:{{ stats.persen_tugas|floatformat:0 }}%;transition:width 0.3s ease;"></div>
         </div>
-
-        <div class="text-xs" style="color:var(--text-muted);">
-            <span style="font-weight:600;color:var(--accent-success);">{{ stats.tugas_selesai }}</span> selesai dari
-            <span style="font-weight:600;color:var(--text-primary);">{{ stats.total_tugas }}</span> tugas
+        <div style="font-size:0.75rem;color:var(--foreground-muted);">
+            <strong style="color:var(--success);">{{ stats.tugas_selesai }}</strong> selesai dari {{ stats.total_tugas }} tugas minggu ini
         </div>
     </div>
 
-    <!-- Aktivitas Stats -->
-    <div class="card animate-fade-up stagger-2" style="padding:20px;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-            <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--accent-success-light);display:flex;align-items:center;justify-content:center;">
-                <i data-lucide="calendar-check" style="width:18px;height:18px;color:var(--accent-success);"></i>
-            </div>
-            <h3 style="margin:0;font-size:.95rem;">Aktivitas Harian</h3>
+    <!-- Aktivitas Harian Stats -->
+    <div class="card" style="padding:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+            <span style="font-size:0.8125rem;font-weight:600;color:var(--foreground-muted);">Aktivitas Harian</span>
+            <i data-lucide="calendar-check" style="width:18px;height:18px;color:var(--success);"></i>
         </div>
-
-        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-            <span style="font-size:2rem;font-weight:800;color:var(--accent-success);">{{ stats.persen_aktivitas|floatformat:0 }}%</span>
-            <span class="text-sm" style="color:var(--text-muted);">penyelesaian</span>
+        <div style="display:flex;align-items:baseline;gap:0.5rem;margin-bottom:0.5rem;">
+            <span style="font-size:1.75rem;font-weight:700;color:var(--success);">{{ stats.persen_aktivitas|floatformat:0 }}%</span>
+            <span style="font-size:0.8125rem;color:var(--foreground-muted);">Tingkat Penyelesaian</span>
         </div>
-
-        <div class="progress-bar" style="margin-bottom:8px;">
-            <div class="progress-fill" style="width:{{ stats.persen_aktivitas|floatformat:0 }}%;background:linear-gradient(90deg, #10B981, #059669);"></div>
+        <div style="background-color:var(--surface-muted);border-radius:var(--radius-full);height:6px;overflow:hidden;margin-bottom:0.75rem;">
+            <div style="height:100%;background-color:var(--success);width:{{ stats.persen_aktivitas|floatformat:0 }}%;transition:width 0.3s ease;"></div>
         </div>
-
-        <div class="text-xs" style="color:var(--text-muted);">
-            <span style="font-weight:600;color:var(--accent-success);">{{ stats.aktivitas_selesai }}</span> selesai dari
-            <span style="font-weight:600;color:var(--text-primary);">{{ stats.total_aktivitas }}</span> aktivitas
+        <div style="font-size:0.75rem;color:var(--foreground-muted);">
+            <strong style="color:var(--success);">{{ stats.aktivitas_selesai }}</strong> selesai dari {{ stats.total_aktivitas }} aktivitas harian
         </div>
     </div>
 </div>
 
-<!-- Rincian Kegiatan Minggu Ini -->
-<div class="card animate-fade-up" style="padding:24px;margin-bottom:24px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:14px;">
-        <i data-lucide="list-checks" style="width:22px;height:22px;color:var(--primary);"></i>
-        <h3 style="margin:0;font-size:1.1rem;">Rincian Kegiatan Minggu Ini</h3>
+<!-- Rincian Kegiatan Minggu Ini (Tabs) -->
+<div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-header" style="border-bottom:none;padding-bottom:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+            <i data-lucide="list-checks" style="width:18px;height:18px;color:var(--primary);"></i>
+            <h3 class="card-title" style="margin:0;">Rincian Agenda Minggu Ini</h3>
+        </div>
+        <div class="segmented-control">
+            <button onclick="switchTab('tugas')" id="tab-btn-tugas" class="segmented-item active" type="button">
+                Tugas Utama
+            </button>
+            <button onclick="switchTab('aktivitas')" id="tab-btn-aktivitas" class="segmented-item" type="button">
+                Aktivitas Harian
+            </button>
+        </div>
     </div>
 
-    <!-- Tabs Header -->
-    <div style="display:flex;gap:10px;border-bottom:2px solid var(--border);padding-bottom:1px;margin-bottom:20px;">
-        <button onclick="switchTab('tugas')" id="tab-btn-tugas" class="btn-tab active" 
-            style="background:none;border:none;padding:10px 16px;font-size:.9rem;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);cursor:pointer;transition:all 0.2s;">
-            Tugas Utama
-        </button>
-        <button onclick="switchTab('aktivitas')" id="tab-btn-aktivitas" class="btn-tab"
-            style="background:none;border:none;padding:10px 16px;font-size:.9rem;font-weight:600;color:var(--text-muted);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;">
-            Aktivitas Harian
-        </button>
-    </div>
-
-    <!-- Tab 1: Tugas Utama Content -->
-    <div id="tab-content-tugas" class="tab-pane">
-        {% if tugas_minggu_ini %}
-        <div style="display:flex;flex-direction:column;gap:12px;">
-            {% for tg in tugas_minggu_ini %}
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg-secondary);flex-wrap:wrap;gap:10px;">
-                <div style="flex:1;min-width:240px;">
-                    <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);">{{ tg.judul }}</div>
-                    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
-                        <span class="text-xs" style="color:var(--text-muted);display:flex;align-items:center;gap:4px;">
-                            <i data-lucide="clock" style="width:12px;height:12px;"></i>
-                            Deadline: {{ tg.deadline|date:"d M Y, H:i" }}
-                        </span>
-                        <span class="badge {% if tg.prioritas == 'tinggi' %}badge-danger{% elif tg.prioritas == 'sedang' %}badge-warning{% else %}badge-info{% endif %}" style="font-size:.65rem;padding:2px 6px;">
-                            {{ tg.get_prioritas_display }}
-                        </span>
-                        <span class="badge badge-muted" style="font-size:.65rem;padding:2px 6px;">
-                            {{ tg.get_kategori_display }}
-                        </span>
+    <div class="card-content" style="padding-top:1rem;">
+        <!-- Tab 1: Tugas Utama -->
+        <div id="tab-content-tugas">
+            {% if tugas_minggu_ini %}
+            <div style="display:flex;flex-direction:column;gap:0.625rem;">
+                {% for tg in tugas_minggu_ini %}
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem 1rem;padding:0.875rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);text-align:left;">
+                    <div style="display:flex;flex-direction:column;gap:4px;min-width:180px;text-align:left;">
+                        <span style="font-weight:600;font-size:0.875rem;color:var(--foreground);line-height:1.35;word-break:break-word;">{{ tg.judul }}</span>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:0.8125rem;color:var(--foreground-muted);">
+                            <i data-lucide="calendar" style="width:13px;height:13px;"></i>
+                            <span>Deadline: {{ tg.deadline|date:"d M, H:i" }}</span>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    {% if tg.status == 'selesai' %}
-                    <span class="badge badge-success" style="padding:4px 10px;font-size:.75rem;">Selesai</span>
-                    {% else %}
-                    <span class="badge badge-danger" style="padding:4px 10px;font-size:.75rem;">Belum Selesai</span>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state" style="padding:24px 0;">
-            <i data-lucide="info" style="width:36px;height:36px;opacity:0.5;margin-bottom:8px;"></i>
-            <p style="font-size:.9rem;color:var(--text-muted);margin:0;">Tidak ada tugas dengan deadline minggu ini.</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Tab 2: Aktivitas Harian Content -->
-    <div id="tab-content-aktivitas" class="tab-pane" style="display:none;">
-        {% if aktivitas_minggu_ini %}
-        <div style="display:flex;flex-direction:column;gap:12px;">
-            {% for akt in aktivitas_minggu_ini %}
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--bg-secondary);flex-wrap:wrap;gap:10px;">
-                <div style="flex:1;min-width:240px;">
-                    <div style="font-weight:600;font-size:.95rem;color:var(--text-primary);">{{ akt.judul }}</div>
-                    <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
-                        <span class="text-xs" style="color:var(--text-muted);display:flex;align-items:center;gap:4px;">
-                            <i data-lucide="calendar" style="width:12px;height:12px;"></i>
-                            {{ akt.tanggal|date:"l, d M Y" }}
-                        </span>
-                        <span class="text-xs" style="color:var(--text-muted);display:flex;align-items:center;gap:4px;">
-                            <i data-lucide="clock" style="width:12px;height:12px;"></i>
-                            {{ akt.jam_mulai|time:"H:i" }} - {{ akt.jam_selesai|time:"H:i" }} ({{ akt.durasi_menit }} mnt)
-                        </span>
-                        {% if akt.is_habit %}
-                        <span class="badge badge-info" style="font-size:.65rem;padding:2px 6px;">
-                            <i data-lucide="repeat" style="width:10px;height:10px;"></i> Habit
-                        </span>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
+                        <span class="badge badge-secondary">{{ tg.get_prioritas_display }}</span>
+                        {% if tg.status == 'selesai' %}
+                        <span class="badge badge-success">Selesai</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Belum</span>
                         {% endif %}
                     </div>
                 </div>
-                <div>
-                    {% if akt.status == 'selesai' %}
-                    <span class="badge badge-success" style="padding:4px 10px;font-size:.75rem;">Selesai</span>
-                    {% elif akt.status == 'terlewat' %}
-                    <span class="badge badge-danger" style="padding:4px 10px;font-size:.75rem;">Terlewat</span>
-                    {% else %}
-                    <span class="badge badge-muted" style="padding:4px 10px;font-size:.75rem;">Belum</span>
-                    {% endif %}
-                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            {% else %}
+            <div style="padding:1.5rem;text-align:center;color:var(--foreground-muted);font-size:0.8125rem;">
+                Tidak ada tugas dengan deadline pada minggu ini.
+            </div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="empty-state" style="padding:24px 0;">
-            <i data-lucide="info" style="width:36px;height:36px;opacity:0.5;margin-bottom:8px;"></i>
-            <p style="font-size:.9rem;color:var(--text-muted);margin:0;">Tidak ada aktivitas harian minggu ini.</p>
+
+        <!-- Tab 2: Aktivitas Harian -->
+        <div id="tab-content-aktivitas" style="display:none;">
+            {% if aktivitas_minggu_ini %}
+            <div style="display:flex;flex-direction:column;gap:0.625rem;">
+                {% for akt in aktivitas_minggu_ini %}
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem 1rem;padding:0.875rem 1.25rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);text-align:left;">
+                    <div style="display:flex;flex-direction:column;gap:4px;min-width:180px;text-align:left;">
+                        <span style="font-weight:600;font-size:0.875rem;color:var(--foreground);line-height:1.35;word-break:break-word;">{{ akt.judul }}</span>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:0.8125rem;color:var(--foreground-muted);">
+                            <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                            <span>{{ akt.tanggal|date:"d M" }} ({{ akt.jam_mulai|time:"H:i" }} — {{ akt.jam_selesai|time:"H:i" }})</span>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
+                        {% if akt.is_habit %}<span class="badge badge-outline">Habit</span>{% endif %}
+                        {% if akt.status == 'selesai' %}
+                        <span class="badge badge-success">Selesai</span>
+                        {% elif akt.status == 'terlewat' %}
+                        <span class="badge badge-destructive">Terlewat</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Belum</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="padding:1.5rem;text-align:center;color:var(--foreground-muted);font-size:0.8125rem;">
+                Tidak ada aktivitas harian pada minggu ini.
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 </div>
 
-<!-- Evaluasi Form -->
-<div class="card animate-fade-up" style="padding:24px;margin-bottom:24px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <i data-lucide="pencil-line" style="width:20px;height:20px;color:var(--primary);"></i>
-        <h3 style="margin:0;font-size:1rem;">Catatan & Refleksi Mingguan</h3>
+<!-- Form Catatan & Refleksi Mingguan -->
+<div class="card" style="padding:1.25rem;margin-bottom:1.25rem;">
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+        <i data-lucide="pencil-line" style="width:18px;height:18px;color:var(--primary);"></i>
+        <h3 class="card-title" style="margin:0;">Catatan & Refleksi Mingguan</h3>
     </div>
 
     <form method="POST">
         {% csrf_token %}
-
-        <div style="margin-bottom:16px;">
-            {{ form.catatan_evaluasi|add_class:"form-input" }}
+        <div class="form-group" style="margin-bottom:1rem;">
+            {{ form.catatan_evaluasi|add_class:"form-textarea"|attr:"rows:4"|attr:"placeholder:Tuliskan pencapaian Anda, kendala yang dihadapi, dan rencana perbaikan untuk minggu depan..." }}
         </div>
-
-        <div style="display:flex;gap:10px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
             <button type="submit" class="btn btn-primary">
-                <i data-lucide="save" style="width:16px;height:16px;"></i>
-                {% if evaluasi_existing %}Update Evaluasi{% else %}Simpan Evaluasi{% endif %}
+                <i data-lucide="save" style="width:14px;height:14px;"></i>
+                <span>{% if evaluasi_existing %}Perbarui Evaluasi{% else %}Simpan Evaluasi{% endif %}</span>
             </button>
-            <span class="text-xs" style="color:var(--text-muted);">
-                Statistik akan otomatis dihitung saat disimpan
-            </span>
+            <span style="font-size:0.75rem;color:var(--foreground-muted);">Statistik performa akan otomatis dihitung saat Anda menyimpan refleksi ini.</span>
         </div>
     </form>
 </div>
 
-<!-- Riwayat Evaluasi -->
+<!-- Riwayat Evaluasi Sebelumnya -->
 {% if evaluasi_history %}
-<div class="animate-fade-up">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-        <i data-lucide="history" style="width:20px;height:20px;color:var(--text-secondary);"></i>
-        <h3 style="margin:0;font-size:1.05rem;">Riwayat Evaluasi</h3>
+<div>
+    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+        <i data-lucide="history" style="width:16px;height:16px;color:var(--foreground-muted);"></i>
+        <h3 style="margin:0;font-size:0.9375rem;font-weight:700;color:var(--foreground);">Riwayat Evaluasi Lalu</h3>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:12px;">
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
         {% for ev in evaluasi_history %}
-        <div class="card" style="padding:20px;cursor:pointer;" onclick="toggleRiwayat(this)">
-            <!-- Header (always visible) -->
-            <div style="display:flex;align-items:center;justify-content:space-between;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:36px;height:36px;border-radius:var(--radius-md);background:var(--bg-secondary);display:flex;align-items:center;justify-content:center;">
-                        <i data-lucide="calendar" style="width:16px;height:16px;color:var(--text-muted);"></i>
+        <div class="card" style="padding:1rem;cursor:pointer;" onclick="toggleRiwayat(this)">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    <div style="width:32px;height:32px;border-radius:var(--radius-sm);background-color:var(--surface-muted);display:flex;align-items:center;justify-content:center;">
+                        <i data-lucide="calendar" style="width:16px;height:16px;color:var(--foreground-muted);"></i>
                     </div>
                     <div>
-                        <div style="font-weight:600;font-size:.9rem;">
+                        <div style="font-weight:600;font-size:0.875rem;color:var(--foreground);">
                             {{ ev.minggu_mulai|date:"d M" }} — {{ ev.minggu_selesai|date:"d M Y" }}
                         </div>
-                        <div class="text-xs" style="color:var(--text-muted);">
-                            Disimpan {{ ev.created_at|date:"d M Y, H:i" }}
+                        <div style="font-size:0.75rem;color:var(--foreground-muted);">
+                            Disimpan pada {{ ev.created_at|date:"d M Y, H:i" }}
                         </div>
                     </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <span class="badge badge-info">Tugas {{ ev.persen_tugas|floatformat:0 }}%</span>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="badge badge-secondary">Tugas {{ ev.persen_tugas|floatformat:0 }}%</span>
                     <span class="badge badge-success">Aktivitas {{ ev.persen_aktivitas|floatformat:0 }}%</span>
-                    <i data-lucide="chevron-down" class="riwayat-chevron" style="width:16px;height:16px;color:var(--text-muted);transition:transform 0.2s;"></i>
+                    <i data-lucide="chevron-down" class="riwayat-chevron" style="width:16px;height:16px;color:var(--foreground-muted);transition:transform 0.2s;"></i>
                 </div>
             </div>
 
-            <!-- Detail (hidden by default) -->
-            <div class="riwayat-detail" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;">
-                        <div class="text-xs" style="color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Tugas</div>
-                        <div style="font-weight:700;font-size:1.1rem;color:var(--primary);margin-top:4px;">{{ ev.persen_tugas|floatformat:0 }}%</div>
-                        <div class="text-xs" style="color:var(--text-muted);">{{ ev.tugas_selesai }}/{{ ev.total_tugas }} selesai</div>
-                    </div>
-                    <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px;">
-                        <div class="text-xs" style="color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Aktivitas</div>
-                        <div style="font-weight:700;font-size:1.1rem;color:var(--accent-success);margin-top:4px;">{{ ev.persen_aktivitas|floatformat:0 }}%</div>
-                        <div class="text-xs" style="color:var(--text-muted);">{{ ev.aktivitas_selesai }}/{{ ev.total_aktivitas }} selesai</div>
-                    </div>
-                </div>
-
+            <div class="riwayat-detail" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
                 {% if ev.catatan_evaluasi %}
-                <div style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:14px;">
-                    <div class="text-xs" style="color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Catatan</div>
-                    <div style="font-size:.9rem;color:var(--text-primary);line-height:1.6;white-space:pre-wrap;">{{ ev.catatan_evaluasi }}</div>
+                <div style="background-color:var(--surface-muted);border-radius:var(--radius-md);padding:0.75rem;font-size:0.8125rem;color:var(--foreground);line-height:1.5;white-space:pre-wrap;">
+                    {{ ev.catatan_evaluasi }}
                 </div>
                 {% else %}
-                <p class="text-xs" style="color:var(--text-muted);font-style:italic;">Tidak ada catatan untuk minggu ini.</p>
+                <span style="font-size:0.75rem;color:var(--foreground-muted);font-style:italic;">Tidak ada catatan tertulis.</span>
                 {% endif %}
             </div>
         </div>
@@ -280,47 +232,27 @@
         if (tabName === 'tugas') {
             tabTugas.style.display = 'block';
             tabAktivitas.style.display = 'none';
-            btnTugas.style.color = 'var(--primary)';
-            btnTugas.style.borderBottomColor = 'var(--primary)';
-            btnAktivitas.style.color = 'var(--text-muted)';
-            btnAktivitas.style.borderBottomColor = 'transparent';
+            btnTugas.className = 'segmented-item active';
+            btnAktivitas.className = 'segmented-item';
         } else {
             tabTugas.style.display = 'none';
             tabAktivitas.style.display = 'block';
-            btnTugas.style.color = 'var(--text-muted)';
-            btnTugas.style.borderBottomColor = 'transparent';
-            btnAktivitas.style.color = 'var(--primary)';
-            btnAktivitas.style.borderBottomColor = 'var(--primary)';
+            btnTugas.className = 'segmented-item';
+            btnAktivitas.className = 'segmented-item active';
         }
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 
     function toggleRiwayat(card) {
         const detail = card.querySelector('.riwayat-detail');
         const chevron = card.querySelector('.riwayat-chevron');
-
         if (detail.style.display === 'none') {
             detail.style.display = 'block';
-            detail.style.animation = 'fadeUp 0.2s ease';
-            chevron.style.transform = 'rotate(180deg)';
+            if (chevron) chevron.style.transform = 'rotate(180deg)';
         } else {
             detail.style.display = 'none';
-            chevron.style.transform = 'rotate(0deg)';
+            if (chevron) chevron.style.transform = 'rotate(0deg)';
         }
     }
-
-    // SweetAlert2 auto-trigger dari Django messages
-    document.addEventListener('DOMContentLoaded', function() {
-        {% for message in messages %}
-        Swal.fire({
-            icon: '{% if message.tags == "success" %}success{% elif message.tags == "danger" or message.tags == "error" %}error{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
-            title: '{% if message.tags == "success" %}Berhasil!{% elif message.tags == "danger" or message.tags == "error" %}Gagal!{% else %}Info{% endif %}',
-            text: '{{ message|escapejs }}',
-            confirmButtonColor: '#4F46E5',
-            timer: 3000,
-            timerProgressBar: true,
-        });
-        {% endfor %}
-    });
 </script>
 {% endblock %}

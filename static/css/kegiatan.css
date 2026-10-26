@@ -1,210 +1,108 @@
-/* Premium visual layout for Kegiatan & Acara cards */
+/**
+ * KEGIATAN.CSS — Shadcn/ui Kegiatan & Acara Cards Grid
+ * Zero gradient, solid tokens, <200 lines
+ */
+
 .kegiatan-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 16px;
+    margin-top: 16px;
 }
 
 .keg-card {
-    border-radius: 1.25rem;
-    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
     border: 1px solid var(--border);
     box-shadow: var(--shadow-sm);
-    padding: 20px;
-    transition: all 0.25s ease;
+    padding: 18px;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     position: relative;
-    overflow: hidden;
 }
 
 .keg-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
-    border-color: var(--primary);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-popover);
 }
 
-.keg-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-}
-
-.keg-card.cat-akademik::before { background: #14b8a6; } /* Teal */
-.keg-card.cat-pekerjaan::before { background: #F59E0B; } /* Amber */
-.keg-card.cat-keluarga::before { background: #EF4444; } /* Red */
-.keg-card.cat-pribadi_sosial::before { background: #10B981; } /* Emerald */
-.keg-card.cat-acara::before { background: #84cc16; } /* Lime */
-.keg-card.cat-lainnya::before { background: #64748B; } /* Slate */
+.keg-card.cat-akademik { border-left: 3px solid var(--accent-blue); }
+.keg-card.cat-pekerjaan { border-left: 3px solid var(--warning); }
+.keg-card.cat-keluarga { border-left: 3px solid var(--destructive); }
+.keg-card.cat-pribadi_sosial { border-left: 3px solid var(--success); }
+.keg-card.cat-acara { border-left: 3px solid var(--primary); }
+.keg-card.cat-lainnya { border-left: 3px solid var(--foreground-muted); }
 
 .keg-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .keg-title {
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--text-primary);
-    line-height: 1.4;
+    color: var(--foreground);
+    line-height: 1.35;
     margin: 0;
+    word-break: break-word;
 }
 
 .keg-meta-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.825rem;
-    color: var(--text-secondary);
-    margin-top: 6px;
+    font-size: 0.8125rem;
+    color: var(--foreground-muted);
+    margin-top: 4px;
 }
 
 .keg-meta-item i {
-    color: var(--text-muted);
+    color: var(--foreground-muted);
     flex-shrink: 0;
 }
 
 .keg-notes {
-    background: var(--bg-secondary);
+    background: var(--surface-muted);
     padding: 10px 12px;
-    border-radius: 0.75rem;
-    font-size: 0.825rem;
-    color: var(--text-secondary);
-    margin: 12px 0;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    color: var(--foreground);
+    margin: 10px 0;
     border: 1px solid var(--border);
-    min-height: 50px;
+    min-height: 44px;
     word-break: break-word;
+    line-height: 1.5;
 }
 
 .keg-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 14px;
-    padding-top: 14px;
+    margin-top: 12px;
+    padding-top: 12px;
     border-top: 1px solid var(--border);
 }
 
-/* Filters spacing */
 .filter-wrapper {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
     flex-wrap: wrap;
-}
-
-/* Modal Form Custom Classes & Responsive Grid Layout */
-.swal-kegiatan-modal {
-    max-width: 720px !important;
-    width: 90% !important;
-    border-radius: 1.25rem !important;
-    padding: 1.75rem !important;
-}
-
-.swal-kegiatan-modal .form-input, 
-.swal-kegiatan-modal .form-select,
-.swal-custom-modal .form-input, 
-.swal-custom-modal .form-select {
-    height: 42px;
-    border-radius: 0.75rem !important;
-    border: 1px solid #CBD5E1 !important;
-    font-family: inherit;
-    padding: 8px 14px !important;
-    font-size: 0.9rem !important;
-    background-color: #ffffff !important;
-    color: #1E293B !important;
-}
-
-.swal-kegiatan-modal .form-input:focus, 
-.swal-kegiatan-modal .form-select:focus,
-.swal-custom-modal .form-input:focus, 
-.swal-custom-modal .form-select:focus {
-    border-color: var(--primary) !important;
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
-}
-
-.swal-kegiatan-modal .form-select,
-.swal-custom-modal .form-select {
-    padding-right: 2.5rem !important;
-}
-
-
-.swal-form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    text-align: left;
-    margin-top: 1rem;
-}
-
-.swal-form-col-full {
-    grid-column: span 2;
+    gap: 0.75rem;
 }
 
 @media (max-width: 640px) {
-    .swal-form-grid {
+    .kegiatan-grid {
         grid-template-columns: 1fr;
+    }
+    .filter-wrapper {
+        flex-direction: column;
+        align-items: stretch;
         gap: 0.75rem;
     }
-    .swal-form-col-full {
-        grid-column: span 1;
-    }
 }
-
-/* Hide SweetAlert2 built-in validation container entirely */
-.swal-kegiatan-modal .swal2-validation-message {
-    display: none !important;
-}
-
-/* Modal Sukses Ringkas & Modern */
-.swal-success-popup-custom {
-    width: 380px !important;
-    padding: 1.75rem 1.25rem !important;
-    border-radius: 1.25rem !important; /* 20px */
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
-}
-
-.swal-success-popup-custom .swal2-icon {
-    margin: 0.5rem auto 1rem auto !important;
-    scale: 0.85;
-}
-
-.swal-success-title-custom {
-    font-size: 1.25rem !important;
-    font-weight: 700 !important;
-    color: #1e293b !important;
-    padding: 0 !important;
-    margin-bottom: 0.35rem !important;
-}
-
-.swal-success-text-custom {
-    font-size: 0.9rem !important;
-    color: #64748b !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-/* Sembunyikan total area tombol/actions */
-.swal-success-popup-custom .swal2-actions {
-    display: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-@media (max-width: 576px) {
-    .swal-kegiatan-modal {
-        width: 92% !important;
-        padding: 1.25rem !important;
-    }
-}
-

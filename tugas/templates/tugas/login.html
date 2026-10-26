@@ -5,65 +5,66 @@
 
 {% block content %}
 <div class="auth-page">
-    <div class="auth-card animate-fade-up">
+    <div class="auth-card">
         <!-- Logo -->
-        <div style="text-align:center;margin-bottom:8px;">
-            <img src="{% static 'images/yunus_remove.png' %}" alt="Logo" 
-                style="width:80px;height:80px;object-fit:contain;">
+        <div class="flex justify-center mb-3">
+            <img src="{% static 'images/yunus_remove.png' %}" alt="Logo" class="w-16 h-16 object-contain">
         </div>
 
         <h1 class="auth-title">Selamat Datang</h1>
-        <p class="auth-subtitle">Masuk ke akunmu untuk mengelola tugas</p>
+        <p class="auth-subtitle">Masuk ke akun untuk mengelola tugas dan jadwal</p>
 
         {% if form.errors %}
-        <div class="alert alert-danger" style="margin-bottom:20px;">
-            <i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
-            Username atau password salah. Periksa kembali.
+        <div class="alert alert-destructive mb-4">
+            <i data-lucide="alert-circle"></i>
+            <span>Username atau password salah. Periksa kembali.</span>
         </div>
         {% endif %}
 
-        <form method="post">
+        <form method="post" class="flex flex-col gap-4">
             {% csrf_token %}
 
-            <div style="margin-bottom:18px;">
-                <label class="form-label">Username</label>
-                <div style="position:relative;">
-                    <i data-lucide="user"
-                        style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);"></i>
-                    <input type="text" name="username" placeholder="Masukkan username" autocomplete="username" required
-                        style="padding-left:40px;">
+            <div class="form-group mb-0">
+                <label class="form-label" for="id_username">Username</label>
+                <div class="relative">
+                    <span class="input-icon-prefix">
+                        <i data-lucide="user"></i>
+                    </span>
+                    <input type="text" id="id_username" name="username" class="form-input has-prefix" placeholder="Masukkan username" autocomplete="username" required>
                 </div>
             </div>
 
-            <div style="margin-bottom:24px;">
-                <label class="form-label">Password</label>
-                <div style="position:relative;">
-                    <i data-lucide="lock"
-                        style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);"></i>
-                    <input type="password" name="password" placeholder="Masukkan password"
-                        autocomplete="current-password" required style="padding-left:40px;padding-right:40px;">
-                    <button type="button" onclick="togglePasswordVisibility(this)"
-                        style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;z-index:10;"
-                        title="Tampilkan/Sembunyikan Password">
-                        <i data-lucide="eye" style="width:18px;height:18px;color:var(--text-muted);"></i>
+            <div class="form-group mb-0">
+                <label class="form-label" for="id_password">Password</label>
+                <div class="relative">
+                    <span class="input-icon-prefix">
+                        <i data-lucide="lock"></i>
+                    </span>
+                    <input type="password" id="id_password" name="password" class="form-input has-prefix has-suffix" placeholder="Masukkan password" autocomplete="current-password" required>
+                    <button type="button" class="input-icon-suffix btn-ghost-icon" onclick="togglePasswordVisibility(this)" title="Lihat/Sembunyikan Password" tabindex="-1">
+                        <i data-lucide="eye"></i>
                     </button>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;font-size:.95rem;">
-                <i data-lucide="log-in" style="width:18px;height:18px;"></i>
-                Masuk
+            <button type="submit" class="btn btn-primary w-full mt-2">
+                <i data-lucide="log-in"></i>
+                <span>Masuk</span>
             </button>
         </form>
 
-        <p style="text-align:center;margin-top:24px;font-size:.875rem;color:var(--text-muted);">
+        <div class="text-center mt-6 text-sm text-muted">
             Belum punya akun?
-            <a href="{% url 'tugas:register' %}" style="font-weight:600;">Daftar di sini</a>
-        </p>
+            <a href="{% url 'tugas:register' %}" class="font-medium text-foreground hover:underline ml-1">Daftar sekarang</a>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>document.addEventListener("DOMContentLoaded", () => lucide.createIcons());</script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        if (window.lucide) lucide.createIcons();
+    });
+</script>
 {% endblock %}

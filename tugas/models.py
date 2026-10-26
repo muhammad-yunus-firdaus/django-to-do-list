@@ -62,14 +62,29 @@ class Tugas(models.Model):
     )
 
     def clean(self):
-        # Cek deadline biar ga kelewat dari waktu sekarang
-        # Khusus buat tugas yang masih belum selesai aja
-        if self.deadline:
-            if self.deadline < now() and self.status.lower() == "belum":
-                raise ValidationError("⛔ Deadline tidak boleh lebih kecil dari waktu sekarang untuk tugas yang belum selesai.")
+        """Validasi deadline: hanya tolak deadline lampau saat membuat tugas baru.
+        Saat edit, izinkan jika deadline tidak diubah atau tidak lebih lampau dari sebelumnya.
+        """
+        if self.deadline and self.status.lower() == 'belum':
+            if self.pk is None:
+                # Tugas baru: deadline wajib di masa depan
+                if self.deadline < now():
+                    raise ValidationError(
+                        "Deadline tidak boleh di masa lampau untuk tugas yang belum selesai."
+                    )
+            else:
+                # Tugas lama (edit): hanya tolak jika deadline DIUBAH menjadi lebih lampau
+                try:
+                    original = Tugas.objects.get(pk=self.pk)
+                    if self.deadline < original.deadline and self.deadline < now():
+                        raise ValidationError(
+                            "Deadline baru tidak boleh lebih lampau dari deadline sebelumnya."
+                        )
+                except Tugas.DoesNotExist:
+                    pass
 
     def save(self, *args, **kwargs):
-        # Jalanin validasi dulu sebelum disimpan
+        """Jalankan validasi sebelum menyimpan."""
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -136,7 +151,7 @@ class Subtask(models.Model):
     )
 
     def __str__(self):
-        status = "✓" if self.selesai else "○"
+        status = "[selesai]" if self.selesai else "[belum]"
         return f"{status} {self.judul}"
 
     class Meta:
@@ -180,7 +195,7 @@ class Notification(models.Model):
     )
 
     def __str__(self):
-        status = "✓" if self.is_read else "●"
+        status = "[dibaca]" if self.is_read else "[belum dibaca]"
         return f"{status} {self.get_tipe_display()} - {self.user.username}"
 
     class Meta:
@@ -239,24 +254,51 @@ class AktivitasHarian(models.Model):
     )
 
     def _calculate_jam_selesai(self):
-        """Hitung jam_selesai berdasarkan jam_mulai + durasi_menit."""
+        """Hitung jam_selesai berdasarkan jam_mulai + durasi_menit.
+        Jika melewati tengah malam, jam_selesai bisa menjadi time hari berikutnya.
+        """
         if self.jam_mulai and self.durasi_menit:
             start_dt = datetime.combine(date.today(), self.jam_mulai)
             end_dt = start_dt + timedelta(minutes=self.durasi_menit)
             return end_dt.time()
         return None
 
-    def clean(self):
-        """Validasi anti-overlap: cegah aktivitas di jam yang sudah terisi."""
-        if not self.jam_mulai or not self.durasi_menit:
-            return
+    @staticmethod
+    def _time_to_minutes(t):
+        """Konversi datetime.time ke menit sejak 00:00 (integer)."""
+        return t.hour * 60 + t.minute
 
-        calculated_end = self._calculate_jam_selesai()
-        if not calculated_end:
+    @staticmethod
+    def _get_time_intervals(start_min, durasi):
+        """Mengembalikan list tuple (start, end) dalam rentang 0..1440.
+        Jika melewati tengah malam (end_min > 1440), dipecah menjadi dua interval:
+        (start_min, 1440) dan (0, end_min - 1440).
+        """
+        end_min = start_min + (durasi or 0)
+        if end_min <= 1440:
+            return [(start_min, end_min)]
+        else:
+            return [(start_min, 1440), (0, end_min - 1440)]
+
+    @staticmethod
+    def _intervals_overlap(intervals1, intervals2):
+        """Cek apakah ada pasangan interval yang saling beririsan."""
+        for s1, e1 in intervals1:
+            for s2, e2 in intervals2:
+                if s1 < e2 and e1 > s2:
+                    return True
+        return False
+
+    def clean(self):
+        """Validasi anti-overlap menggunakan satuan menit dan interval wrapping untuk midnight-crossing."""
+        if not self.jam_mulai or not self.durasi_menit:
             return
 
         if not self.user_id:
             return
+
+        new_start = self._time_to_minutes(self.jam_mulai)
+        new_intervals = self._get_time_intervals(new_start, self.durasi_menit)
 
         # Cari aktivitas lain di tanggal yang sama milik user ini
         qs = AktivitasHarian.objects.filter(
@@ -268,16 +310,15 @@ class AktivitasHarian(models.Model):
             qs = qs.exclude(pk=self.pk)
 
         for aktivitas in qs:
-            existing_start = aktivitas.jam_mulai
-            existing_end = aktivitas.jam_selesai or aktivitas._calculate_jam_selesai()
-            if not existing_end:
-                continue
+            ex_start = self._time_to_minutes(aktivitas.jam_mulai)
+            ex_intervals = self._get_time_intervals(ex_start, aktivitas.durasi_menit)
 
-            # Cek overlap: new_start < existing_end AND new_end > existing_start
-            if self.jam_mulai < existing_end and calculated_end > existing_start:
+            if self._intervals_overlap(new_intervals, ex_intervals):
+                ex_end_time = (aktivitas.jam_selesai or aktivitas._calculate_jam_selesai())
+                ex_end_str = ex_end_time.strftime('%H:%M') if ex_end_time else '?'
                 raise ValidationError(
                     f"Jadwal bertabrakan dengan aktivitas \"{aktivitas.judul}\" "
-                    f"({existing_start.strftime('%H:%M')} - {existing_end.strftime('%H:%M')}). "
+                    f"({aktivitas.jam_mulai.strftime('%H:%M')} - {ex_end_str}). "
                     f"Silakan pilih jam yang berbeda."
                 )
 
@@ -287,12 +328,16 @@ class AktivitasHarian(models.Model):
             tanggal=self.tanggal,
         )
         for keg in kegiatan_qs:
-            if self.jam_mulai < keg.jam_selesai and calculated_end > keg.jam_mulai:
-                raise ValidationError(
-                    f"Jadwal bertabrakan dengan acara/kegiatan \"{keg.judul}\" "
-                    f"({keg.jam_mulai.strftime('%H:%M')} - {keg.jam_selesai.strftime('%H:%M')}). "
-                    f"Silakan pilih jam yang berbeda."
-                )
+            keg_start = self._time_to_minutes(keg.jam_mulai)
+            keg_end = self._time_to_minutes(keg.jam_selesai) if keg.jam_selesai else keg_start
+            if keg_end > keg_start:
+                keg_intervals = [(keg_start, keg_end)]
+                if self._intervals_overlap(new_intervals, keg_intervals):
+                    raise ValidationError(
+                        f"Jadwal bertabrakan dengan acara/kegiatan \"{keg.judul}\" "
+                        f"({keg.jam_mulai.strftime('%H:%M')} - {keg.jam_selesai.strftime('%H:%M')}). "
+                        f"Silakan pilih jam yang berbeda."
+                    )
 
     def save(self, *args, **kwargs):
         """Auto-calculate jam_selesai sebelum save."""
@@ -302,9 +347,10 @@ class AktivitasHarian(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        status_icon = {"belum": "○", "selesai": "✓", "terlewat": "✗"}.get(self.status, "○")
+        status_label = {"belum": "[belum]", "selesai": "[selesai]", "terlewat": "[terlewat]"}.get(self.status, "[belum]")
         habit_tag = " [Habit]" if self.is_habit else ""
-        return f"{status_icon} {self.judul}{habit_tag} ({self.jam_mulai.strftime('%H:%M')} - {self.jam_selesai.strftime('%H:%M') if self.jam_selesai else '?'})"
+        end_time = self.jam_selesai.strftime('%H:%M') if self.jam_selesai else '?'
+        return f"{status_label} {self.judul}{habit_tag} ({self.jam_mulai.strftime('%H:%M')} - {end_time})"
 
     class Meta:
         ordering = ['tanggal', 'jam_mulai']
@@ -421,7 +467,13 @@ class Kegiatan(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Dibuat Pada")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Diperbarui Pada")
 
+    @staticmethod
+    def _time_to_minutes(t):
+        """Konversi datetime.time ke menit sejak 00:00 (integer)."""
+        return t.hour * 60 + t.minute
+
     def clean(self):
+        """Validasi overlap untuk Kegiatan: jam_selesai harus setelah jam mulai."""
         if not self.tanggal or not self.jam_mulai or not self.jam_selesai:
             return
 
@@ -430,6 +482,9 @@ class Kegiatan(models.Model):
 
         if not self.user_id:
             return
+
+        new_start = self._time_to_minutes(self.jam_mulai)
+        new_end = self._time_to_minutes(self.jam_selesai)
 
         # 1. Cek overlap dengan Kegiatan lain
         keg_qs = Kegiatan.objects.filter(
@@ -440,7 +495,10 @@ class Kegiatan(models.Model):
             keg_qs = keg_qs.exclude(pk=self.pk)
 
         for keg in keg_qs:
-            if self.jam_mulai < keg.jam_selesai and self.jam_selesai > keg.jam_mulai:
+            keg_start = self._time_to_minutes(keg.jam_mulai)
+            keg_end = self._time_to_minutes(keg.jam_selesai)
+
+            if new_start < keg_end and new_end > keg_start:
                 raise ValidationError(
                     f"Jadwal bertabrakan dengan acara \"{keg.judul}\" "
                     f"({keg.jam_mulai.strftime('%H:%M')} - {keg.jam_selesai.strftime('%H:%M')})."
@@ -451,14 +509,19 @@ class Kegiatan(models.Model):
             user=self.user,
             tanggal=self.tanggal,
         )
+        keg_intervals = [(new_start, new_end)]
         for akt in akt_qs:
-            akt_end = akt.jam_selesai or akt._calculate_jam_selesai()
-            if akt_end:
-                if self.jam_mulai < akt_end and self.jam_selesai > akt.jam_mulai:
-                    raise ValidationError(
-                        f"Jadwal bertabrakan dengan aktivitas \"{akt.judul}\" "
-                        f"({akt.jam_mulai.strftime('%H:%M')} - {akt_end.strftime('%H:%M')})."
-                    )
+            akt_start = AktivitasHarian._time_to_minutes(akt.jam_mulai)
+            akt_intervals = AktivitasHarian._get_time_intervals(akt_start, akt.durasi_menit)
+
+            if AktivitasHarian._intervals_overlap(keg_intervals, akt_intervals):
+                akt_end_time = akt.jam_selesai or akt._calculate_jam_selesai()
+                akt_end_str = akt_end_time.strftime('%H:%M') if akt_end_time else '?'
+                raise ValidationError(
+                    f"Jadwal bertabrakan dengan aktivitas \"{akt.judul}\" "
+                    f"({akt.jam_mulai.strftime('%H:%M')} - {akt_end_str})."
+                )
+
 
     def save(self, *args, **kwargs):
         self.full_clean()

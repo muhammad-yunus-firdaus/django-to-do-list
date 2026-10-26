@@ -1,0 +1,308 @@
+/**
+ * forms.css — shadcn/ui Tactile Form Controls
+ */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--foreground);
+    line-height: 1;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    height: 2.25rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    outline: none;
+}
+
+.form-select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.25rem;
+    cursor: pointer;
+}
+
+.form-textarea {
+    height: auto;
+    min-height: 5rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--foreground-subtle);
+}
+
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover {
+    border-color: var(--border-hover);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 1px var(--ring);
+}
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+    background-color: var(--surface-muted);
+    color: var(--foreground-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Native Time & Date Picker UX (Full Box Clickable) */
+input[type="time"].form-input,
+input[type="date"].form-input,
+input[type="datetime-local"].form-input {
+    cursor: pointer;
+    position: relative;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 0.25rem;
+    transition: opacity var(--transition-fast);
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+}
+
+/* Checkbox Style */
+.form-checkbox {
+    appearance: none;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: all var(--transition-fast);
+    outline: none;
+    margin: 0;
+}
+
+.form-checkbox:hover {
+    border-color: var(--border-hover);
+}
+
+.form-checkbox:focus-visible {
+    box-shadow: 0 0 0 2px var(--ring-offset), 0 0 0 4px var(--ring);
+}
+
+.form-checkbox:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.form-checkbox:checked::before {
+    content: '';
+    width: 0.625rem;
+    height: 0.35rem;
+    border-left: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    transform: rotate(-45deg) translate(1px, -1px);
+}
+
+/* Quick Duration Pills (Untuk Agenda & Kegiatan) */
+.quick-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+}
+
+.quick-pill {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--foreground-muted);
+    background-color: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    user-select: none;
+}
+
+.quick-pill:hover {
+    color: var(--foreground);
+    background-color: var(--border);
+    border-color: var(--border-hover);
+}
+
+.quick-pill.active {
+    color: var(--primary-fg);
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Input Icon Adornments (Prefix & Suffix) */
+.relative {
+    position: relative;
+}
+
+.input-icon-prefix {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    color: var(--foreground-muted);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.input-icon-suffix {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    color: var(--foreground-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 2;
+    transition: color var(--transition-fast);
+}
+
+.input-icon-suffix:hover {
+    color: var(--foreground);
+}
+
+.input-icon-prefix svg,
+.input-icon-suffix svg {
+    width: 1.125rem;
+    height: 1.125rem;
+}
+
+.form-input.has-prefix {
+    padding-left: 2.375rem;
+}
+
+.form-input.has-suffix {
+    padding-right: 2.375rem;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ALERT COMPONENT (MINIMALIST FEEDBACK BOX)
+   ══════════════════════════════════════════════════════════════════════ */
+
+.alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.84375rem;
+    line-height: 1.4;
+    border: 1px solid transparent;
+}
+
+.alert svg,
+.alert i[data-lucide] {
+    flex-shrink: 0;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-top: 0.125rem;
+}
+
+.alert-destructive {
+    background-color: #FEF2F2;
+    border-color: #FCA5A5;
+    color: #991B1B;
+}
+
+.alert-destructive svg,
+.alert-destructive i[data-lucide] {
+    color: #DC2626;
+}
+
+.alert-success {
+    background-color: #F0FDF4;
+    border-color: #86EFAC;
+    color: #166534;
+}
+
+.alert-success svg,
+.alert-success i[data-lucide] {
+    color: #16A34A;
+}
+
+.alert-info {
+    background-color: #F0F9FF;
+    border-color: #BAE6FD;
+    color: #0369A1;
+}
+
+.alert-info svg,
+.alert-info i[data-lucide] {
+    color: #0284C7;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TASK FORM RESPONSIVE 2-COL LAYOUT
+   ══════════════════════════════════════════════════════════════════════ */
+.task-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.task-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+@media (max-width: 991px) {
+    .task-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 540px) {
+    .task-form-row {
+        grid-template-columns: 1fr;
+    }
+}
