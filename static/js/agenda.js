@@ -435,7 +435,7 @@ function init24HourTimeline() {
             const endStr = nextH === 24 ? '24:00' : `${String(nextH).padStart(2, '0')}:00`;
 
             const emptyCard = document.createElement('div');
-            emptyCard.className = 'slot-empty-card slot-empty';
+            emptyCard.className = 'timeline-card timeline-item slot-empty-card slot-empty';
             emptyCard.dataset.startMinutes = slotStartMins;
             emptyCard.style.display = 'none'; // default filter is "filled"
             emptyCard.innerHTML = `

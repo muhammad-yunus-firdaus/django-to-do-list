@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block head %}
+{{ block.super }}
+{% endblock %}
+
 {% block layout %}
 <!-- Mobile Sidebar Backdrop Overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>

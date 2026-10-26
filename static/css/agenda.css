@@ -169,26 +169,36 @@
 }
 
 /* ── Timeline Activity Card ── */
+.timeline-card,
+.timeline-item,
 .aktivitas-card {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 14px 18px;
+    padding: 1rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     background-color: var(--surface);
+    box-shadow: var(--shadow-xs);
+    box-sizing: border-box;
     transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
+.timeline-card:hover,
+.timeline-item:hover,
 .aktivitas-card:hover {
     border-color: var(--border-hover);
 }
 
+.timeline-card.status-selesai,
+.timeline-item.status-selesai,
 .aktivitas-card.status-selesai {
     opacity: 0.65;
     background-color: var(--surface-muted);
 }
 
+.timeline-card.status-selesai .akt-judul,
+.timeline-item.status-selesai .akt-judul,
 .aktivitas-card.status-selesai .akt-judul {
     text-decoration: line-through;
     color: var(--foreground-muted);
@@ -317,6 +327,8 @@
     }
 
     /* Kartu Aktivitas Mobile: Layout Bertumpuk Rapi */
+    .timeline-card,
+    .timeline-item,
     .aktivitas-card {
         display: flex;
         flex-direction: column;

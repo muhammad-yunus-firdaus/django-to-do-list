@@ -2,12 +2,12 @@
 {% load widget_tweaks %}
 {% load static %}
 
-{% block title %}Jadwal Hari Ini - Manajemen Tugas{% endblock %}
+{% block title %}Manajemen Tugas — Jadwal Hari Ini{% endblock %}
 {% block page_title %}Jadwal Hari Ini{% endblock %}
 
 {% block head %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'css/agenda.css' %}">
+<link rel="stylesheet" href="{% static 'css/agenda.css' %}?v=13">
 {% endblock %}
 
 {% block content %}
@@ -166,7 +166,7 @@
 <div id="timelineContainer" style="display:flex;flex-direction:column;gap:0.5rem;">
     {% for item in timeline_items %}
         {% if item.type == 'aktivitas' %}
-            <div class="aktivitas-card slot-filled {% if item.item.status == 'selesai' %}status-selesai{% endif %}" data-id="{{ item.item.id }}" id="aktCard-{{ item.item.id }}">
+            <div class="timeline-card timeline-item aktivitas-card slot-filled {% if item.item.status == 'selesai' %}status-selesai{% endif %}" data-id="{{ item.item.id }}" id="aktCard-{{ item.item.id }}">
                 <div class="akt-time-box">
                     <div class="akt-time-start">{{ item.item.jam_mulai|time:"H:i" }}</div>
                     <div class="akt-time-end">{{ item.item.jam_selesai|time:"H:i" }}</div>
@@ -207,7 +207,7 @@
                 </div>
             </div>
         {% elif item.type == 'kegiatan' %}
-            <div class="aktivitas-card slot-filled" style="border-left:3px solid var(--accent-blue);" data-id="{{ item.item.id }}">
+            <div class="timeline-card timeline-item aktivitas-card slot-filled" style="border-left:3px solid var(--accent-blue);" data-id="{{ item.item.id }}">
                 <div class="akt-time-box">
                     <div class="akt-time-start" style="color:var(--accent-blue);">{{ item.item.jam_mulai|time:"H:i" }}</div>
                     <div class="akt-time-end">{{ item.item.jam_selesai|time:"H:i" }}</div>
@@ -260,5 +260,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/agenda.js' %}?v=11"></script>
+<script src="{% static 'js/agenda.js' %}?v=13"></script>
 {% endblock %}

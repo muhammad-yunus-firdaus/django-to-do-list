@@ -1,5 +1,5 @@
 // Service Worker for PWA (Bust Cache & Offline Resilience)
-const CACHE_NAME = 'task-manager-focus-ring-v3';
+const CACHE_NAME = 'task-manager-prod-v1';
 const urlsToCache = [
   '/tugas/dashboard/',
   '/tugas/daftar/',
